@@ -1,0 +1,385 @@
+/**
+ * Estilos para Sistema de Sugestões Inteligentes "Top-3"
+ */
+
+/* Loading state no slot */
+[data-suggest-slot].loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+[data-suggest-slot].loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid #3b82f6;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+/* Popover principal */
+.suggestions-popover {
+    position: fixed;
+    width: 420px;
+    max-height: 600px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    z-index: 9999;
+    opacity: 0;
+    transform: scale(0.95);
+    transition: opacity 0.2s, transform 0.2s;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+}
+
+.suggestions-popover.show {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Header do popover */
+.popover-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.popover-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.popover-title svg {
+    width: 20px;
+    height: 20px;
+}
+
+.popover-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 6px;
+    padding: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.popover-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.popover-close svg {
+    width: 20px;
+    height: 20px;
+    color: white;
+}
+
+/* Info badges */
+.popover-info {
+    display: flex;
+    gap: 8px;
+    padding: 12px 20px;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    overflow-x: auto;
+}
+
+.info-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #374151;
+    white-space: nowrap;
+}
+
+/* Content */
+.popover-content {
+    max-height: 460px;
+    overflow-y: auto;
+    padding: 16px;
+}
+
+/* Lista de sugestões */
+.suggestions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Card de sugestão */
+.suggestion-card {
+    position: relative;
+    padding: 16px;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    transition: all 0.2s;
+}
+
+.suggestion-card:hover {
+    border-color: #667eea;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Ranking visual */
+.suggestion-card.rank-1 {
+    border-color: #fbbf24;
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+}
+
+.suggestion-card.rank-2 {
+    border-color: #d1d5db;
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+}
+
+.suggestion-card.rank-3 {
+    border-color: #e5e7eb;
+    background: white;
+}
+
+/* Header da sugestão */
+.suggestion-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.suggestion-rank {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.rank-1 .suggestion-rank {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+}
+
+.rank-2 .suggestion-rank {
+    background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+}
+
+.rank-3 .suggestion-rank {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+}
+
+.suggestion-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+    flex: 1;
+}
+
+/* Métricas */
+.suggestion-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.metric {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+    font-size: 11px;
+    color: #374151;
+    font-weight: 500;
+}
+
+.metric svg {
+    width: 14px;
+    height: 14px;
+}
+
+.metric-good {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+}
+
+/* Motivo */
+.suggestion-reason {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0 0 12px 0;
+    line-height: 1.4;
+}
+
+/* Botão aplicar */
+.btn-apply {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-apply:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-apply:active {
+    transform: translateY(0);
+}
+
+.btn-apply svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Sem sugestões */
+.no-suggestions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.no-suggestions svg {
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.no-suggestions p {
+    margin: 4px 0;
+}
+
+/* Fallback warning */
+.fallback-warning {
+    margin-top: 12px;
+    padding: 12px;
+    background: #fef3c7;
+    border: 1px solid #fbbf24;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #92400e;
+    text-align: center;
+}
+
+/* Mensagens de erro/sucesso */
+.suggestion-error,
+.suggestion-success {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10000;
+    animation: slideIn 0.3s ease-out;
+}
+
+.suggestion-error {
+    background: #fee2e2;
+    border: 1px solid #ef4444;
+    color: #991b1b;
+}
+
+.suggestion-success {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #d1fae5;
+    border: 1px solid #10b981;
+    color: #065f46;
+}
+
+.suggestion-success svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Animações */
+@keyframes spin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Scrollbar customizado */
+.popover-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.popover-content::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 3px;
+}
+
+.popover-content::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+}
+
+.popover-content::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* Responsivo */
+@media (max-width: 640px) {
+    .suggestions-popover {
+        position: fixed;
+        left: 10px !important;
+        right: 10px !important;
+        top: 50% !important;
+        transform: translateY(-50%);
+        width: auto;
+        max-width: none;
+    }
+
+    .suggestions-popover.show {
+        transform: translateY(-50%);
+    }
+}

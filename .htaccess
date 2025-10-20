@@ -1,0 +1,18 @@
+# .htaccess NA RAIZ - Redirecionar para /public/
+
+# Desabilitar listagem de diretórios
+Options -Indexes
+
+# Redirecionar tudo para a pasta public/
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Bloquear acesso a arquivos sensíveis
+<FilesMatch "\.(env|md|sql|log|ini|sh|bak|config|json|lock)$">
+    Require all denied
+</FilesMatch>
+
+# Bloquear acesso a pastas sensíveis
+RedirectMatch 403 ^/(app|storage|tests|scripts|vendor)(/.*)?$

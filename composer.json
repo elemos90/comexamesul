@@ -1,0 +1,17 @@
+{
+    "name":  "unilicungo/portal-comissao-exames",
+    "description":  "Portal da Comissão de Exames de Admissão - UniLicungo",
+    "type":  "project",
+    "require":  {
+                    "php":  "^8.1",
+                    "ext-pdo":  "*",
+                    "dompdf/dompdf":  "^1.2",
+                    "phpoffice/phpspreadsheet":  "^1.29",
+                    "phpmailer/phpmailer":  "^6.9"
+                },
+    "autoload":  {
+                     "psr-4":  {
+                                   "App\\":  "app/"
+                               }
+                 }
+}

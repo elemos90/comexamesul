@@ -1,0 +1,123 @@
+╔═══════════════════════════════════════════════════════════════╗
+║                                                               ║
+║   🐛 ERRO "Erro Interno" - SOLUÇÃO RÁPIDA                    ║
+║                                                               ║
+╚═══════════════════════════════════════════════════════════════╝
+
+⚡ SOLUÇÃO EM 2 MINUTOS:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📝 PASSO 1: Ver o Erro Exato
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Abrir no NAVEGADOR:
+
+👉 http://localhost/debug_top3.php
+
+Procurar por texto VERMELHO com "EXCEÇÃO CAPTURADA"
+
+⚠️ ERRO MAIS COMUM: "Unknown column 'experiencia_supervisao'"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📝 PASSO 2: Executar SQL de Correção
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Abrir phpMyAdmin:
+   👉 http://localhost/phpmyadmin
+
+2. Selecionar banco: comexamesul
+
+3. Clicar na aba "SQL"
+
+4. Copiar e colar TODO o conteúdo do arquivo:
+   📁 app/Database/fix_top3_errors.sql
+
+5. Clicar "Executar"
+
+✅ DEVE APARECER: "TUDO OK! Sistema Top-3 pronto para uso!"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📝 PASSO 3: Testar Novamente
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Limpar cache: Ctrl + F5
+
+2. Abrir no NAVEGADOR:
+   👉 http://localhost/juries/planning
+
+3. Clicar em: ⚡ Sugestões Top-3
+
+✅ DEVE ABRIR: Popover com 3 sugestões
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 SQL RESUMIDO (se preferir copiar direto):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+-- Adicionar coluna (se não existir)
+ALTER TABLE users 
+ADD COLUMN experiencia_supervisao INT DEFAULT 0;
+
+-- Popular com valores
+UPDATE users 
+SET experiencia_supervisao = FLOOR(RAND() * 10) 
+WHERE role IN ('coordenador', 'membro', 'docente');
+
+-- Ativar todos os docentes
+UPDATE users 
+SET active = 1, available_for_vigilance = 1 
+WHERE role IN ('coordenador', 'membro', 'docente');
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📚 DOCUMENTAÇÃO COMPLETA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📄 RESOLVER_ERRO_INTERNO.md    (Guia detalhado)
+📄 README_SMART_SUGGESTIONS.md (Documentação técnica)
+📄 INSTALACAO_TOP3.md          (Instalação completa)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ CORREÇÕES APLICADAS NO CÓDIGO:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. ✅ Fallback para experiencia_supervisao (funciona sem a coluna)
+2. ✅ Melhor tratamento de erros
+3. ✅ Logs detalhados
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🆘 AINDA COM ERRO?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Verifique:
+1. XAMPP rodando? (Apache + MySQL verdes)
+2. Executou o SQL completo?
+3. Limpou cache? (Ctrl + F5)
+4. Viu o debug_top3.php?
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ RESUMO EXECUTIVO:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Problema: Coluna experiencia_supervisao não existe
+Solução: Executar fix_top3_errors.sql
+Tempo:   2 minutos
+Status:  ✅ Corrigível
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 PRÓXIMA AÇÃO:
+
+1️⃣ http://localhost/debug_top3.php  (ver erro)
+2️⃣ phpMyAdmin → SQL → fix_top3_errors.sql (executar)
+3️⃣ http://localhost/juries/planning (testar)
+
+Boa sorte! 🚀
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

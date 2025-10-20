@@ -1,0 +1,22 @@
+# .htaccess MINIMAL - Para troubleshooting 503
+# Copie este arquivo para .htaccess se tiver erro 503
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Redirecionar tudo para index.php
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# Bloquear .env
+<Files ".env">
+    Require all denied
+</Files>
+
+# Desabilitar listagem de diretórios
+Options -Indexes
+
+# UTF-8
+AddDefaultCharset UTF-8

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Drag and Drop</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/assets/libs/sortable.min.js"></script>
+    <style>
+        .draggable-item {
+            cursor: move;
+            transition: all 0.3s;
+        }
+        .draggable-item:hover {
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8 text-gray-800">🧪 Teste de Drag and Drop</h1>
+        
+        <div class="grid grid-cols-2 gap-6">
+            <!-- Pool de Vigilantes -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4 text-blue-600">Vigilantes Disponíveis</h2>
+                <p class="text-sm text-gray-500 mb-4">Arraste para a sala →</p>
+                <ul id="vigilantes-pool" class="space-y-2">
+                    <li class="draggable-item bg-blue-50 border-2 border-blue-200 rounded p-3" data-id="1">
+                        <p class="font-medium">João Silva</p>
+                        <p class="text-xs text-gray-600">joao@example.com</p>
+                    </li>
+                    <li class="draggable-item bg-blue-50 border-2 border-blue-200 rounded p-3" data-id="2">
+                        <p class="font-medium">Maria Santos</p>
+                        <p class="text-xs text-gray-600">maria@example.com</p>
+                    </li>
+                    <li class="draggable-item bg-blue-50 border-2 border-blue-200 rounded p-3" data-id="3">
+                        <p class="font-medium">Pedro Costa</p>
+                        <p class="text-xs text-gray-600">pedro@example.com</p>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Sala de Exame -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4 text-green-600">Sala 101</h2>
+                <p class="text-sm text-gray-500 mb-4">← Solte vigilantes aqui</p>
+                <ul id="sala-101" class="min-h-[200px] border-2 border-dashed border-green-300 rounded-lg p-4 space-y-2 bg-green-50">
+                    <li class="text-sm text-gray-400 italic text-center py-8">Arraste vigilantes para aqui</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Log de Eventos -->
+        <div class="mt-8 bg-gray-800 text-white rounded-lg p-6">
+            <h3 class="text-lg font-semibold mb-4">📋 Log de Eventos</h3>
+            <div id="log" class="space-y-1 font-mono text-sm max-h-64 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <script>
+        // Função para adicionar log
+        function addLog(message) {
+            const log = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.textContent = new Date().toLocaleTimeString() + ' - ' + message;
+            entry.className = 'text-green-400';
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // Verificar se Sortable está carregado
+        if (typeof Sortable === 'undefined') {
+            addLog('❌ ERRO: Sortable não está carregado!');
+        } else {
+            addLog('✅ Sortable carregado com sucesso');
+        }
+
+        // Inicializar Pool de Vigilantes
+        const vigilantesPool = document.getElementById('vigilantes-pool');
+        if (vigilantesPool) {
+            new Sortable(vigilantesPool, {
+                group: {
+                    name: 'vigilantes',
+                    pull: true,
+                    put: true
+                },
+                animation: 150,
+                onStart: function(evt) {
+                    addLog('🖱️ Começou a arrastar: ' + evt.item.querySelector('p').textContent);
+                },
+                onEnd: function(evt) {
+                    addLog('✋ Soltou o item');
+                }
+            });
+            addLog('✅ Pool de vigilantes inicializado');
+        }
+
+        // Inicializar Sala
+        const sala = document.getElementById('sala-101');
+        if (sala) {
+            new Sortable(sala, {
+                group: {
+                    name: 'vigilantes',
+                    pull: true,
+                    put: true
+                },
+                animation: 150,
+                onAdd: function(evt) {
+                    const nome = evt.item.querySelector('p').textContent;
+                    addLog('✅ Vigilante adicionado à sala: ' + nome);
+                    
+                    // Remover mensagem placeholder
+                    const placeholder = sala.querySelector('.italic');
+                    if (placeholder) {
+                        placeholder.remove();
+                    }
+                    
+                    // Mudar cor do item
+                    evt.item.classList.remove('bg-blue-50', 'border-blue-200');
+                    evt.item.classList.add('bg-green-100', 'border-green-400');
+                },
+                onRemove: function(evt) {
+                    const nome = evt.item.querySelector('p').textContent;
+                    addLog('⬅️ Vigilante removido da sala: ' + nome);
+                    
+                    // Restaurar cor original
+                    evt.item.classList.remove('bg-green-100', 'border-green-400');
+                    evt.item.classList.add('bg-blue-50', 'border-blue-200');
+                    
+                    // Adicionar placeholder se sala ficar vazia
+                    if (sala.children.length === 0) {
+                        sala.innerHTML = '<li class="text-sm text-gray-400 italic text-center py-8">Arraste vigilantes para aqui</li>';
+                    }
+                }
+            });
+            addLog('✅ Sala 101 inicializada');
+        }
+
+        addLog('🚀 Sistema pronto! Tente arrastar os vigilantes.');
+    </script>
+</body>
+</html>

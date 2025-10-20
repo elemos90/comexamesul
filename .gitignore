@@ -1,0 +1,126 @@
+# ====================================
+# SEGURANÇA - Arquivos Sensíveis
+# ====================================
+
+# Variáveis de ambiente (NUNCA commitar!)
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Credenciais e chaves
+*.pem
+*.key
+*.p12
+*.pfx
+
+# ====================================
+# Dependências
+# ====================================
+
+# Composer
+/vendor/
+composer.lock
+
+# Node.js (se usar)
+/node_modules/
+package-lock.json
+yarn.lock
+
+# ====================================
+# Arquivos Temporários
+# ====================================
+
+# Logs
+/storage/logs/*.log
+/storage/logs/*.txt
+!/storage/logs/.gitkeep
+
+# Cache
+/storage/cache/*
+!/storage/cache/.gitkeep
+
+# Uploads
+/public/uploads/*
+!/public/uploads/.gitkeep
+/storage/uploads/*
+!/storage/uploads/.gitkeep
+
+# Sessões
+/storage/sessions/*
+!/storage/sessions/.gitkeep
+
+# Arquivos temporários
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+
+# ====================================
+# IDE e Editores
+# ====================================
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# PHPStorm
+.idea/
+*.iml
+
+# NetBeans
+nbproject/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Eclipse
+.project
+.buildpath
+.settings/
+
+# ====================================
+# Sistema Operacional
+# ====================================
+
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+
+# ====================================
+# PHP
+# ====================================
+
+# Relatórios de teste
+/phpunit.xml
+/coverage/
+/.phpunit.result.cache
+
+# ====================================
+# Projeto Específico
+# ====================================
+
+# Scripts de teste (remover em produção)
+test_*.php
+debug_*.php
+temp_*.php
+
+# Instaladores já executados
+.master_data_installed
+
+# Backups de BD
+*.sql.gz
+*.sql.bak
+backup_*.sql

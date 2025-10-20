@@ -1,0 +1,81 @@
+<?php
+// INDEX.PHP DE TESTE - Para diagnosticar erro 503
+// Substitua temporariamente o index.php original por este
+
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+echo "=== DIAGNÓSTICO DO INDEX.PHP ===\n\n";
+
+// Teste 1: PHP funcionando
+echo "✓ PHP está funcionando\n";
+echo "✓ Versão PHP: " . phpversion() . "\n\n";
+
+// Teste 2: Arquivo bootstrap existe?
+$bootstrapPath = __DIR__ . '/../bootstrap.php';
+echo "Teste 2: Verificando bootstrap.php...\n";
+if (file_exists($bootstrapPath)) {
+    echo "✓ bootstrap.php encontrado: $bootstrapPath\n";
+} else {
+    die("✗ ERRO: bootstrap.php NÃO encontrado em: $bootstrapPath\n");
+}
+echo "\n";
+
+// Teste 3: Tentar carregar bootstrap
+echo "Teste 3: Carregando bootstrap.php...\n";
+try {
+    require_once $bootstrapPath;
+    echo "✓ bootstrap.php carregado com sucesso\n";
+} catch (Throwable $e) {
+    die("✗ ERRO ao carregar bootstrap.php:\n" . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n");
+}
+echo "\n";
+
+// Teste 4: Verificar autoload
+echo "Teste 4: Verificando autoload do Composer...\n";
+if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
+    echo "✓ vendor/autoload.php encontrado\n";
+} else {
+    die("✗ ERRO: vendor/autoload.php NÃO encontrado\n");
+}
+echo "\n";
+
+// Teste 5: Verificar classes principais
+echo "Teste 5: Verificando classes...\n";
+if (class_exists('App\Routes\Router')) {
+    echo "✓ App\Routes\Router existe\n";
+} else {
+    echo "✗ App\Routes\Router NÃO encontrada\n";
+}
+
+if (class_exists('App\Http\Request')) {
+    echo "✓ App\Http\Request existe\n";
+} else {
+    echo "✗ App\Http\Request NÃO encontrada\n";
+}
+echo "\n";
+
+// Teste 6: Tentar criar Request
+echo "Teste 6: Criando Request...\n";
+try {
+    $request = new App\Http\Request($_SERVER, $_GET, $_POST, $_FILES);
+    echo "✓ Request criado com sucesso\n";
+} catch (Throwable $e) {
+    die("✗ ERRO ao criar Request:\n" . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n");
+}
+echo "\n";
+
+// Teste 7: Tentar criar Router
+echo "Teste 7: Criando Router...\n";
+try {
+    $router = new App\Routes\Router($request);
+    echo "✓ Router criado com sucesso\n";
+} catch (Throwable $e) {
+    die("✗ ERRO ao criar Router:\n" . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n");
+}
+echo "\n";
+
+echo "=== TODOS OS TESTES PASSARAM! ===\n";
+echo "O problema deve estar no dispatch() ou nas rotas.\n";
+echo "\nSe chegou até aqui, o código básico está OK.\n";
+echo "Volte o index.php original e verifique os logs de erro.\n";

@@ -26,7 +26,7 @@ class RateLimitMiddleware
         $key = 'rate:' . $request->ip() . ':' . $request->path();
         if (!RateLimiter::hit($key, $this->decaySeconds, $this->maxAttempts)) {
             Flash::add('error', 'Muitas tentativas. Aguarde e tente novamente.');
-            header('Location: /login');
+            redirect('/login');
             exit;
         }
         return $next($request);

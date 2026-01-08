@@ -17,6 +17,9 @@ $router->group(['middleware' => ['GuestMiddleware']], function ($router) {
     $router->post('/password/forgot', 'AuthController@forgotPassword', ['CsrfMiddleware']);
     $router->get('/password/reset', 'AuthController@showResetPassword');
     $router->post('/password/reset', 'AuthController@resetPassword', ['CsrfMiddleware']);
+    // Stats Routes
+    $router->get('/stats', 'StatsController@index', ['AuthMiddleware', 'RoleMiddleware:admin,coordenador']);
+    $router->get('/stats/generate', 'StatsController@generate', ['AuthMiddleware', 'RoleMiddleware:admin,coordenador']);
 });
 
 $router->post('/logout', 'AuthController@logout', ['AuthMiddleware', 'CsrfMiddleware']);
@@ -63,8 +66,25 @@ $router->get('/applications/export', 'ApplicationDashboardController@export', ['
 
 $router->get('/juries', 'JuryController@index', ['AuthMiddleware']);
 
+// Módulo de Pagamentos
+$router->get('/payments', 'PaymentController@index', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->get('/payments/rates', 'PaymentController@rates', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->post('/payments/rates', 'PaymentController@storeRate', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+$router->get('/payments/preview/{vacancyId}', 'PaymentController@preview', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->post('/payments/generate/{vacancyId}', 'PaymentController@generate', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+$router->post('/payments/validate/{vacancyId}', 'PaymentController@validate', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+$router->get('/payments/export/{vacancyId}', 'PaymentController@export', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+
+// Meu Mapa de Pagamento (Individual - Vigilante/Supervisor)
+$router->get('/payments/my-map', 'PaymentController@myMap', ['AuthMiddleware']);
+
+
 // Planejamento com Drag-and-Drop (ANTES de /juries/{id})
 $router->get('/juries/planning', 'JuryController@planning', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+
+// Calendário Visual de Júris
+$router->get('/juries/calendar', 'JuryController@calendar', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro,vigilante']);
+$router->get('/api/juries/calendar-events', 'JuryController@calendarEvents', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro,vigilante']);
 
 // Novo: Planejamento por Vaga (Smart Allocation)
 $router->get('/juries/planning-by-vacancy', 'JuryController@planningByVacancy', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
@@ -79,6 +99,17 @@ $router->get('/juries/vacancy/{id}/approved-candidates', 'JuryController@getVaca
 // API para supervisores
 $router->get('/api/users/supervisors', 'JuryController@getEligibleSupervisors', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
 $router->post('/juries/bulk-assign-supervisor', 'JuryController@bulkAssignSupervisor', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+
+// API para alocação de supervisores por blocos (v2.7)
+$router->post('/juries/supervisors/auto-allocate', 'JuryAllocationController@autoAllocateSupervisors', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+$router->post('/juries/{id}/supervisor/single', 'JuryAllocationController@setSupervisorSingle', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+$router->post('/juries/{id}/supervisor/remove', 'JuryAllocationController@removeSupervisorFromJury', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+$router->get('/juries/supervisors/stats/{vacancyId}', 'JuryAllocationController@getSupervisorStats', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->get('/juries/supervisors/load/{supervisorId}', 'JuryAllocationController@getSupervisorLoad', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+
+// API para alocação de vigilantes (v2.8)
+$router->get('/juries/vigilantes/status/{id}', 'JuryAllocationController@getVigilanteStatus', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->post('/juries/vigilantes/auto-distribute', 'JuryAllocationController@autoDistributeVigilantes', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
 
 $router->get('/juries/{id}', 'JuryController@show', ['AuthMiddleware']);
 $router->post('/juries', 'JuryController@store', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);

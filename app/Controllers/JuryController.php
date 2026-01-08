@@ -27,7 +27,7 @@ class JuryController extends Controller
     {
         $cache = new StatsCacheService();
         $cache->forget('dashboard_stats');
-        
+
         // Invalidar cache de todos os vigilantes
         $cache->flush(); // Limpa todo cache para garantir atualização
     }
@@ -38,12 +38,12 @@ class JuryController extends Controller
         $juryVigilantes = new JuryVigilante();
         $userModel = new User();
         $vacancyModel = new \App\Models\ExamVacancy();
-        
+
         // NOVO: Filtro por vaga (padrão = vaga aberta atual)
         $vacancyId = isset($_GET['vacancy_id']) ? $_GET['vacancy_id'] : 'current';
         $vacancy = null;
         $allVacancies = [];
-        
+
         // Se vacancy_id = 'all', mostrar todas
         if ($vacancyId === 'all') {
             $vacancyId = null;
@@ -55,12 +55,12 @@ class JuryController extends Controller
         } else {
             $vacancyId = (int) $vacancyId;
         }
-        
+
         // Buscar dados da vaga atual (se houver)
         if ($vacancyId) {
             $vacancy = $vacancyModel->find($vacancyId);
         }
-        
+
         // Buscar todas as vagas para o dropdown (apenas para coordenador/membro)
         if ($user['role'] !== 'vigilante') {
             $allVacancies = $vacancyModel->statement('SELECT * FROM exam_vacancies ORDER BY created_at DESC LIMIT 10');
@@ -85,17 +85,17 @@ class JuryController extends Controller
                     ['user' => (int) $user['id']]
                 );
             }
-            
+
             // EAGER LOADING: Carregar todos vigilantes de uma vez
             $juryIds = array_column($juries, 'id');
             $allVigilantes = $juryVigilantes->getVigilantesForMultipleJuries($juryIds);
-            
+
             // Agrupar vigilantes por jury_id
             $vigilantesByJury = [];
             foreach ($allVigilantes as $v) {
                 $vigilantesByJury[$v['jury_id']][] = $v;
             }
-            
+
             // Associar vigilantes aos júris
             foreach ($juries as &$jury) {
                 $jury['vigilantes'] = $vigilantesByJury[$jury['id']] ?? [];
@@ -128,27 +128,27 @@ class JuryController extends Controller
             } else {
                 $juries = $juryModel->withAllocations();
             }
-            
+
             // EAGER LOADING: Carregar todos vigilantes de uma vez
             $juryIds = array_column($juries, 'id');
             $allVigilantes = $juryVigilantes->getVigilantesForMultipleJuries($juryIds);
-            
+
             // Agrupar vigilantes por jury_id
             $vigilantesByJury = [];
             foreach ($allVigilantes as $v) {
                 $vigilantesByJury[$v['jury_id']][] = $v;
             }
-            
+
             // Associar vigilantes aos júris
             foreach ($juries as &$jury) {
                 $jury['vigilantes'] = $vigilantesByJury[$jury['id']] ?? [];
                 $jury['has_report'] = $juryModel->hasSupervisorReport((int) $jury['id']);
             }
             unset($jury);
-            
+
             $availableVigilantes = $userModel->getVigilantesWithWorkload();
             $supervisors = $userModel->statement("SELECT u.* FROM users u WHERE supervisor_eligible = 1 ORDER BY u.name");
-            
+
             // Preparar júris agrupados com vigilantes carregados
             // CORREÇÃO: Filtrar groupedJuries pela vaga se aplicável
             if ($vacancyId) {
@@ -172,7 +172,7 @@ class JuryController extends Controller
             } else {
                 $groupedJuries = $juryModel->getGroupedBySubjectAndTime();
             }
-            
+
             // EAGER LOADING para júris agrupados
             $allGroupedJuryIds = [];
             foreach ($groupedJuries as $group) {
@@ -180,16 +180,16 @@ class JuryController extends Controller
                     $allGroupedJuryIds[] = $jury['id'];
                 }
             }
-            
+
             if (!empty($allGroupedJuryIds)) {
                 $groupedVigilantes = $juryVigilantes->getVigilantesForMultipleJuries($allGroupedJuryIds);
-                
+
                 // Agrupar vigilantes por jury_id
                 $groupedVigilantesByJury = [];
                 foreach ($groupedVigilantes as $v) {
                     $groupedVigilantesByJury[$v['jury_id']][] = $v;
                 }
-                
+
                 // Associar aos júris agrupados
                 foreach ($groupedJuries as &$group) {
                     foreach ($group['juries'] as &$jury) {
@@ -212,7 +212,7 @@ class JuryController extends Controller
                 'allVacancies' => $allVacancies,
             ]);
         }
-        
+
         return $this->view('juries/index_print', [
             'juries' => $juries,
             'groupedJuries' => $groupedJuries ?? [],
@@ -225,9 +225,109 @@ class JuryController extends Controller
         ]);
     }
 
+    /**
+     * Calendário Visual de Júris
+     */
+    public function calendar(Request $request): string
+    {
+        $user = Auth::user();
+        $vacancyModel = new \App\Models\ExamVacancy();
+
+        $vacancyId = isset($_GET['vacancy_id']) ? (int) $_GET['vacancy_id'] : null;
+        $allVacancies = $vacancyModel->statement('SELECT * FROM exam_vacancies ORDER BY created_at DESC LIMIT 10');
+
+        return $this->view('juries/calendar', [
+            'user' => $user,
+            'vacancyId' => $vacancyId,
+            'allVacancies' => $allVacancies,
+        ]);
+    }
+
+    /**
+     * API: Eventos do calendário para FullCalendar
+     */
+    public function calendarEvents(Request $request)
+    {
+        try {
+            $start = $_GET['start'] ?? date('Y-m-01');
+            $end = $_GET['end'] ?? date('Y-m-t');
+            $vacancyId = isset($_GET['vacancy_id']) && $_GET['vacancy_id'] ? (int) $_GET['vacancy_id'] : null;
+
+            $db = database();
+
+            $sql = "
+                SELECT j.*, 
+                       COALESCE(el.name, j.location) as location_name,
+                       j.room as room_name,
+                       supervisor.name as supervisor_name,
+                       (SELECT COUNT(*) FROM jury_vigilantes WHERE jury_id = j.id) as vigilantes_count,
+                       CEIL(j.candidates_quota / 50.0) + 1 as vigilantes_required
+                FROM juries j
+                LEFT JOIN exam_locations el ON el.id = j.location_id
+                LEFT JOIN users supervisor ON supervisor.id = j.supervisor_id
+                WHERE j.exam_date >= :start AND j.exam_date <= :end
+            ";
+
+            $params = ['start' => $start, 'end' => $end];
+
+            if ($vacancyId) {
+                $sql .= " AND j.vacancy_id = :vacancy_id";
+                $params['vacancy_id'] = $vacancyId;
+            }
+
+            $sql .= " ORDER BY j.exam_date, j.start_time";
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $juries = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            $juryVigilantes = new JuryVigilante();
+
+            $events = [];
+            foreach ($juries as $jury) {
+                $vigilantes = $juryVigilantes->vigilantesForJury((int) $jury['id']);
+                $vigilantesCount = (int) $jury['vigilantes_count'];
+                $vigilantesRequired = (int) $jury['vigilantes_required'];
+                $hasSupervisor = !empty($jury['supervisor_id']);
+
+                $className = 'event-empty';
+                if ($vigilantesCount >= $vigilantesRequired && $hasSupervisor) {
+                    $className = 'event-complete';
+                } elseif ($vigilantesCount > 0) {
+                    $className = $hasSupervisor ? 'event-partial' : 'event-no-supervisor';
+                } elseif (!$hasSupervisor) {
+                    $className = 'event-no-supervisor';
+                }
+
+                $events[] = [
+                    'id' => $jury['id'],
+                    'title' => $jury['subject'],
+                    'start' => $jury['exam_date'] . 'T' . $jury['start_time'],
+                    'end' => $jury['exam_date'] . 'T' . $jury['end_time'],
+                    'className' => $className,
+                    'extendedProps' => [
+                        'date' => date('d/m/Y', strtotime($jury['exam_date'])),
+                        'time' => substr($jury['start_time'], 0, 5) . ' - ' . substr($jury['end_time'], 0, 5),
+                        'location' => $jury['location_name'],
+                        'room' => $jury['room_name'],
+                        'supervisor' => $jury['supervisor_name'] ?: 'Não definido',
+                        'vigilantes_count' => $vigilantesCount,
+                        'vigilantes_required' => $vigilantesRequired,
+                        'vigilantes_list' => array_map(fn($v) => $v['name'], $vigilantes),
+                        'vacancy_id' => $jury['vacancy_id'],
+                    ]
+                ];
+            }
+
+            Response::json(['success' => true, 'events' => $events]);
+        } catch (\Exception $e) {
+            Response::json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
     public function store(Request $request)
     {
-        $data = $request->only(['subject','exam_date','start_time','end_time','location','room','candidates_quota','notes']);
+        $data = $request->only(['subject', 'exam_date', 'start_time', 'end_time', 'location', 'room', 'candidates_quota', 'notes']);
         $validator = new Validator();
         $rules = [
             'subject' => 'required|min:3|max:180',
@@ -243,28 +343,28 @@ class JuryController extends Controller
             $_SESSION['errors'] = $validator->errors();
             redirect('/juries');
         }
-        
+
         // Validar data do júri: não pode ser no passado
         if (strtotime($data['exam_date']) < strtotime(date('Y-m-d'))) {
             Flash::add('error', 'Nao e possivel criar juris para datas passadas.');
             redirect('/juries');
         }
-        
+
         $juryModel = new Jury();
-        
+
         // Verificar se existem júris da mesma disciplina e data com horários diferentes
         $existingJuries = $juryModel->statement(
             "SELECT * FROM juries WHERE subject = :subject AND exam_date = :date",
             ['subject' => $data['subject'], 'date' => $data['exam_date']]
         );
-        
+
         if (!empty($existingJuries)) {
             $firstJury = $existingJuries[0];
             if ($firstJury['start_time'] !== $data['start_time'] || $firstJury['end_time'] !== $data['end_time']) {
                 Flash::add('warning', 'AVISO: Júris da mesma disciplina devem ter o mesmo horário para evitar fraudes. Horário esperado: ' . substr($firstJury['start_time'], 0, 5) . ' - ' . substr($firstJury['end_time'], 0, 5));
             }
         }
-        
+
         $juryId = $juryModel->create([
             'subject' => $data['subject'],
             'exam_date' => $data['exam_date'],
@@ -279,10 +379,10 @@ class JuryController extends Controller
             'updated_at' => now(),
         ]);
         ActivityLogger::log('juries', $juryId, 'create');
-        
+
         // Invalidar cache
         $this->invalidateCache();
-        
+
         Flash::add('success', 'Juri criado com sucesso.');
         redirect('/juries');
     }
@@ -290,7 +390,7 @@ class JuryController extends Controller
     public function update(Request $request)
     {
         $id = (int) $request->param('id');
-        $data = $request->only(['subject','exam_date','start_time','end_time','location','room','candidates_quota','notes']);
+        $data = $request->only(['subject', 'exam_date', 'start_time', 'end_time', 'location', 'room', 'candidates_quota', 'notes']);
         $juryModel = new Jury();
         $jury = $juryModel->find($id);
         if (!$jury) {
@@ -379,15 +479,15 @@ class JuryController extends Controller
         try {
             $juryId = (int) $request->param('id');
             $supervisorId = (int) $request->input('supervisor_id');
-            
+
             $juryModel = new Jury();
             $jury = $juryModel->find($juryId);
-            
+
             if (!$jury) {
                 Response::json(['success' => false, 'message' => 'Júri não encontrado.'], 404);
                 return;
             }
-            
+
             // Se supervisor_id = 0, remover supervisor
             if ($supervisorId === 0) {
                 // Remover supervisor de todos os júris do mesmo exame
@@ -404,43 +504,43 @@ class JuryController extends Controller
                         'end_time' => $jury['end_time']
                     ]
                 );
-                
+
                 $removedCount = 0;
                 foreach ($affectedJuries as $affectedJury) {
                     $juryModel->update($affectedJury['id'], [
-                        'supervisor_id' => null, 
+                        'supervisor_id' => null,
                         'updated_at' => now()
                     ]);
                     $removedCount++;
                 }
-                
+
                 ActivityLogger::log('juries', $juryId, 'remove_supervisor', [
                     'previous_supervisor' => $jury['supervisor_id'],
                     'affected_juries' => $removedCount
                 ]);
-                
+
                 Response::json([
                     'success' => true,
                     'message' => "Supervisor removido de {$removedCount} júri(s) do mesmo exame."
                 ]);
                 return;
             }
-            
+
             // Validar supervisor
             $userModel = new User();
             $supervisor = $userModel->find($supervisorId);
-            
+
             if (!$supervisor) {
                 Response::json(['success' => false, 'message' => 'Supervisor não encontrado.'], 404);
                 return;
             }
-            
+
             // Verificar se o vigilante está disponível (não precisa ser obrigatoriamente elegível)
             if ($supervisor['role'] !== 'vigilante') {
                 Response::json(['success' => false, 'message' => 'Apenas vigilantes podem ser supervisores.'], 422);
                 return;
             }
-            
+
             // Verificar se o supervisor já tem conflito de horário
             $conflicts = $juryModel->statement(
                 "SELECT j.id, j.subject, j.start_time, j.end_time 
@@ -463,16 +563,16 @@ class JuryController extends Controller
                     'end_time2' => $jury['end_time']
                 ]
             );
-            
+
             if (!empty($conflicts)) {
                 $conflict = $conflicts[0];
                 Response::json([
-                    'success' => false, 
+                    'success' => false,
                     'message' => "❌ {$supervisor['name']} já é supervisor de '{$conflict['subject']}' no horário {$conflict['start_time']}-{$conflict['end_time']}.\n\nEscolha outro vigilante ou remova-o do outro exame primeiro."
                 ], 422);
                 return;
             }
-            
+
             // Atualizar supervisor em todos os júris do mesmo exame
             $affectedJuries = $juryModel->statement(
                 "SELECT id FROM juries 
@@ -487,27 +587,27 @@ class JuryController extends Controller
                     'end_time' => $jury['end_time']
                 ]
             );
-            
+
             $assignedCount = 0;
             foreach ($affectedJuries as $affectedJury) {
                 $juryModel->update($affectedJury['id'], [
-                    'supervisor_id' => $supervisorId, 
+                    'supervisor_id' => $supervisorId,
                     'updated_at' => now()
                 ]);
                 $assignedCount++;
             }
-            
+
             ActivityLogger::log('juries', $juryId, 'set_supervisor', [
                 'supervisor' => $supervisorId,
                 'supervisor_name' => $supervisor['name'],
                 'affected_juries' => $assignedCount
             ]);
-            
+
             Response::json([
                 'success' => true,
                 'message' => "{$supervisor['name']} atribuído como supervisor de {$assignedCount} júri(s)."
             ]);
-            
+
         } catch (\Exception $e) {
             error_log("Erro ao definir supervisor: " . $e->getMessage());
             error_log("Stack trace: " . $e->getTraceAsString());
@@ -522,12 +622,12 @@ class JuryController extends Controller
     {
         $data = $request->only(['subject', 'exam_date', 'start_time', 'end_time', 'location', 'notes']);
         $rooms = $request->input('rooms');
-        
+
         if (empty($rooms) || !is_array($rooms)) {
             Flash::add('error', 'Adicione pelo menos uma sala.');
             redirect('/juries');
         }
-        
+
         $validator = new Validator();
         $rules = [
             'subject' => 'required|min:3|max:180',
@@ -536,27 +636,27 @@ class JuryController extends Controller
             'end_time' => 'required|time',
             'location' => 'required|max:120',
         ];
-        
+
         if (!$validator->validate($data, $rules)) {
             Flash::add('error', 'Verifique os dados da disciplina.');
             $_SESSION['errors'] = $validator->errors();
             redirect('/juries');
         }
-        
+
         // Validar data do júri: não pode ser no passado
         if (strtotime($data['exam_date']) < strtotime(date('Y-m-d'))) {
             Flash::add('error', 'Nao e possivel criar juris para datas passadas.');
             redirect('/juries');
         }
-        
+
         $juryModel = new Jury();
         $createdCount = 0;
-        
+
         foreach ($rooms as $room) {
             if (empty($room['room']) || empty($room['candidates_quota'])) {
                 continue;
             }
-            
+
             $juryId = $juryModel->create([
                 'subject' => $data['subject'],
                 'exam_date' => $data['exam_date'],
@@ -570,15 +670,15 @@ class JuryController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-            
+
             ActivityLogger::log('juries', $juryId, 'create_batch', [
                 'subject' => $data['subject'],
                 'room' => $room['room']
             ]);
-            
+
             $createdCount++;
         }
-        
+
         Flash::add('success', "Criados {$createdCount} júris para a disciplina {$data['subject']}. Agora arraste vigilantes e supervisores para cada sala.");
         redirect('/juries');
     }
@@ -588,55 +688,55 @@ class JuryController extends Controller
         $location = $request->input('location');
         $examDate = $request->input('exam_date');
         $disciplines = $request->input('disciplines');
-        
+
         if (empty($location) || empty($examDate)) {
             Flash::add('error', 'Local e data são obrigatórios.');
             redirect('/juries');
         }
-        
+
         if (empty($disciplines) || !is_array($disciplines)) {
             Flash::add('error', 'Adicione pelo menos uma disciplina com salas.');
             redirect('/juries');
         }
-        
+
         $validator = new Validator();
         $baseRules = [
             'location' => 'required|max:120',
             'exam_date' => 'required|date',
         ];
-        
+
         if (!$validator->validate(['location' => $location, 'exam_date' => $examDate], $baseRules)) {
             Flash::add('error', 'Verifique os dados do local.');
             $_SESSION['errors'] = $validator->errors();
             redirect('/juries');
         }
-        
+
         // Validar data do júri: não pode ser no passado
         if (strtotime($examDate) < strtotime(date('Y-m-d'))) {
             Flash::add('error', 'Nao e possivel criar juris para datas passadas.');
             redirect('/juries');
         }
-        
+
         $juryModel = new Jury();
         $totalCreated = 0;
         $disciplinesCreated = 0;
-        
+
         foreach ($disciplines as $discipline) {
             if (empty($discipline['subject']) || empty($discipline['start_time']) || empty($discipline['end_time'])) {
                 continue;
             }
-            
+
             $rooms = $discipline['rooms'] ?? [];
             if (empty($rooms) || !is_array($rooms)) {
                 continue;
             }
-            
+
             $roomsCreated = 0;
             foreach ($rooms as $room) {
                 if (empty($room['room']) || empty($room['candidates_quota'])) {
                     continue;
                 }
-                
+
                 $juryId = $juryModel->create([
                     'subject' => $discipline['subject'],
                     'exam_date' => $examDate,
@@ -650,27 +750,27 @@ class JuryController extends Controller
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
-                
+
                 ActivityLogger::log('juries', $juryId, 'create_location_batch', [
                     'location' => $location,
                     'subject' => $discipline['subject'],
                     'room' => $room['room']
                 ]);
-                
+
                 $roomsCreated++;
                 $totalCreated++;
             }
-            
+
             if ($roomsCreated > 0) {
                 $disciplinesCreated++;
             }
         }
-        
+
         if ($totalCreated === 0) {
             Flash::add('error', 'Nenhum júri foi criado. Verifique os dados inseridos.');
             redirect('/juries');
         }
-        
+
         Flash::add('success', "Criados {$totalCreated} júris para {$disciplinesCreated} disciplina(s) no local '{$location}' em " . date('d/m/Y', strtotime($examDate)) . ". Agora aloque vigilantes e supervisores.");
         redirect('/juries');
     }
@@ -682,48 +782,50 @@ class JuryController extends Controller
             Response::json(['success' => false, 'message' => 'Token CSRF inválido'], 403);
             return;
         }
-        
+
         $id = (int) $request->param('id');
         $roomId = $request->input('room_id');
         $candidatesQuota = $request->input('candidates_quota');
         $notes = $request->input('notes');
-        
+
         $juryModel = new Jury();
         $jury = $juryModel->find($id);
-        
+
         if (!$jury) {
             Response::json(['success' => false, 'message' => 'Júri não encontrado.'], 404);
             return;
         }
-        
+
         // Validar dados
         $validator = new Validator();
-        if (!$validator->validate(['room_id' => $roomId, 'candidates_quota' => $candidatesQuota], [
-            'room_id' => 'required|int',
-            'candidates_quota' => 'required|int|min:1',
-        ])) {
+        if (
+            !$validator->validate(['room_id' => $roomId, 'candidates_quota' => $candidatesQuota], [
+                'room_id' => 'required|int',
+                'candidates_quota' => 'required|int|min:1',
+            ])
+        ) {
             Response::json(['success' => false, 'message' => 'Dados inválidos.', 'errors' => $validator->errors()], 400);
             return;
         }
-        
+
         // Buscar informações da sala
         $roomModel = new \App\Models\ExamRoom();
         $room = $roomModel->find((int) $roomId);
-        
+
         if (!$room) {
             Response::json(['success' => false, 'message' => 'Sala não encontrada.'], 404);
             return;
         }
-        
+
         // Verificar capacidade da sala
         if ((int) $candidatesQuota > (int) $room['capacity']) {
             Response::json([
-                'success' => false, 
+                'success' => false,
                 'message' => "O número de candidatos ({$candidatesQuota}) excede a capacidade da sala ({$room['capacity']})."
             ], 400);
             return;
         }
-        
+
         // Atualizar júri
         $juryModel->update($id, [
             'room_id' => (int) $roomId,
@@ -732,14 +834,14 @@ class JuryController extends Controller
             'notes' => $notes,
             'updated_at' => now(),
         ]);
-        
+
         ActivityLogger::log('juries', $id, 'update_quick', [
             'room_id' => $roomId,
             'room' => $room['code'],
             'candidates_quota' => $candidatesQuota,
             'notes' => $notes
         ]);
-        
+
         Response::json(['success' => true, 'message' => 'Sala atualizada com sucesso!']);
     }
 
@@ -751,11 +853,11 @@ class JuryController extends Controller
         $endTime = $request->input('end_time');
         $location = $request->input('location');
         $juries = $request->input('juries');
-        
+
         if (empty($juries) || !is_array($juries)) {
             Response::json(['success' => false, 'message' => 'Nenhum júri para atualizar.'], 400);
         }
-        
+
         $validator = new Validator();
         $baseData = [
             'subject' => $subject,
@@ -764,32 +866,34 @@ class JuryController extends Controller
             'end_time' => $endTime,
             'location' => $location,
         ];
-        
-        if (!$validator->validate($baseData, [
-            'subject' => 'required|min:3|max:180',
-            'exam_date' => 'required|date',
-            'start_time' => 'required|time',
-            'end_time' => 'required|time',
-            'location' => 'required|max:120',
-        ])) {
+
+        if (
+            !$validator->validate($baseData, [
+                'subject' => 'required|min:3|max:180',
+                'exam_date' => 'required|date',
+                'start_time' => 'required|time',
+                'end_time' => 'required|time',
+                'location' => 'required|max:120',
+            ])
+        ) {
             Response::json(['success' => false, 'message' => 'Dados da disciplina inválidos.', 'errors' => $validator->errors()], 400);
         }
-        
+
         $juryModel = new Jury();
         $updatedCount = 0;
-        
+
         foreach ($juries as $juryData) {
             if (empty($juryData['id']) || empty($juryData['room'])) {
                 continue;
             }
-            
+
             $juryId = (int) $juryData['id'];
             $jury = $juryModel->find($juryId);
-            
+
             if (!$jury) {
                 continue;
             }
-            
+
             $juryModel->update($juryId, [
                 'subject' => $subject,
                 'exam_date' => $examDate,
@@ -800,19 +904,19 @@ class JuryController extends Controller
                 'candidates_quota' => (int) ($juryData['candidates_quota'] ?? $jury['candidates_quota']),
                 'updated_at' => now(),
             ]);
-            
+
             ActivityLogger::log('juries', $juryId, 'update_batch', [
                 'subject' => $subject,
                 'room' => $juryData['room']
             ]);
-            
+
             $updatedCount++;
         }
-        
+
         if ($updatedCount === 0) {
             Response::json(['success' => false, 'message' => 'Nenhum júri foi atualizado.'], 400);
         }
-        
+
         Response::json(['success' => true, 'message' => "{$updatedCount} júri(s) atualizado(s) com sucesso!"]);
     }
 
@@ -824,37 +928,37 @@ class JuryController extends Controller
         $vigilanteId = (int) $request->input('vigilante_id');
         $juryId = (int) $request->input('jury_id');
         $type = $request->input('type', 'vigilante'); // 'vigilante' ou 'supervisor'
-        
+
         $allocationService = new \App\Services\AllocationService();
-        
+
         if ($type === 'supervisor') {
             $result = $allocationService->canAssignSupervisor($vigilanteId, $juryId);
         } else {
             $result = $allocationService->canAssignVigilante($vigilanteId, $juryId);
         }
-        
+
         Response::json($result);
     }
-    
+
     /**
      * API: Auto-alocação rápida (júri específico)
      */
     public function autoAllocateJury(Request $request)
     {
         $juryId = (int) $request->input('jury_id');
-        
+
         $allocationService = new \App\Services\AllocationService();
         $result = $allocationService->autoAllocateJury($juryId, Auth::id());
-        
+
         if ($result['success']) {
             ActivityLogger::log('juries', $juryId, 'auto_allocate', [
                 'allocated' => $result['allocated'] ?? 0
             ]);
         }
-        
+
         Response::json($result);
     }
-    
+
     /**
      * API: Auto-alocação completa (toda disciplina)
      */
@@ -862,17 +966,17 @@ class JuryController extends Controller
     {
         $subject = $request->input('subject');
         $examDate = $request->input('exam_date');
-        
+
         if (empty($subject) || empty($examDate)) {
             Response::json([
                 'success' => false,
                 'message' => 'Disciplina e data são obrigatórios'
             ], 400);
         }
-        
+
         $allocationService = new \App\Services\AllocationService();
         $result = $allocationService->autoAllocateDiscipline($subject, $examDate, Auth::id());
-        
+
         if ($result['success']) {
             ActivityLogger::log('juries', 0, 'auto_allocate_discipline', [
                 'subject' => $subject,
@@ -880,10 +984,10 @@ class JuryController extends Controller
                 'total_allocated' => $result['total_allocated'] ?? 0
             ]);
         }
-        
+
         Response::json($result);
     }
-    
+
     /**
      * API: Obter estatísticas de alocação
      */
@@ -891,52 +995,60 @@ class JuryController extends Controller
     {
         $allocationService = new \App\Services\AllocationService();
         $stats = $allocationService->getAllocationStats();
-        
+
         Response::json([
             'success' => true,
             'stats' => $stats
         ]);
     }
-    
+
     /**
      * API: Obter slots e ocupação de júri(s)
      */
     public function getJurySlots(Request $request)
     {
         $juryId = (int) $request->param('id');
-        
+
         $allocationService = new \App\Services\AllocationService();
         $slots = $allocationService->getJurySlots($juryId);
-        
+
         Response::json([
             'success' => true,
             'slots' => $slots
         ]);
     }
-    
+
     /**
      * API: Obter vigilantes elegíveis para um júri
      */
     public function getEligibleVigilantes(Request $request)
     {
-        $juryId = (int) $request->param('id');
-        
-        $allocationService = new \App\Services\AllocationService();
-        $vigilantes = $allocationService->getEligibleVigilantes($juryId);
-        
-        Response::json([
-            'success' => true,
-            'vigilantes' => $vigilantes
-        ]);
+        try {
+            $juryId = (int) $request->param('id');
+
+            $allocationService = new \App\Services\AllocationService();
+            $vigilantes = $allocationService->getEligibleVigilantes($juryId);
+
+            Response::json([
+                'success' => true,
+                'vigilantes' => $vigilantes
+            ]);
+        } catch (\Exception $e) {
+            error_log("Erro ao buscar vigilantes elegíveis: " . $e->getMessage());
+            Response::json([
+                'success' => false,
+                'message' => 'Erro ao carregar candidatos: ' . $e->getMessage()
+            ], 500);
+        }
     }
-    
+
     /**
      * API: Obter supervisores elegíveis (para um júri ou todos)
      */
     public function getEligibleSupervisors(Request $request)
     {
         $juryId = (int) $request->param('id');
-        
+
         // Se não há juryId, retornar todos os supervisores elegíveis
         if (!$juryId) {
             $userModel = new User();
@@ -949,24 +1061,24 @@ class JuryController extends Controller
                  WHERE u.supervisor_eligible = 1
                  ORDER BY IFNULL(vw.supervision_count, 0) ASC, u.name"
             );
-            
+
             Response::json([
                 'success' => true,
                 'supervisors' => $supervisors
             ]);
             return;
         }
-        
+
         // Com juryId, usar o serviço de alocação para considerar conflitos
         $allocationService = new \App\Services\AllocationService();
         $supervisors = $allocationService->getEligibleSupervisors($juryId);
-        
+
         Response::json([
             'success' => true,
             'supervisors' => $supervisors
         ]);
     }
-    
+
     /**
      * API: Trocar vigilantes (swap)
      */
@@ -975,27 +1087,27 @@ class JuryController extends Controller
         $fromVigilanteId = (int) $request->input('from_vigilante_id');
         $toVigilanteId = (int) $request->input('to_vigilante_id');
         $juryId = (int) $request->input('jury_id');
-        
+
         if (!$fromVigilanteId || !$toVigilanteId || !$juryId) {
             Response::json([
                 'success' => false,
                 'message' => 'Parâmetros inválidos'
             ], 400);
         }
-        
+
         $allocationService = new \App\Services\AllocationService();
         $result = $allocationService->swapVigilantes($fromVigilanteId, $toVigilanteId, $juryId, Auth::id());
-        
+
         if ($result['success']) {
             ActivityLogger::log('jury_vigilantes', $juryId, 'swap', [
                 'from' => $fromVigilanteId,
                 'to' => $toVigilanteId
             ]);
         }
-        
+
         Response::json($result);
     }
-    
+
     /**
      * API: Obter métricas detalhadas (KPIs)
      */
@@ -1003,10 +1115,10 @@ class JuryController extends Controller
     {
         $allocationService = new \App\Services\AllocationService();
         $stats = $allocationService->getAllocationStats();
-        
+
         // Calcular métricas adicionais
         $db = database();
-        
+
         // Conflitos detectados
         $conflictsStmt = $db->query("
             SELECT COUNT(DISTINCT jv1.vigilante_id) as conflicts_count
@@ -1018,14 +1130,14 @@ class JuryController extends Controller
               AND (j1.start_time < j2.end_time AND j2.start_time < j1.end_time)
         ");
         $conflictsCount = (int) $conflictsStmt->fetchColumn();
-        
+
         // Júris sem alocação completa
         $incompleteStmt = $db->query("
             SELECT COUNT(*) FROM vw_jury_slots 
             WHERE occupancy_status = 'incomplete'
         ");
         $incompleteJuries = (int) $incompleteStmt->fetchColumn();
-        
+
         // Taxa de ocupação média
         $occupancyStmt = $db->query("
             SELECT AVG((vigilantes_allocated * 100.0) / vigilantes_capacity) as avg_occupancy
@@ -1033,7 +1145,7 @@ class JuryController extends Controller
             WHERE vigilantes_capacity > 0
         ");
         $avgOccupancy = round((float) $occupancyStmt->fetchColumn(), 2);
-        
+
         Response::json([
             'success' => true,
             'metrics' => array_merge($stats, [
@@ -1044,7 +1156,7 @@ class JuryController extends Controller
             ])
         ]);
     }
-    
+
     /**
      * API: Recarregar lista de vigilantes disponíveis (para atualização dinâmica)
      */
@@ -1052,14 +1164,14 @@ class JuryController extends Controller
     {
         $userModel = new User();
         $vigilantes = $userModel->getVigilantesWithWorkload();
-        
+
         Response::json([
             'success' => true,
             'vigilantes' => $vigilantes,
             'total' => count($vigilantes)
         ]);
     }
-    
+
     /**
      * API: Recarregar lista de supervisores disponíveis
      */
@@ -1073,14 +1185,14 @@ class JuryController extends Controller
              WHERE u.supervisor_eligible = 1 
              ORDER BY vw.workload_score ASC, u.name"
         );
-        
+
         Response::json([
             'success' => true,
             'supervisors' => $supervisors,
             'total' => count($supervisors)
         ]);
     }
-    
+
     /**
      * Página de planejamento com drag-and-drop
      */
@@ -1090,12 +1202,12 @@ class JuryController extends Controller
         $juryModel = new Jury();
         $allocationService = new \App\Services\AllocationService();
         $vacancyModel = new \App\Models\ExamVacancy();
-        
+
         // NOVO: Filtro por vaga (padrão = vaga aberta atual)
         $vacancyId = isset($_GET['vacancy_id']) ? $_GET['vacancy_id'] : 'current';
         $vacancy = null;
         $allVacancies = [];
-        
+
         // Se vacancy_id = 'all', mostrar todas
         if ($vacancyId === 'all') {
             $vacancyId = null;
@@ -1107,15 +1219,15 @@ class JuryController extends Controller
         } else {
             $vacancyId = (int) $vacancyId;
         }
-        
+
         // Buscar dados da vaga atual (se houver)
         if ($vacancyId) {
             $vacancy = $vacancyModel->find($vacancyId);
         }
-        
+
         // Buscar todas as vagas para o dropdown
         $allVacancies = $vacancyModel->statement('SELECT * FROM exam_vacancies ORDER BY created_at DESC LIMIT 10');
-        
+
         // Buscar júris futuros agrupados (com filtro opcional)
         if ($vacancyId) {
             // Buscar júris filtrados por vaga COM dados da sala E supervisor
@@ -1137,7 +1249,7 @@ class JuryController extends Controller
                  ORDER BY j.exam_date, j.start_time",
                 ['vacancy_id' => $vacancyId]
             );
-            
+
             // Agrupar manualmente
             $groupedJuries = [];
             foreach ($juries as $jury) {
@@ -1157,7 +1269,7 @@ class JuryController extends Controller
         } else {
             $groupedJuries = $juryModel->getGroupedBySubjectAndTime();
         }
-        
+
         // Enriquecer com dados de alocação
         foreach ($groupedJuries as &$group) {
             foreach ($group['juries'] as &$jury) {
@@ -1168,11 +1280,11 @@ class JuryController extends Controller
             unset($jury);
         }
         unset($group);
-        
+
         // Vigilantes disponíveis com carga
         $userModel = new User();
         $availableVigilantes = $userModel->getVigilantesWithWorkload();
-        
+
         // Supervisores elegíveis
         $availableSupervisors = $userModel->statement(
             "SELECT u.*, vw.supervision_count, vw.workload_score 
@@ -1181,24 +1293,48 @@ class JuryController extends Controller
              WHERE u.supervisor_eligible = 1 
              ORDER BY vw.workload_score ASC, u.name"
         );
-        
+
         // Estatísticas (filtradas por vaga se aplicável)
         if ($vacancyId) {
+            // Calcular estatísticas detalhadas
+            $totalAllocated = $juryModel->statement(
+                "SELECT COUNT(*) as total
+                 FROM jury_vigilantes jv
+                 INNER JOIN juries j ON j.id = jv.jury_id
+                 WHERE j.vacancy_id = :vacancy_id",
+                ['vacancy_id' => $vacancyId]
+            )[0]['total'] ?? 0;
+
+            $juriesWithoutSupervisor = $juryModel->statement(
+                "SELECT COUNT(*) as total
+                 FROM juries
+                 WHERE vacancy_id = :vacancy_id AND (supervisor_id IS NULL OR supervisor_id = 0)",
+                ['vacancy_id' => $vacancyId]
+            )[0]['total'] ?? 0;
+
+            $totalCandidates = $juryModel->statement(
+                "SELECT SUM(candidates_quota) as total
+                 FROM juries
+                 WHERE vacancy_id = :vacancy_id",
+                ['vacancy_id' => $vacancyId]
+            )[0]['total'] ?? 0;
+
+            // Calcular slots totais (assumindo 2 vigilantes por júri como base, ou ajustável)
+            // Se houver regra específica de slots por sala, deve ser ajustado aqui.
+            // Por enquanto, mantendo a lógica de 2 por sala que parecia estar implícita
+            $totalSlots = count($juries ?? []) * 2;
+
             $stats = [
                 'total_juries' => count($juries ?? []),
-                'allocated_vigilantes' => $juryModel->statement(
-                    "SELECT COUNT(DISTINCT jv.vigilante_id) as total
-                     FROM jury_vigilantes jv
-                     INNER JOIN juries j ON j.id = jv.jury_id
-                     WHERE j.vacancy_id = :vacancy_id",
-                    ['vacancy_id' => $vacancyId]
-                )[0]['total'] ?? 0,
-                'total_vigilantes_needed' => count($juries ?? []) * 2
+                'total_allocated' => $totalAllocated,
+                'slots_available' => $totalSlots,
+                'juries_without_supervisor' => $juriesWithoutSupervisor,
+                'total_candidates' => $totalCandidates
             ];
         } else {
             $stats = $allocationService->getAllocationStats();
         }
-        
+
         return $this->view('juries/planning', [
             'groupedJuries' => $groupedJuries,
             'vigilantes' => $availableVigilantes,
@@ -1235,7 +1371,7 @@ class JuryController extends Controller
             'report' => $report,
         ]);
     }
-    
+
     /**
      * API: PLANEJAR alocação automática por Local/Data
      * Endpoint: POST /api/alocacao/plan-local-date
@@ -1254,12 +1390,12 @@ class JuryController extends Controller
             ], 403);
             return;
         }
-        
+
         // Obter parâmetros
         $data = $request->json();
         $location = $data['location'] ?? null;
         $date = $data['data'] ?? null;
-        
+
         // Validar parâmetros
         if (!$location || !$date) {
             Response::json([
@@ -1268,7 +1404,7 @@ class JuryController extends Controller
             ], 400);
             return;
         }
-        
+
         // Validar formato de data
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
             Response::json([
@@ -1277,13 +1413,13 @@ class JuryController extends Controller
             ], 400);
             return;
         }
-        
+
         try {
             // Executar planejamento
             $db = $this->getConnection();
             $plannerService = new AllocationPlannerService($db);
             $result = $plannerService->planLocalDate($location, $date);
-            
+
             // Log de atividade
             $logger = new ActivityLogger($db);
             $logger->log(
@@ -1298,9 +1434,9 @@ class JuryController extends Controller
                     'acoes' => $result['stats']['total_acoes'] ?? 0
                 ]
             );
-            
+
             Response::json($result);
-            
+
         } catch (\Exception $e) {
             error_log("Erro ao gerar plano: " . $e->getMessage());
             Response::json([
@@ -1309,7 +1445,7 @@ class JuryController extends Controller
             ], 500);
         }
     }
-    
+
     /**
      * API: APLICAR plano de alocação
      * Endpoint: POST /api/alocacao/apply-local-date
@@ -1328,13 +1464,13 @@ class JuryController extends Controller
             ], 403);
             return;
         }
-        
+
         // Obter parâmetros
         $data = $request->json();
         $location = $data['location'] ?? null;
         $date = $data['data'] ?? null;
         $plan = $data['plan'] ?? null;
-        
+
         // Validar parâmetros
         if (!$location || !$date || !$plan || !is_array($plan)) {
             Response::json([
@@ -1343,13 +1479,13 @@ class JuryController extends Controller
             ], 400);
             return;
         }
-        
+
         try {
             // Executar aplicação do plano
             $db = $this->getConnection();
             $plannerService = new AllocationPlannerService($db);
             $result = $plannerService->applyLocalDate($location, $date, $plan);
-            
+
             // Log de atividade
             $logger = new ActivityLogger($db);
             $logger->log(
@@ -1364,9 +1500,9 @@ class JuryController extends Controller
                     'falhas' => count($result['falhas'] ?? [])
                 ]
             );
-            
+
             Response::json($result);
-            
+
         } catch (\Exception $e) {
             error_log("Erro ao aplicar plano: " . $e->getMessage());
             Response::json([
@@ -1375,7 +1511,7 @@ class JuryController extends Controller
             ], 500);
         }
     }
-    
+
     /**
      * API: Obter KPIs de alocação por Local/Data
      * Endpoint: GET /api/alocacao/kpis
@@ -1393,11 +1529,11 @@ class JuryController extends Controller
             ], 401);
             return;
         }
-        
+
         // Obter parâmetros
         $location = $request->query('location');
         $date = $request->query('data');
-        
+
         // Validar parâmetros
         if (!$location || !$date) {
             Response::json([
@@ -1406,18 +1542,18 @@ class JuryController extends Controller
             ], 400);
             return;
         }
-        
+
         try {
             // Obter KPIs
             $db = $this->getConnection();
             $plannerService = new AllocationPlannerService($db);
             $kpis = $plannerService->getKPIs($location, $date);
-            
+
             Response::json([
                 'ok' => true,
                 'kpis' => $kpis
             ]);
-            
+
         } catch (\Exception $e) {
             error_log("Erro ao obter KPIs: " . $e->getMessage());
             Response::json([
@@ -1426,7 +1562,7 @@ class JuryController extends Controller
             ], 500);
         }
     }
-    
+
     /**
      * Página de planejamento por vaga (wizard)
      */
@@ -1436,10 +1572,10 @@ class JuryController extends Controller
         $vacancyModel = new \App\Models\ExamVacancy();
         $juryModel = new Jury();
         $allocationService = new \App\Services\SmartAllocationService();
-        
+
         // Buscar vagas abertas
         $openVacancies = $vacancyModel->openVacancies();
-        
+
         // CORREÇÃO #1 & #6: Pré-carregar estatísticas de todas as vagas (evita N+1)
         $vacanciesWithStats = [];
         foreach ($openVacancies as $vacancy) {
@@ -1447,24 +1583,24 @@ class JuryController extends Controller
             $juries = $juryModel->getByVacancyWithStats((int) $vacancy['id']);
             $vacancy['has_juries'] = !empty($juries);
             $vacancy['stats'] = null;
-            
+
             if ($vacancy['has_juries']) {
                 $vacancy['stats'] = $allocationService->getVacancyAllocationStats((int) $vacancy['id']);
             }
-            
+
             $vacanciesWithStats[] = $vacancy;
         }
-        
+
         // Buscar dados mestre
         $locationModel = new \App\Models\ExamLocation();
         $locations = $locationModel->statement("SELECT * FROM exam_locations WHERE active = 1 ORDER BY name");
-        
+
         $disciplineModel = new \App\Models\Discipline();
         $disciplines = $disciplineModel->getActive();
-        
+
         $roomModel = new \App\Models\ExamRoom();
         $rooms = $roomModel->getAllWithLocation(true);
-        
+
         return $this->view('juries/planning_by_vacancy', [
             'vacancies' => $vacanciesWithStats,
             'locations' => $locations,
@@ -1473,7 +1609,7 @@ class JuryController extends Controller
             'user' => $user,
         ]);
     }
-    
+
     /**
      * API: Criar júris vinculados a uma vaga
      */
@@ -1481,13 +1617,14 @@ class JuryController extends Controller
     {
         try {
             // Garantir que não há output antes do JSON
-            if (ob_get_length()) ob_clean();
-            
+            if (ob_get_length())
+                ob_clean();
+
             $vacancyId = (int) $request->input('vacancy_id');
             $location = $request->input('location');
             $examDate = $request->input('exam_date');
             $disciplines = $request->input('disciplines');
-            
+
             if (!$vacancyId || !$location || !$examDate || empty($disciplines)) {
                 Response::json([
                     'success' => false,
@@ -1495,25 +1632,25 @@ class JuryController extends Controller
                 ], 400);
                 return;
             }
-            
+
             $juryModel = new Jury();
             $roomModel = new \App\Models\ExamRoom();
             $created = [];
             $totalCreated = 0;
             $conflicts = [];
-            
+
             foreach ($disciplines as $discipline) {
                 if (empty($discipline['subject']) || empty($discipline['start_time']) || empty($discipline['end_time'])) {
                     continue;
                 }
-                
+
                 $rooms = $discipline['rooms'] ?? [];
-                
+
                 foreach ($rooms as $room) {
                     if (empty($room['room']) || empty($room['candidates_quota'])) {
                         continue;
                     }
-                    
+
                     // Buscar detalhes da sala para criar texto descritivo e obter location_id
                     $roomDetails = null;
                     $roomLocationId = null;
@@ -1523,13 +1660,13 @@ class JuryController extends Controller
                             $roomLocationId = $roomDetails['location_id'];
                         }
                     }
-                    
+
                     // Criar texto descritivo da sala
                     $roomText = $room['room']; // Código (fallback)
                     if ($roomDetails) {
                         // Usar nome da sala se existir, senão usar código
                         $roomText = $roomDetails['name'] ?: $roomDetails['code'];
-                        
+
                         // Adicionar edifício e piso se existirem
                         $locationParts = [];
                         if (!empty($roomDetails['building'])) {
@@ -1538,12 +1675,12 @@ class JuryController extends Controller
                         if (!empty($roomDetails['floor'])) {
                             $locationParts[] = $roomDetails['floor'];
                         }
-                        
+
                         if (!empty($locationParts)) {
                             $roomText .= ' (' . implode(' | ', $locationParts) . ')';
                         }
                     }
-                    
+
                     // Verificar conflito de sala
                     $conflictCheck = $juryModel->statement(
                         "SELECT id, subject, start_time, end_time 
@@ -1562,7 +1699,7 @@ class JuryController extends Controller
                             'end_time' => $discipline['end_time']
                         ]
                     );
-                    
+
                     if (!empty($conflictCheck)) {
                         $conflicts[] = [
                             'room' => $room['room'],
@@ -1572,7 +1709,7 @@ class JuryController extends Controller
                         ];
                         continue; // Pular esta sala
                     }
-                    
+
                     $juryId = $juryModel->create([
                         'vacancy_id' => $vacancyId,
                         'subject' => $discipline['subject'],
@@ -1589,23 +1726,23 @@ class JuryController extends Controller
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
-                    
+
                     $created[] = [
                         'id' => $juryId,
                         'subject' => $discipline['subject'],
                         'room' => $room['room']
                     ];
-                    
+
                     ActivityLogger::log('juries', $juryId, 'create_for_vacancy', [
                         'vacancy_id' => $vacancyId,
                         'subject' => $discipline['subject'],
                         'room' => $room['room']
                     ]);
-                    
+
                     $totalCreated++;
                 }
             }
-            
+
             if ($totalCreated === 0) {
                 $conflictMsg = '';
                 if (!empty($conflicts)) {
@@ -1621,16 +1758,16 @@ class JuryController extends Controller
                 ], 400);
                 return;
             }
-            
+
             $message = "Criados {$totalCreated} júris com sucesso";
-            
+
             if (!empty($conflicts)) {
                 $message .= "\n\n⚠️ Atenção: " . count($conflicts) . " sala(s) foram ignoradas por conflito de horário:";
                 foreach ($conflicts as $c) {
                     $message .= "\n- Sala {$c['room']}: {$c['subject']} ({$c['time']}) conflita com {$c['existing']}";
                 }
             }
-            
+
             Response::json([
                 'success' => true,
                 'message' => $message,
@@ -1639,97 +1776,98 @@ class JuryController extends Controller
                 'conflicts' => $conflicts,
                 'has_conflicts' => !empty($conflicts)
             ]);
-            
+
         } catch (\Exception $e) {
-            if (ob_get_length()) ob_clean();
+            if (ob_get_length())
+                ob_clean();
             Response::json([
                 'success' => false,
                 'message' => 'Erro ao criar júris: ' . $e->getMessage()
             ], 500);
         }
     }
-    
+
     /**
      * API: Auto-alocar vigilantes em todos os júris de uma vaga
      */
     public function autoAllocateVacancy(Request $request)
     {
         $vacancyId = (int) $request->input('vacancy_id');
-        
+
         if (!$vacancyId) {
             Response::json([
                 'success' => false,
                 'message' => 'ID da vaga não fornecido'
             ], 400);
         }
-        
+
         $allocationService = new \App\Services\SmartAllocationService();
         $result = $allocationService->autoAllocateVacancy($vacancyId, Auth::id());
-        
+
         if ($result['success']) {
             ActivityLogger::log('juries', 0, 'auto_allocate_vacancy', [
                 'vacancy_id' => $vacancyId,
                 'total_allocated' => $result['stats']['total_allocated'] ?? 0
             ]);
         }
-        
+
         Response::json($result);
     }
-    
+
     /**
      * API: Desalocar todos vigilantes de uma vaga
      */
     public function clearVacancyAllocations(Request $request)
     {
         $vacancyId = (int) $request->input('vacancy_id');
-        
+
         if (!$vacancyId) {
             Response::json([
                 'success' => false,
                 'message' => 'ID da vaga não fornecido'
             ], 400);
         }
-        
+
         $allocationService = new \App\Services\SmartAllocationService();
         $result = $allocationService->clearVacancyAllocations($vacancyId);
-        
+
         ActivityLogger::log('juries', 0, 'clear_vacancy_allocations', [
             'vacancy_id' => $vacancyId
         ]);
-        
+
         Response::json($result);
     }
-    
+
     /**
      * API: Obter estatísticas de alocação de uma vaga
      */
     public function getVacancyStats(Request $request)
     {
         $vacancyId = (int) $request->param('id');
-        
+
         if (!$vacancyId) {
             Response::json([
                 'success' => false,
                 'message' => 'ID da vaga não fornecido'
             ], 400);
         }
-        
+
         $allocationService = new \App\Services\SmartAllocationService();
         $stats = $allocationService->getVacancyAllocationStats($vacancyId);
-        
+
         Response::json([
             'success' => true,
             'stats' => $stats
         ]);
     }
-    
+
     /**
      * API: Obter vigilantes elegíveis para um júri
      */
     public function getEligibleForJury(Request $request)
     {
         $juryId = (int) $request->param('id');
-        
+
         if (!$juryId) {
             Response::json([
                 'success' => false,
@@ -1737,14 +1875,14 @@ class JuryController extends Controller
             ], 400);
             return;
         }
-        
+
         $allocationService = new \App\Services\SmartAllocationService();
         $vigilantes = $allocationService->getEligibleVigilantesForJury($juryId);
-        
+
         // Debug info
         $juryModel = new Jury();
         $jury = $juryModel->find($juryId);
-        
+
         Response::json([
             'success' => true,
             'vigilantes' => $vigilantes,
@@ -1756,7 +1894,7 @@ class JuryController extends Controller
             'total' => count($vigilantes)
         ]);
     }
-    
+
     /**
      * Página de gerenciamento de júris por vaga
      */
@@ -1764,18 +1902,18 @@ class JuryController extends Controller
     {
         $vacancyId = (int) $request->param('id');
         $user = Auth::user();
-        
+
         $vacancyModel = new \App\Models\ExamVacancy();
         $vacancy = $vacancyModel->find($vacancyId);
-        
+
         if (!$vacancy) {
             Flash::add('error', 'Vaga não encontrada');
             redirect('/juries/planning-by-vacancy');
         }
-        
+
         $juryModel = new Jury();
         $groupedJuries = $juryModel->getGroupedByVacancy($vacancyId);
-        
+
         // Enriquecer com dados de alocação e verificar conflitos de sala
         $juryVigilantes = new JuryVigilante();
         foreach ($groupedJuries as &$locationGroup) {
@@ -1784,7 +1922,7 @@ class JuryController extends Controller
                     $jury['vigilantes'] = $juryVigilantes->vigilantesForJury((int) $jury['id']);
                     $jury['vigilantes_count'] = count($jury['vigilantes']);
                     $jury['required_vigilantes'] = $juryModel->calculateRequiredVigilantes((int) $jury['candidates_quota']);
-                    
+
                     // Verificar conflito de sala
                     $conflicts = $juryModel->statement(
                         "SELECT id, subject, start_time, end_time 
@@ -1805,20 +1943,20 @@ class JuryController extends Controller
                             'end_time' => $jury['end_time']
                         ]
                     );
-                    
+
                     $jury['has_room_conflict'] = !empty($conflicts);
                     $jury['room_conflicts'] = $conflicts;
                 }
             }
         }
-        
+
         // Estatísticas
         $allocationService = new \App\Services\SmartAllocationService();
         $stats = $allocationService->getVacancyAllocationStats($vacancyId);
-        
+
         // Candidatos aprovados
         $candidates = $allocationService->getApprovedCandidates($vacancyId);
-        
+
         return $this->view('juries/manage_vacancy', [
             'vacancy' => $vacancy,
             'groupedJuries' => $groupedJuries,
@@ -1827,34 +1965,35 @@ class JuryController extends Controller
             'user' => $user,
         ]);
     }
-    
+
     /**
      * API: Obter candidatos aprovados de uma vaga (para supervisão)
      */
     public function getVacancyApprovedCandidates(Request $request): void
     {
         $vacancyId = (int) $request->param('id');
-        
+
         $allocationService = new \App\Services\SmartAllocationService();
         $candidates = $allocationService->getApprovedCandidates($vacancyId);
-        
+
         Response::json([
             'success' => true,
             'candidates' => $candidates
         ]);
     }
-    
+
     /**
      * Atribuir supervisor em lote
      */
     public function bulkAssignSupervisor(Request $request): void
     {
         try {
-            if (ob_get_length()) ob_clean();
-            
+            if (ob_get_length())
+                ob_clean();
+
             $juryIds = $request->input('jury_ids');
             $supervisorId = $request->input('supervisor_id');
-            
+
             if (empty($juryIds) || !is_array($juryIds)) {
                 Response::json([
                     'success' => false,
@@ -1862,11 +2001,11 @@ class JuryController extends Controller
                 ], 400);
                 return;
             }
-            
+
             // supervisor_id = 0 significa "Comissão de Exames"
             // supervisor_id > 0 significa supervisor individual
             // supervisor_id = null/empty não é permitido
-            
+
             if ($supervisorId === '' || $supervisorId === null) {
                 Response::json([
                     'success' => false,
@@ -1874,20 +2013,20 @@ class JuryController extends Controller
                 ], 400);
                 return;
             }
-            
+
             $supervisorId = (int) $supervisorId;
             $juryModel = new Jury();
             $updated = 0;
-            
+
             foreach ($juryIds as $juryId) {
                 $result = $juryModel->update((int) $juryId, [
                     'supervisor_id' => $supervisorId,
                     'updated_at' => now()
                 ]);
-                
+
                 if ($result) {
                     $updated++;
-                    
+
                     ActivityLogger::log('juries', (int) $juryId, 'assign_supervisor', [
                         'supervisor_id' => $supervisorId,
                         'type' => $supervisorId == 0 ? 'committee' : 'individual',
@@ -1895,24 +2034,25 @@ class JuryController extends Controller
                     ]);
                 }
             }
-            
+
             $supervisorLabel = $supervisorId == 0 ? 'Comissão de Exames' : 'Supervisor';
-            
+
             Response::json([
                 'success' => true,
                 'message' => "{$supervisorLabel} atribuído a {$updated} júri(s) com sucesso",
                 'updated' => $updated
             ]);
-            
+
         } catch (\Exception $e) {
-            if (ob_get_length()) ob_clean();
+            if (ob_get_length())
+                ob_clean();
             Response::json([
                 'success' => false,
                 'message' => 'Erro ao atribuir supervisor: ' . $e->getMessage()
             ], 500);
         }
     }
-    
+
     /**
      * API: Buscar detalhes de um júri (para edição)
      */
@@ -1920,10 +2060,10 @@ class JuryController extends Controller
     {
         try {
             $juryId = (int) $request->param('id');
-            
+
             $juryModel = new Jury();
             $jury = $juryModel->find($juryId);
-            
+
             if (!$jury) {
                 Response::json([
                     'success' => false,
@@ -1931,12 +2071,12 @@ class JuryController extends Controller
                 ], 404);
                 return;
             }
-            
+
             Response::json([
                 'success' => true,
                 'jury' => $jury
             ]);
-            
+
         } catch (\Exception $e) {
             Response::json([
                 'success' => false,
@@ -1944,7 +2084,7 @@ class JuryController extends Controller
             ], 500);
         }
     }
-    
+
     /**
      * API: Atualizar júri
      */
@@ -1959,27 +2099,27 @@ class JuryController extends Controller
                 ], 403);
                 return;
             }
-            
+
             $juryId = (int) $request->param('id');
             $locationId = (int) $request->input('location_id');
             $roomId = (int) $request->input('room_id');
-            
+
             // Buscar informações do local e sala
             $locationModel = new \App\Models\ExamLocation();
             $roomModel = new \App\Models\ExamRoom();
-            
+
             $location = $locationModel->find($locationId);
             if (!$location) {
                 Response::json(['success' => false, 'message' => 'Local não encontrado'], 404);
                 return;
             }
-            
+
             $room = $roomModel->find($roomId);
             if (!$room) {
                 Response::json(['success' => false, 'message' => 'Sala não encontrada'], 404);
                 return;
             }
-            
+
             // Criar texto descritivo da sala
             $roomText = $room['name'] ?: $room['code'];
             $locationParts = [];
@@ -1992,7 +2132,7 @@ class JuryController extends Controller
             if (!empty($locationParts)) {
                 $roomText .= ' (' . implode(' | ', $locationParts) . ')';
             }
-            
+
             // Dados a atualizar
             $data = [
                 'subject' => $request->input('subject'),
@@ -2007,41 +2147,43 @@ class JuryController extends Controller
                 'notes' => $request->input('notes'),
                 'updated_at' => now()
             ];
-            
+
             // Validações
             if (empty($data['subject'])) {
                 Response::json(['success' => false, 'message' => 'Disciplina é obrigatória'], 400);
                 return;
             }
-            
+
             if ($data['candidates_quota'] < 1 || $data['candidates_quota'] > 300) {
                 Response::json(['success' => false, 'message' => 'Número de candidatos inválido (1-300)'], 400);
                 return;
             }
-            
+
             // Validar horários
             if ($data['end_time'] <= $data['start_time']) {
                 Response::json(['success' => false, 'message' => 'Horário de término deve ser maior que o de início'], 400);
                 return;
             }
-            
+
             $juryModel = new Jury();
             $jury = $juryModel->find($juryId);
-            
+
             if (!$jury) {
                 Response::json(['success' => false, 'message' => 'Júri não encontrado'], 404);
                 return;
             }
-            
+
             // Verificar conflitos de sala (se mudou data/horário/sala)
             $hasConflict = false;
             $conflictMessage = '';
-            
-            if ($data['room_id'] != $jury['room_id'] || 
+
+            if (
+                $data['room_id'] != $jury['room_id'] ||
                 $data['exam_date'] != $jury['exam_date'] ||
                 $data['start_time'] != $jury['start_time'] ||
-                $data['end_time'] != $jury['end_time']) {
-                
+                $data['end_time'] != $jury['end_time']
+            ) {
+
                 // Verificar se a sala está disponível
                 $isAvailable = $roomModel->isAvailable(
                     $roomId,
@@ -2050,7 +2192,7 @@ class JuryController extends Controller
                     $data['end_time'],
                     $juryId  // Excluir o júri atual da verificação
                 );
-                
+
                 if (!$isAvailable) {
                     $conflicts = $juryModel->statement(
                         "SELECT id, subject FROM juries 
@@ -2066,7 +2208,7 @@ class JuryController extends Controller
                             'end_time' => $data['end_time']
                         ]
                     );
-                    
+
                     if (!empty($conflicts)) {
                         $hasConflict = true;
                         $conflictList = array_map(fn($c) => $c['subject'], $conflicts);
@@ -2074,10 +2216,10 @@ class JuryController extends Controller
                     }
                 }
             }
-            
+
             // Atualizar
             $result = $juryModel->update($juryId, $data);
-            
+
             if ($result) {
                 // Log de auditoria (com tratamento de erro)
                 try {
@@ -2090,10 +2232,10 @@ class JuryController extends Controller
                 } catch (\Exception $logError) {
                     error_log("AVISO: Erro ao gravar log: " . $logError->getMessage());
                 }
-                
+
                 // Invalidar cache
                 $this->invalidateCache();
-                
+
                 Response::json([
                     'success' => true,
                     'message' => 'Júri atualizado com sucesso!' . $conflictMessage,
@@ -2105,7 +2247,7 @@ class JuryController extends Controller
                     'message' => 'Erro ao atualizar júri'
                 ], 500);
             }
-            
+
         } catch (\Exception $e) {
             Response::json([
                 'success' => false,
@@ -2113,7 +2255,7 @@ class JuryController extends Controller
             ], 500);
         }
     }
-    
+
     /**
      * API: Eliminar júri
      */
@@ -2122,9 +2264,9 @@ class JuryController extends Controller
         // Desabilitar exibição de erros
         ini_set('display_errors', '0');
         ini_set('log_errors', '1');
-        
+
         error_log("========== API deleteJury CHAMADA ==========");
-        
+
         try {
             // Validar CSRF
             if (!Csrf::validate($request)) {
@@ -2135,19 +2277,19 @@ class JuryController extends Controller
                 ], 403);
                 return;
             }
-            
+
             $juryId = (int) $request->param('id');
             error_log("DEBUG: Tentando eliminar júri ID: $juryId");
-            
+
             $juryModel = new Jury();
             $jury = $juryModel->find($juryId);
-            
+
             if (!$jury) {
                 error_log("ERRO: Júri $juryId não encontrado");
                 Response::json(['success' => false, 'message' => 'Júri não encontrado'], 404);
                 return;
             }
-            
+
             // Guardar dados para log antes de eliminar
             $juryData = [
                 'id' => $jury['id'],
@@ -2156,7 +2298,7 @@ class JuryController extends Controller
                 'exam_date' => $jury['exam_date'] ?? 'N/A',
                 'vacancy_id' => $jury['vacancy_id'] ?? null
             ];
-            
+
             // Eliminar alocações de vigilantes primeiro
             try {
                 $juryVigilantes = new JuryVigilante();
@@ -2169,13 +2311,13 @@ class JuryController extends Controller
                 error_log("AVISO: Erro ao remover vigilantes: " . $e->getMessage());
                 // Continuar mesmo assim
             }
-            
+
             // Eliminar júri
             $result = $juryModel->delete($juryId);
-            
+
             if ($result) {
                 error_log("DEBUG: Júri $juryId eliminado com sucesso");
-                
+
                 // Log de auditoria (com tratamento de erro)
                 try {
                     ActivityLogger::log('juries', $juryId, 'delete', [
@@ -2186,10 +2328,10 @@ class JuryController extends Controller
                 } catch (\Exception $logError) {
                     error_log("AVISO: Erro ao gravar log: " . $logError->getMessage());
                 }
-                
+
                 // Invalidar cache
                 $this->invalidateCache();
-                
+
                 Response::json([
                     'success' => true,
                     'message' => 'Júri eliminado com sucesso!'
@@ -2201,11 +2343,11 @@ class JuryController extends Controller
                     'message' => 'Erro ao eliminar júri'
                 ], 500);
             }
-            
+
         } catch (\Exception $e) {
             error_log("ERRO em deleteJury: " . $e->getMessage());
             error_log("TRACE: " . $e->getTraceAsString());
-            
+
             Response::json([
                 'success' => false,
                 'message' => 'Erro ao eliminar júri: ' . $e->getMessage(),
@@ -2214,7 +2356,7 @@ class JuryController extends Controller
             ], 500);
         }
     }
-    
+
     /**
      * API: Obter dados mestre (locais e salas)
      * GET /api/master-data/locations-rooms
@@ -2224,19 +2366,19 @@ class JuryController extends Controller
         try {
             $locationModel = new \App\Models\ExamLocation();
             $roomModel = new \App\Models\ExamRoom();
-            
+
             // Buscar locais ativos
             $locations = $locationModel->getActive();
-            
+
             // Buscar salas ativas com informações do local
             $rooms = $roomModel->getAllWithLocation(true);
-            
+
             Response::json([
                 'success' => true,
                 'locations' => $locations ?? [],
                 'rooms' => $rooms ?? []
             ]);
-            
+
         } catch (\Exception $e) {
             Response::json([
                 'success' => false,
@@ -2244,28 +2386,29 @@ class JuryController extends Controller
             ], 500);
         }
     }
-    
+
     /**
      * API: Obter disciplinas usadas em uma vaga
      * GET /api/vacancies/{vacancy_id}/subjects
      */
-    public function getVacancySubjects(int $vacancyId): void
+    public function getVacancySubjects(Request $request): void
     {
         try {
-            $juryModel = new Jury();
-            
-            $subjects = $juryModel->statement(
-                "SELECT DISTINCT subject FROM juries WHERE vacancy_id = :vacancy_id ORDER BY subject ASC",
-                ['vacancy_id' => $vacancyId]
-            );
-            
-            $subjectList = array_map(fn($row) => $row['subject'], $subjects);
-            
+            $vacancyId = (int) $request->param('id');
+
+            // 1. Apenas disciplinas do cadastro mestre (conforme solicitado)
+            $disciplineModel = new \App\Models\Discipline();
+            $masterDisciplines = $disciplineModel->getActive();
+            $allSubjects = array_map(fn($row) => $row['name'], $masterDisciplines);
+
+            // Ordenar
+            sort($allSubjects);
+
             Response::json([
                 'success' => true,
-                'subjects' => $subjectList ?? []
+                'subjects' => array_values($allSubjects)
             ]);
-            
+
         } catch (\Exception $e) {
             Response::json([
                 'success' => false,
@@ -2273,7 +2416,7 @@ class JuryController extends Controller
             ], 500);
         }
     }
-    
+
     /**
      * Criar múltiplos júris de uma vez (criação em lote)
      * POST /juries/create-bulk
@@ -2283,7 +2426,7 @@ class JuryController extends Controller
         try {
             // Obter dados
             $data = $request->all();
-            
+
             // Validar campos obrigatórios
             $required = ['vacancy_id', 'subject', 'exam_date', 'start_time', 'end_time', 'location_id', 'rooms'];
             foreach ($required as $field) {
@@ -2292,44 +2435,44 @@ class JuryController extends Controller
                     return;
                 }
             }
-            
+
             if (empty($data['rooms']) || !is_array($data['rooms'])) {
                 Response::json(['success' => false, 'message' => 'Adicione pelo menos uma sala'], 400);
                 return;
             }
-            
+
             $juryModel = new Jury();
             $roomModel = new \App\Models\ExamRoom();
             $locationModel = new \App\Models\ExamLocation();
             $createdJuries = [];
-            
+
             // Buscar informações do local
             $location = $locationModel->find((int) $data['location_id']);
             if (!$location) {
                 Response::json(['success' => false, 'message' => 'Local não encontrado'], 404);
                 return;
             }
-            
+
             // Para cada sala, criar júri
             foreach ($data['rooms'] as $roomData) {
                 $roomId = (int) ($roomData['room_id'] ?? 0);
                 $candidates = (int) ($roomData['candidates_quota'] ?? $roomData['candidates'] ?? 0);
-                
+
                 if ($roomId <= 0 || $candidates <= 0) {
                     error_log("DEBUG: Sala inválida - room_id: $roomId, candidates: $candidates");
                     continue; // Pular salas inválidas
                 }
-                
+
                 // Buscar informações da sala
                 $room = $roomModel->find($roomId);
                 if (!$room) {
                     error_log("DEBUG: Sala ID $roomId não encontrada");
                     continue;
                 }
-                
+
                 // Criar texto descritivo da sala
                 $roomText = $room['name'] ?: $room['code'];
-                
+
                 $locationParts = [];
                 if (!empty($room['building'])) {
                     $locationParts[] = $room['building'];
@@ -2340,7 +2483,7 @@ class JuryController extends Controller
                 if (!empty($locationParts)) {
                     $roomText .= ' (' . implode(' | ', $locationParts) . ')';
                 }
-                
+
                 // Inserir júri
                 $juryId = $juryModel->create([
                     'vacancy_id' => (int) $data['vacancy_id'],
@@ -2358,7 +2501,7 @@ class JuryController extends Controller
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
-                
+
                 if ($juryId) {
                     $createdJuries[] = [
                         'id' => $juryId,
@@ -2367,7 +2510,7 @@ class JuryController extends Controller
                     ];
                 }
             }
-            
+
             if (count($createdJuries) > 0) {
                 Response::json([
                     'success' => true,
@@ -2381,7 +2524,7 @@ class JuryController extends Controller
                     'message' => 'Nenhum júri foi criado. Verifique os dados das salas.'
                 ], 400);
             }
-            
+
         } catch (\Exception $e) {
             Response::json([
                 'success' => false,
@@ -2389,7 +2532,7 @@ class JuryController extends Controller
             ], 500);
         }
     }
-    
+
     /**
      * Sincronizar TODOS os dados de salas em todos os júris
      * Atualiza room, room_id, location, location_id com os dados atuais
@@ -2400,29 +2543,29 @@ class JuryController extends Controller
             $juryModel = new Jury();
             $roomModel = new \App\Models\ExamRoom();
             $locationModel = new \App\Models\ExamLocation();
-            
+
             // Buscar todos os júris com room_id
             $juries = $juryModel->statement(
                 "SELECT id, room_id FROM juries WHERE room_id IS NOT NULL"
             );
-            
+
             $updated = 0;
             $notFound = 0;
-            
+
             foreach ($juries as $jury) {
                 $room = $roomModel->find($jury['room_id']);
-                
+
                 if (!$room) {
                     $notFound++;
                     continue;
                 }
-                
+
                 // Buscar dados do local
                 $location = $locationModel->find($room['location_id']);
-                
+
                 // Criar texto descritivo da sala
                 $roomText = $room['name'] ?: $room['code'];
-                
+
                 $locationParts = [];
                 if (!empty($room['building'])) {
                     $locationParts[] = $room['building'];
@@ -2433,7 +2576,7 @@ class JuryController extends Controller
                 if (!empty($locationParts)) {
                     $roomText .= ' (' . implode(' | ', $locationParts) . ')';
                 }
-                
+
                 // Atualizar júri com TODOS os dados da sala
                 $juryModel->update($jury['id'], [
                     'room' => $roomText,
@@ -2442,23 +2585,23 @@ class JuryController extends Controller
                     'location' => $location ? $location['name'] : null,
                     'updated_at' => now()
                 ]);
-                
+
                 $updated++;
             }
-            
+
             ActivityLogger::log('juries', 0, 'sync_room_data', [
                 'updated' => $updated,
                 'not_found' => $notFound,
                 'fields' => 'room, room_id, location_id, location'
             ]);
-            
+
             Response::json([
                 'success' => true,
                 'message' => "Sincronização concluída!",
                 'updated' => $updated,
                 'not_found' => $notFound
             ]);
-            
+
         } catch (\Exception $e) {
             Response::json([
                 'success' => false,
@@ -2466,7 +2609,7 @@ class JuryController extends Controller
             ], 500);
         }
     }
-    
+
     /**
      * Atualizar disciplina/exame inteira (múltiplas salas)
      */
@@ -2481,41 +2624,41 @@ class JuryController extends Controller
                 ], 403);
                 return;
             }
-            
+
             $vacancyId = (int) $request->param('vacancy_id');
             $subject = $request->input('subject');
             $examDate = $request->input('exam_date');
             $startTime = $request->input('start_time');
             $endTime = $request->input('end_time');
             $rooms = $request->input('rooms', []);
-            
+
             // Validações
             if (empty($subject) || empty($examDate) || empty($startTime) || empty($endTime)) {
                 Response::json(['success' => false, 'message' => 'Todos os campos são obrigatórios'], 400);
                 return;
             }
-            
+
             if (empty($rooms)) {
                 Response::json(['success' => false, 'message' => 'Adicione pelo menos uma sala'], 400);
                 return;
             }
-            
+
             if ($endTime <= $startTime) {
                 Response::json(['success' => false, 'message' => 'Horário de término deve ser maior que o de início'], 400);
                 return;
             }
-            
+
             $juryModel = new Jury();
             $db = Connection::getInstance();
-            
+
             // Iniciar transação
             $db->beginTransaction();
-            
+
             try {
                 $updatedJuries = [];
                 $newJuries = [];
                 $removedJuries = [];
-                
+
                 // Buscar júris existentes desta disciplina/horário/vaga
                 $existingJuries = $juryModel->statement(
                     "SELECT * FROM juries 
@@ -2527,19 +2670,19 @@ class JuryController extends Controller
                         'subject' => $subject
                     ]
                 );
-                
+
                 $existingJuryIds = array_column($existingJuries, 'id');
                 $processedJuryIds = [];
-                
+
                 // Processar salas
                 foreach ($rooms as $roomData) {
                     $roomName = $roomData['room'];
                     $candidatesQuota = (int) $roomData['candidates_quota'];
-                    
+
                     if ($candidatesQuota < 1 || $candidatesQuota > 300) {
                         throw new \Exception("Número de candidatos inválido para sala {$roomName}");
                     }
-                    
+
                     $juryData = [
                         'subject' => $subject,
                         'exam_date' => $examDate,
@@ -2549,7 +2692,7 @@ class JuryController extends Controller
                         'candidates_quota' => $candidatesQuota,
                         'updated_at' => now()
                     ];
-                    
+
                     // Se tem jury_id, é uma atualização
                     if (isset($roomData['jury_id']) && $roomData['jury_id'] > 0) {
                         $juryId = (int) $roomData['jury_id'];
@@ -2560,7 +2703,7 @@ class JuryController extends Controller
                         // Nova sala - criar júri
                         $juryData['vacancy_id'] = $vacancyId;
                         $juryData['created_at'] = now();
-                        
+
                         // Buscar primeiro júri existente para pegar local/location
                         if (!empty($existingJuries)) {
                             $firstJury = $existingJuries[0];
@@ -2568,32 +2711,32 @@ class JuryController extends Controller
                             $juryData['location_id'] = $firstJury['location_id'];
                             $juryData['room_id'] = $firstJury['room_id'];
                         }
-                        
+
                         $newJuryId = $juryModel->create($juryData);
                         $newJuries[] = $newJuryId;
                         $processedJuryIds[] = $newJuryId;
                     }
                 }
-                
+
                 // Identificar júris para remover (existiam mas não vieram no request)
                 $juriesToRemove = array_diff($existingJuryIds, $processedJuryIds);
-                
+
                 // Remover júris não mais necessários
                 if (!empty($juriesToRemove)) {
                     foreach ($juriesToRemove as $juryId) {
                         // Remover alocações de vigilantes primeiro
                         $db->prepare("DELETE FROM jury_vigilantes WHERE jury_id = ?")
-                           ->execute([$juryId]);
-                        
+                            ->execute([$juryId]);
+
                         // Remover o júri
                         $juryModel->delete($juryId);
                         $removedJuries[] = $juryId;
                     }
                 }
-                
+
                 // Commit
                 $db->commit();
-                
+
                 // Log de atividade
                 ActivityLogger::log('juries', 0, 'update_discipline', [
                     'vacancy_id' => $vacancyId,
@@ -2602,7 +2745,7 @@ class JuryController extends Controller
                     'created' => count($newJuries),
                     'removed' => count($removedJuries)
                 ]);
-                
+
                 $message = "Disciplina atualizada com sucesso!";
                 if (count($newJuries) > 0) {
                     $message .= " " . count($newJuries) . " sala(s) adicionada(s).";
@@ -2610,7 +2753,7 @@ class JuryController extends Controller
                 if (count($removedJuries) > 0) {
                     $message .= " " . count($removedJuries) . " sala(s) removida(s).";
                 }
-                
+
                 Response::json([
                     'success' => true,
                     'message' => $message,
@@ -2618,12 +2761,12 @@ class JuryController extends Controller
                     'created' => count($newJuries),
                     'removed' => count($removedJuries)
                 ]);
-                
+
             } catch (\Exception $e) {
                 $db->rollBack();
                 throw $e;
             }
-            
+
         } catch (\Exception $e) {
             Response::json([
                 'success' => false,

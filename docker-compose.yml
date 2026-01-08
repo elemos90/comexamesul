@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: comexamesul-app
+    container_name: comexamesul-app
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - DB_HOST=db
+      - DB_DATABASE=comexamesul
+      - DB_USERNAME=user
+      - DB_PASSWORD=password
+    depends_on:
+      - db
+    networks:
+      - comexamesul-network
+
+  db:
+    image: mysql:8.0
+    container_name: comexamesul-db
+    environment:
+      - MYSQL_DATABASE=comexamesul
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=password
+      - MYSQL_ROOT_PASSWORD=root_password
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./app/Database/migrations.sql:/docker-entrypoint-initdb.d/01_migrations.sql
+      - ./app/Database/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+    networks:
+      - comexamesul-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: comexamesul-pma
+    environment:
+      - PMA_HOST=db
+      - MYSQL_ROOT_PASSWORD=root_password
+    ports:
+      - "8081:80"
+    depends_on:
+      - db
+    networks:
+      - comexamesul-network
+
+networks:
+  comexamesul-network:
+    driver: bridge
+
+volumes:
+  db_data:

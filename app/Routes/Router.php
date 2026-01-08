@@ -92,12 +92,12 @@ class Router
         $routes = $this->routes[$method] ?? [];
         foreach ($routes as $route) {
             $pattern = $this->convertUriToRegex($route['uri']);
-            
+
             // DEBUG: Log de matching
             if (strpos($path, '/api/') === 0) {
                 error_log("DEBUG Router: Testando pattern $pattern contra $path");
             }
-            
+
             if (preg_match($pattern, $path, $matches)) {
                 $params = [];
                 foreach ($matches as $key => $value) {

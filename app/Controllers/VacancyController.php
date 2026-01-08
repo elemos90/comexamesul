@@ -18,10 +18,10 @@ class VacancyController extends Controller
     {
         $user = Auth::user();
         $model = new ExamVacancy();
-        
+
         // Fechar vagas expiradas automaticamente
         $model->closeExpired();
-        
+
         $vacancies = $user['role'] === 'vigilante'
             ? $model->openVacancies()
             : $model->statement('SELECT * FROM exam_vacancies ORDER BY created_at DESC');
@@ -64,19 +64,20 @@ class VacancyController extends Controller
     public function store(Request $request)
     {
         $data = $request->only(['title', 'description', 'deadline_at']);
-        
+
         // Armazenar valores preenchidos para mostrar em caso de erro
         $_SESSION['old'] = $data;
-        
+
         // VALIDAÇÃO CRÍTICA: Verificar se já existe vaga aberta
         $model = new ExamVacancy();
         $openVacancies = $model->openVacancies();
-        
+
         if (!empty($openVacancies)) {
             $existingVacancy = $openVacancies[0];
             $deadline = date('d/m/Y H:i', strtotime($existingVacancy['deadline_at']));
-            
-            Flash::add('error', 
+
+            Flash::add(
+                'error',
                 'Não é possível criar uma nova vaga enquanto houver outra aberta. ' .
                 'A vaga "' . htmlspecialchars($existingVacancy['title']) . '" ' .
                 '(prazo: ' . $deadline . ') está atualmente aberta. ' .
@@ -84,18 +85,18 @@ class VacancyController extends Controller
             );
             redirect('/vacancies');
         }
-        
+
         $validator = new Validator();
         $rules = [
             'title' => 'required|min:3|max:180',
             'description' => 'required|min:10',
             'deadline_at' => 'required|date',
         ];
-        
+
         if (!$validator->validate($data, $rules)) {
             $errors = $validator->errors();
             $_SESSION['errors'] = $errors;
-            
+
             // Criar mensagem mais descritiva
             $errorMessages = [];
             foreach ($errors as $field => $messages) {
@@ -144,6 +145,7 @@ class VacancyController extends Controller
             Flash::add('error', 'Verifique os dados da vaga.');
             $_SESSION['errors'] = $validator->errors();
             redirect('/vacancies');
+            return;
         }
 
         $model = new ExamVacancy();
@@ -151,35 +153,40 @@ class VacancyController extends Controller
         if (!$vacancy) {
             Flash::add('error', 'Vaga nao encontrada.');
             redirect('/vacancies');
+            return;
         }
 
         // Bloquear edicao de vagas encerradas
         if ($vacancy['status'] === 'encerrada') {
             Flash::add('error', 'Vagas encerradas nao podem ser editadas. Esta vaga esta arquivada permanentemente.');
             redirect('/vacancies');
+            return;
         }
 
         // Impedir mudanca para estado encerrado via edicao (deve usar botao Encerrar)
         if ($data['status'] === 'encerrada') {
             Flash::add('error', 'Para encerrar uma vaga, use o botao "Encerrar" na listagem.');
             redirect('/vacancies');
+            return;
         }
-        
+
         // VALIDAÇÃO CRÍTICA: Ao reabrir vaga, verificar se já existe outra aberta
         if ($vacancy['status'] !== 'aberta' && $data['status'] === 'aberta') {
             $openVacancies = $model->openVacancies();
-            
+
             if (!empty($openVacancies)) {
                 $existingVacancy = $openVacancies[0];
                 $deadline = date('d/m/Y H:i', strtotime($existingVacancy['deadline_at']));
-                
-                Flash::add('error', 
+
+                Flash::add(
+                    'error',
                     'Não é possível reabrir esta vaga enquanto houver outra aberta. ' .
                     'A vaga "' . htmlspecialchars($existingVacancy['title']) . '" ' .
                     '(prazo: ' . $deadline . ') está atualmente aberta. ' .
                     'Feche essa vaga primeiro antes de reabrir outra.'
                 );
                 redirect('/vacancies');
+                return;
             }
         }
 
@@ -223,27 +230,50 @@ class VacancyController extends Controller
         $id = (int) $request->param('id');
         $model = new ExamVacancy();
         $vacancy = $model->find($id);
-        
+
         if (!$vacancy) {
             Flash::add('error', 'Vaga nao encontrada.');
             redirect('/vacancies');
         }
-        
+
         if ($vacancy['status'] !== 'fechada') {
             Flash::add('error', 'Apenas vagas fechadas podem ser encerradas.');
             redirect('/vacancies');
         }
-        
+
+        // Validar alocação de vigilantes (Regra Obrigatória)
+        $config = require __DIR__ . '/../Config/supervisor_settings.php';
+        if (!empty($config['enforce_min_vigilantes'])) {
+            $juryModel = new Jury();
+            $juries = $juryModel->statement("SELECT id FROM juries WHERE vacancy_id = :id", ['id' => $id]);
+
+            $allocationService = new \App\Services\AllocationService();
+            $incompleteJuries = 0;
+
+            foreach ($juries as $jury) {
+                $status = $allocationService->getVigilanteAllocationStatus($jury['id']);
+                if (!$status['is_complete']) {
+                    $incompleteJuries++;
+                }
+            }
+
+            if ($incompleteJuries > 0) {
+                Flash::add('error', "Não é possível encerrar a vaga: existem {$incompleteJuries} júris com número insuficiente de vigilantes. Verifique o planeamento.");
+                redirect('/vacancies');
+                return;
+            }
+        }
+
         $model->update($id, [
             'status' => 'encerrada',
             'updated_at' => now()
         ]);
-        
+
         ActivityLogger::log('vacancies', $id, 'finalize', [
             'title' => $vacancy['title'],
             'previous_status' => 'fechada'
         ]);
-        
+
         Flash::add('success', 'Vaga encerrada e arquivada com sucesso.');
         redirect('/vacancies');
     }
@@ -253,7 +283,7 @@ class VacancyController extends Controller
         $id = (int) $request->param('id');
         $model = new ExamVacancy();
         $vacancy = $model->find($id);
-        
+
         if (!$vacancy) {
             Flash::add('error', 'Vaga nao encontrada.');
             redirect('/vacancies');
@@ -265,7 +295,7 @@ class VacancyController extends Controller
             "SELECT COUNT(*) as count FROM juries WHERE vacancy_id = :vacancy_id",
             ['vacancy_id' => $id]
         );
-        
+
         if (!empty($juries) && $juries[0]['count'] > 0) {
             Flash::add('error', 'Nao e possivel remover esta vaga pois existem ' . $juries[0]['count'] . ' juri(s) associado(s). Remova os juris primeiro.');
             redirect('/vacancies');
@@ -277,7 +307,7 @@ class VacancyController extends Controller
             "SELECT COUNT(*) as count FROM vacancy_applications WHERE vacancy_id = :vacancy_id AND status = 'aprovada'",
             ['vacancy_id' => $id]
         );
-        
+
         if (!empty($approvedApps) && $approvedApps[0]['count'] > 0) {
             Flash::add('error', 'Nao e possivel remover esta vaga pois existem ' . $approvedApps[0]['count'] . ' candidatura(s) aprovada(s). Esta vaga possui historico importante.');
             redirect('/vacancies');
@@ -288,7 +318,7 @@ class VacancyController extends Controller
             "SELECT COUNT(*) as count FROM vacancy_applications WHERE vacancy_id = :vacancy_id",
             ['vacancy_id' => $id]
         );
-        
+
         if (!empty($allApps) && $allApps[0]['count'] > 0) {
             Flash::add('warning', 'Esta vaga possui ' . $allApps[0]['count'] . ' candidatura(s) registrada(s). Recomenda-se apenas fechar a vaga ao inves de remove-la para preservar o historico.');
             // Permitir exclusão mas com aviso

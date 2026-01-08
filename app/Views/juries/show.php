@@ -1,7 +1,7 @@
 <?php
 $title = 'Júri #' . $jury['id'];
 $breadcrumbs = [
-    ['label' => 'Júris', 'url' => '/juries'],
+    ['label' => 'Júris', 'url' => url('/juries')],
     ['label' => $jury['subject']]
 ];
 ?>
@@ -11,10 +11,16 @@ $breadcrumbs = [
         <div class="flex flex-wrap items-center justify-between">
             <div>
                 <h1 class="text-2xl font-semibold text-gray-800"><?= htmlspecialchars($jury['subject']) ?></h1>
-                <p class="text-sm text-gray-500 mt-1"><?= htmlspecialchars(date('d/m/Y', strtotime($jury['exam_date']))) ?> · <?= htmlspecialchars(substr($jury['start_time'], 0, 5)) ?> - <?= htmlspecialchars(substr($jury['end_time'], 0, 5)) ?> · <?= htmlspecialchars($jury['location']) ?> / Sala <?= htmlspecialchars($jury['room']) ?></p>
+                <p class="text-sm text-gray-500 mt-1">
+                    <?= htmlspecialchars(date('d/m/Y', strtotime($jury['exam_date']))) ?> ·
+                    <?= htmlspecialchars(substr($jury['start_time'], 0, 5)) ?> -
+                    <?= htmlspecialchars(substr($jury['end_time'], 0, 5)) ?> ·
+                    <?= htmlspecialchars($jury['location']) ?> / Sala <?= htmlspecialchars($jury['room']) ?></p>
             </div>
             <?php if ((int) $jury['supervisor_id'] === (int) \App\Utils\Auth::id() && !$report): ?>
-                <a href="/juries/<?= $jury['id'] ?>/report" class="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded hover:bg-primary-500">Submeter relatório</a>
+                <a href="url('/juries/<?= $jury['id'] ?>/report"
+                    class="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded hover:bg-primary-500">Submeter
+                    relatório</a>
             <?php endif; ?>
         </div>
         <?php if (!empty($jury['notes'])): ?>
@@ -28,7 +34,8 @@ $breadcrumbs = [
                 <?php foreach ($vigilantes as $vigilante): ?>
                     <li class="bg-gray-50 border border-gray-100 rounded p-3">
                         <p class="text-sm font-medium text-gray-700"><?= htmlspecialchars($vigilante['name']) ?></p>
-                        <p class="text-xs text-gray-500"><?= htmlspecialchars($vigilante['email']) ?> · <?= htmlspecialchars($vigilante['phone']) ?></p>
+                        <p class="text-xs text-gray-500"><?= htmlspecialchars($vigilante['email']) ?> ·
+                            <?= htmlspecialchars($vigilante['phone']) ?></p>
                     </li>
                 <?php endforeach; ?>
                 <?php if (!$vigilantes): ?>
@@ -48,11 +55,26 @@ $breadcrumbs = [
             <div class="bg-white border border-gray-200 rounded-lg p-4">
                 <h3 class="text-lg font-semibold text-gray-800 mb-2">Relatório submetido</h3>
                 <dl class="grid md:grid-cols-4 gap-4 text-sm text-gray-600">
-                    <div><dt class="font-medium text-gray-700">Presentes (H)</dt><dd><?= (int) $report['present_m'] ?></dd></div>
-                    <div><dt class="font-medium text-gray-700">Presentes (M)</dt><dd><?= (int) $report['present_f'] ?></dd></div>
-                    <div><dt class="font-medium text-gray-700">Ausentes (H)</dt><dd><?= (int) $report['absent_m'] ?></dd></div>
-                    <div><dt class="font-medium text-gray-700">Ausentes (M)</dt><dd><?= (int) $report['absent_f'] ?></dd></div>
-                    <div><dt class="font-medium text-gray-700">Total</dt><dd><?= (int) $report['total'] ?></dd></div>
+                    <div>
+                        <dt class="font-medium text-gray-700">Presentes (H)</dt>
+                        <dd><?= (int) $report['present_m'] ?></dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-gray-700">Presentes (M)</dt>
+                        <dd><?= (int) $report['present_f'] ?></dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-gray-700">Ausentes (H)</dt>
+                        <dd><?= (int) $report['absent_m'] ?></dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-gray-700">Ausentes (M)</dt>
+                        <dd><?= (int) $report['absent_f'] ?></dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-gray-700">Total</dt>
+                        <dd><?= (int) $report['total'] ?></dd>
+                    </div>
                 </dl>
                 <?php if (!empty($report['occurrences'])): ?>
                     <div class="mt-3 text-sm text-gray-600">

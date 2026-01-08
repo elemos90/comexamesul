@@ -21,19 +21,19 @@ use PDO;
 class AllocationService
 {
     private PDO $db;
-    
+
     // Pesos para cálculo de score de carga
     const WEIGHT_VIGILANCE = 1;
     const WEIGHT_SUPERVISION = 2;
-    
+
     // Tolerância para equilíbrio (desvio padrão aceitável)
     const BALANCE_TOLERANCE = 1.0;
-    
+
     public function __construct()
     {
         $this->db = database();
     }
-    
+
     /**
      * Verifica se um vigilante pode ser alocado a um júri
      * 
@@ -52,7 +52,7 @@ class AllocationService
                 'severity' => 'error'
             ];
         }
-        
+
         if ((int) $vigilante['available_for_vigilance'] !== 1) {
             return [
                 'can_assign' => false,
@@ -60,7 +60,7 @@ class AllocationService
                 'severity' => 'error'
             ];
         }
-        
+
         // 2. Verificar se júri existe
         $jury = (new Jury())->find($juryId);
         if (!$jury) {
@@ -70,7 +70,7 @@ class AllocationService
                 'severity' => 'error'
             ];
         }
-        
+
         // 3. Verificar se já está alocado neste júri
         $stmt = $this->db->prepare(
             "SELECT id FROM jury_vigilantes WHERE jury_id = :jury AND vigilante_id = :vigilante"
@@ -83,7 +83,7 @@ class AllocationService
                 'severity' => 'warning'
             ];
         }
-        
+
         // 4. Verificar capacidade do júri
         $capacity = (int) ($jury['vigilantes_capacity'] ?? 2);
         $stmt = $this->db->prepare(
@@ -91,7 +91,7 @@ class AllocationService
         );
         $stmt->execute(['jury' => $juryId]);
         $currentCount = (int) $stmt->fetchColumn();
-        
+
         if ($currentCount >= $capacity) {
             return [
                 'can_assign' => false,
@@ -99,7 +99,7 @@ class AllocationService
                 'severity' => 'error'
             ];
         }
-        
+
         // 5. Verificar conflitos de horário
         $hasConflict = (new JuryVigilante())->vigilanteHasConflict(
             $vigilanteId,
@@ -107,7 +107,7 @@ class AllocationService
             $jury['start_time'],
             $jury['end_time']
         );
-        
+
         if ($hasConflict) {
             return [
                 'can_assign' => false,
@@ -115,11 +115,11 @@ class AllocationService
                 'severity' => 'error'
             ];
         }
-        
+
         // 6. Verificar equilíbrio de carga (warning, não bloqueia)
         $workload = $this->getVigilanteWorkload($vigilanteId);
         $avgWorkload = $this->getAverageWorkload();
-        
+
         if ($workload['workload_score'] > $avgWorkload + self::BALANCE_TOLERANCE) {
             return [
                 'can_assign' => true,
@@ -127,14 +127,14 @@ class AllocationService
                 'severity' => 'warning'
             ];
         }
-        
+
         return [
             'can_assign' => true,
             'reason' => null,
             'severity' => 'success'
         ];
     }
-    
+
     /**
      * Verifica se um supervisor pode ser alocado a um júri
      */
@@ -149,7 +149,7 @@ class AllocationService
                 'severity' => 'error'
             ];
         }
-        
+
         // 2. Verificar se júri existe
         $jury = (new Jury())->find($juryId);
         if (!$jury) {
@@ -159,7 +159,7 @@ class AllocationService
                 'severity' => 'error'
             ];
         }
-        
+
         // 3. Verificar conflitos de horário
         $stmt = $this->db->prepare("
             SELECT COUNT(*) FROM juries
@@ -175,7 +175,7 @@ class AllocationService
             'end_time' => $jury['end_time'],
             'start_time' => $jury['start_time']
         ]);
-        
+
         if ((int) $stmt->fetchColumn() > 0) {
             return [
                 'can_assign' => false,
@@ -183,11 +183,11 @@ class AllocationService
                 'severity' => 'error'
             ];
         }
-        
+
         // 4. Verificar equilíbrio de carga
         $workload = $this->getVigilanteWorkload($supervisorId);
         $avgWorkload = $this->getAverageWorkload();
-        
+
         if ($workload['workload_score'] > $avgWorkload + self::BALANCE_TOLERANCE * 2) {
             return [
                 'can_assign' => true,
@@ -195,31 +195,31 @@ class AllocationService
                 'severity' => 'warning'
             ];
         }
-        
+
         return [
             'can_assign' => true,
             'reason' => null,
             'severity' => 'success'
         ];
     }
-    
+
     /**
      * Aloca vigilante a um júri com transação
      */
     public function assignVigilante(int $vigilanteId, int $juryId, int $assignedBy): array
     {
         $validation = $this->canAssignVigilante($vigilanteId, $juryId);
-        
+
         if (!$validation['can_assign']) {
             return [
                 'success' => false,
                 'message' => $validation['reason']
             ];
         }
-        
+
         try {
             $this->db->beginTransaction();
-            
+
             $juryVigilante = new JuryVigilante();
             $juryVigilante->create([
                 'jury_id' => $juryId,
@@ -227,20 +227,20 @@ class AllocationService
                 'assigned_by' => $assignedBy,
                 'created_at' => now()
             ]);
-            
+
             ActivityLogger::log('jury_vigilantes', $juryId, 'assign', [
                 'vigilante_id' => $vigilanteId,
                 'assigned_by' => $assignedBy
             ]);
-            
+
             $this->db->commit();
-            
+
             return [
                 'success' => true,
                 'message' => 'Vigilante alocado com sucesso',
                 'warning' => $validation['severity'] === 'warning' ? $validation['reason'] : null
             ];
-            
+
         } catch (\Exception $e) {
             $this->db->rollBack();
             return [
@@ -249,7 +249,7 @@ class AllocationService
             ];
         }
     }
-    
+
     /**
      * Remove vigilante de um júri
      */
@@ -257,27 +257,27 @@ class AllocationService
     {
         try {
             $this->db->beginTransaction();
-            
+
             $stmt = $this->db->prepare(
                 "DELETE FROM jury_vigilantes WHERE jury_id = :jury AND vigilante_id = :vigilante"
             );
             $stmt->execute(['jury' => $juryId, 'vigilante' => $vigilanteId]);
-            
+
             ActivityLogger::log('jury_vigilantes', $juryId, 'unassign', [
                 'vigilante_id' => $vigilanteId,
                 'removed_by' => $removedBy
             ]);
-            
+
             $this->db->commit();
-            
+
             return ['success' => true, 'message' => 'Vigilante removido com sucesso'];
-            
+
         } catch (\Exception $e) {
             $this->db->rollBack();
             return ['success' => false, 'message' => 'Erro ao remover vigilante'];
         }
     }
-    
+
     /**
      * Troca vigilantes entre júris ou dentro do mesmo júri
      */
@@ -285,7 +285,7 @@ class AllocationService
     {
         try {
             $this->db->beginTransaction();
-            
+
             // Remover ambos temporariamente - CORRIGIDO: usando prepared statement para prevenir SQL injection
             $stmtDelete = $this->db->prepare(
                 "DELETE FROM jury_vigilantes WHERE jury_id = :jury AND vigilante_id IN (:vig1, :vig2)"
@@ -295,35 +295,35 @@ class AllocationService
                 'vig1' => $vigilante1Id,
                 'vig2' => $vigilante2Id
             ]);
-            
+
             // Realocar invertido
             $stmt = $this->db->prepare(
                 "INSERT INTO jury_vigilantes (jury_id, vigilante_id, assigned_by, created_at) VALUES (:jury, :vigilante, :by, :at)"
             );
-            
+
             $stmt->execute([
                 'jury' => $juryId,
                 'vigilante' => $vigilante2Id,
                 'by' => $swappedBy,
                 'at' => now()
             ]);
-            
+
             ActivityLogger::log('jury_vigilantes', $juryId, 'swap', [
                 'from' => $vigilante1Id,
                 'to' => $vigilante2Id,
                 'swapped_by' => $swappedBy
             ]);
-            
+
             $this->db->commit();
-            
+
             return ['success' => true, 'message' => 'Vigilantes trocados com sucesso'];
-            
+
         } catch (\Exception $e) {
             $this->db->rollBack();
             return ['success' => false, 'message' => 'Erro ao trocar vigilantes'];
         }
     }
-    
+
     /**
      * Auto-aloca vigilantes em um júri específico usando algoritmo Greedy
      * 
@@ -337,9 +337,9 @@ class AllocationService
         if (!$jury) {
             return ['success' => false, 'message' => 'Júri não encontrado'];
         }
-        
+
         $capacity = (int) ($jury['vigilantes_capacity'] ?? 2);
-        
+
         // Buscar vigilantes elegíveis ordenados por carga (menor carga primeiro)
         // SELECT * seguro: vw_eligible_vigilantes é uma VIEW com campos específicos
         $stmt = $this->db->prepare("
@@ -352,17 +352,17 @@ class AllocationService
         $stmt->bindValue(':capacity', $capacity, PDO::PARAM_INT);
         $stmt->execute();
         $eligibles = $stmt->fetchAll();
-        
+
         if (empty($eligibles)) {
             return ['success' => false, 'message' => 'Nenhum vigilante elegível encontrado'];
         }
-        
+
         $allocated = 0;
         $errors = [];
-        
+
         try {
             $this->db->beginTransaction();
-            
+
             foreach ($eligibles as $eligible) {
                 $result = $this->assignVigilante((int) $eligible['vigilante_id'], $juryId, $allocatedBy);
                 if ($result['success']) {
@@ -371,22 +371,22 @@ class AllocationService
                     $errors[] = $result['message'];
                 }
             }
-            
+
             $this->db->commit();
-            
+
             return [
                 'success' => true,
                 'message' => "Auto-alocação concluída: {$allocated} vigilante(s) alocado(s)",
                 'allocated' => $allocated,
                 'errors' => $errors
             ];
-            
+
         } catch (\Exception $e) {
             $this->db->rollBack();
             return ['success' => false, 'message' => 'Erro na auto-alocação: ' . $e->getMessage()];
         }
     }
-    
+
     /**
      * Auto-aloca vigilantes em todos os júris de uma disciplina (OTIMIZADO)
      * Usa processamento em lote para máxima performance
@@ -394,7 +394,7 @@ class AllocationService
     public function autoAllocateDiscipline(string $subject, string $examDate, int $allocatedBy): array
     {
         $startTime = microtime(true);
-        
+
         // Buscar todos os júris da disciplina com detalhes
         $stmt = $this->db->prepare("
             SELECT j.id, j.exam_date, j.start_time, j.end_time,
@@ -406,55 +406,57 @@ class AllocationService
         ");
         $stmt->execute(['subject' => $subject, 'date' => $examDate]);
         $juries = $stmt->fetchAll();
-        
+
         if (empty($juries)) {
             return ['success' => false, 'message' => 'Nenhum júri encontrado'];
         }
-        
+
         // Buscar todos os vigilantes disponíveis com carga (uma única query)
         $vigilantes = $this->getAvailableVigilantesForDiscipline($examDate);
-        
+
         if (empty($vigilantes)) {
             return ['success' => false, 'message' => 'Nenhum vigilante disponível'];
         }
-        
+
         // Ordenar vigilantes por carga (menor primeiro)
         usort($vigilantes, fn($a, $b) => $a['workload_score'] <=> $b['workload_score']);
-        
+
         $totalAllocated = 0;
         $juriesProcessed = 0;
         $allocations = [];
         $vigilanteIndex = 0;
-        
+
         try {
             $this->db->beginTransaction();
-            
+
             // Algoritmo Greedy otimizado: alocar em batch
             foreach ($juries as $jury) {
                 $needed = (int) $jury['capacity'] - (int) $jury['allocated'];
-                
+
                 if ($needed <= 0) {
                     continue; // Júri já preenchido
                 }
-                
+
                 $juryAllocations = 0;
-                
+
                 // Buscar vigilantes elegíveis para este júri
                 while ($needed > 0 && $vigilanteIndex < count($vigilantes)) {
                     $vigilante = $vigilantes[$vigilanteIndex];
-                    
+
                     // Verificar conflito de horário
-                    if ($this->hasTimeConflict(
-                        (int) $vigilante['id'],
-                        $jury['exam_date'],
-                        $jury['start_time'],
-                        $jury['end_time'],
-                        $allocations
-                    )) {
+                    if (
+                        $this->hasTimeConflict(
+                            (int) $vigilante['id'],
+                            $jury['exam_date'],
+                            $jury['start_time'],
+                            $jury['end_time'],
+                            $allocations
+                        )
+                    ) {
                         $vigilanteIndex++;
                         continue;
                     }
-                    
+
                     // Alocar!
                     $allocations[] = [
                         'jury_id' => $jury['id'],
@@ -463,30 +465,30 @@ class AllocationService
                         'start_time' => $jury['start_time'],
                         'end_time' => $jury['end_time']
                     ];
-                    
+
                     $juryAllocations++;
                     $totalAllocated++;
                     $needed--;
                     $vigilanteIndex++;
                 }
-                
+
                 if ($juryAllocations > 0) {
                     $juriesProcessed++;
                 }
-                
+
                 // Reset index para próximo júri (horário diferente)
                 $vigilanteIndex = 0;
             }
-            
+
             // Inserir todas as alocações em batch (muito mais rápido)
             if (!empty($allocations)) {
                 $this->batchInsertAllocations($allocations, $allocatedBy);
             }
-            
+
             $this->db->commit();
-            
+
             $duration = round(microtime(true) - $startTime, 2);
-            
+
             return [
                 'success' => true,
                 'message' => "✅ Auto-alocação completa: {$totalAllocated} alocações em {$juriesProcessed} júris ({$duration}s)",
@@ -494,13 +496,13 @@ class AllocationService
                 'total_allocated' => $totalAllocated,
                 'duration' => $duration
             ];
-            
+
         } catch (\Exception $e) {
             $this->db->rollBack();
             return ['success' => false, 'message' => 'Erro na auto-alocação: ' . $e->getMessage()];
         }
     }
-    
+
     /**
      * Verifica conflito de horário considerando alocações pendentes
      */
@@ -520,24 +522,26 @@ class AllocationService
             'end_time' => $endTime,
             'start_time' => $startTime
         ]);
-        
+
         if ((int) $stmt->fetchColumn() > 0) {
             return true;
         }
-        
+
         // Verificar alocações pendentes (nesta transação)
         foreach ($pendingAllocations as $alloc) {
-            if ($alloc['vigilante_id'] == $vigilanteId && 
+            if (
+                $alloc['vigilante_id'] == $vigilanteId &&
                 $alloc['exam_date'] == $date &&
-                $alloc['start_time'] < $endTime && 
-                $startTime < $alloc['end_time']) {
+                $alloc['start_time'] < $endTime &&
+                $startTime < $alloc['end_time']
+            ) {
                 return true;
             }
         }
-        
+
         return false;
     }
-    
+
     /**
      * Busca vigilantes disponíveis para uma data específica
      */
@@ -557,18 +561,19 @@ class AllocationService
         $stmt->execute();
         return $stmt->fetchAll();
     }
-    
+
     /**
      * Insere múltiplas alocações em batch (INSERT múltiplo)
      */
     private function batchInsertAllocations(array $allocations, int $assignedBy): void
     {
-        if (empty($allocations)) return;
-        
+        if (empty($allocations))
+            return;
+
         $now = now();
         $values = [];
         $params = [];
-        
+
         foreach ($allocations as $i => $alloc) {
             $values[] = "(:jury_{$i}, :vigilante_{$i}, :by_{$i}, :at_{$i})";
             $params["jury_{$i}"] = $alloc['jury_id'];
@@ -576,18 +581,18 @@ class AllocationService
             $params["by_{$i}"] = $assignedBy;
             $params["at_{$i}"] = $now;
         }
-        
+
         $sql = "INSERT INTO jury_vigilantes (jury_id, vigilante_id, assigned_by, created_at) VALUES " . implode(', ', $values);
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
-        
+
         // Log em batch
         ActivityLogger::log('jury_vigilantes', 0, 'auto_allocate_batch', [
             'total' => count($allocations),
             'assigned_by' => $assignedBy
         ]);
     }
-    
+
     /**
      * Obtém carga de trabalho de um vigilante/supervisor
      */
@@ -597,14 +602,14 @@ class AllocationService
         $stmt = $this->db->prepare("SELECT * FROM vw_vigilante_workload WHERE user_id = :id");
         $stmt->execute(['id' => $userId]);
         $workload = $stmt->fetch();
-        
+
         return $workload ?: [
             'vigilance_count' => 0,
             'supervision_count' => 0,
             'workload_score' => 0
         ];
     }
-    
+
     /**
      * Obtém carga média de todos os vigilantes disponíveis
      */
@@ -616,7 +621,7 @@ class AllocationService
         ");
         return (float) $stmt->fetchColumn();
     }
-    
+
     /**
      * Obtém estatísticas gerais de alocação
      */
@@ -625,7 +630,7 @@ class AllocationService
         // SELECT * seguro: vw_allocation_stats é uma VIEW com campos específicos
         $stmt = $this->db->query("SELECT * FROM vw_allocation_stats");
         $stats = $stmt->fetch();
-        
+
         if (!$stats) {
             return [
                 'total_juries' => 0,
@@ -639,10 +644,10 @@ class AllocationService
                 'vigilantes_without_allocation' => 0
             ];
         }
-        
+
         return $stats;
     }
-    
+
     /**
      * Obtém slots e ocupação dos júris
      */
@@ -654,12 +659,12 @@ class AllocationService
             $stmt->execute(['id' => $juryId]);
             return $stmt->fetch() ?: [];
         }
-        
+
         // SELECT * seguro: vw_jury_slots é uma VIEW com campos específicos
         $stmt = $this->db->query("SELECT * FROM vw_jury_slots ORDER BY exam_date, start_time, subject, room");
         return $stmt->fetchAll();
     }
-    
+
     /**
      * Obtém vigilantes elegíveis para um júri (sem conflitos)
      */
@@ -674,7 +679,7 @@ class AllocationService
         $stmt->execute(['jury' => $juryId]);
         return $stmt->fetchAll();
     }
-    
+
     /**
      * Obtém supervisores elegíveis para um júri (sem conflitos)
      * Prioriza vigilantes marcados como supervisor_eligible
@@ -689,5 +694,97 @@ class AllocationService
         ");
         $stmt->execute(['jury' => $juryId]);
         return $stmt->fetchAll();
+    }
+    /**
+     * Calcula o número mínimo de vigilantes com base no número de candidatos
+     * Regra: 1 vigilante a cada 30 candidatos (arredondado para cima)
+     */
+    public function calculateMinVigilantes(int $candidates): int
+    {
+        if ($candidates <= 0)
+            return 0;
+
+        $config = require __DIR__ . '/../Config/supervisor_settings.php';
+        $perVigilante = $config['candidates_per_vigilante'] ?? 30;
+
+        return (int) ceil($candidates / $perVigilante);
+    }
+
+    /**
+     * Obtém o status de alocação de vigilantes para um júri
+     * Retorna se está completo, quantos faltam, e o mínimo necessário
+     */
+    public function getVigilanteAllocationStatus(int $juryId): array
+    {
+        $jury = (new Jury())->find($juryId);
+        if (!$jury) {
+            return ['status' => 'error', 'message' => 'Júri não encontrado'];
+        }
+
+        $candidates = (int) ($jury['candidates_quota'] ?? 0);
+        $minVigilantes = $this->calculateMinVigilantes($candidates);
+
+        // Se configurado min_vigilantes_per_jury, respeitar
+        $config = require __DIR__ . '/../Config/supervisor_settings.php';
+        $absoluteMin = $config['min_vigilantes_per_jury'] ?? 1;
+        $minVigilantes = max($minVigilantes, $absoluteMin);
+
+        // Contar vigilantes atuais
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM jury_vigilantes WHERE jury_id = :jury");
+        $stmt->execute(['jury' => $juryId]);
+        $currentCount = (int) $stmt->fetchColumn();
+
+        $missing = max(0, $minVigilantes - $currentCount);
+
+        $status = 'success'; // Verde
+        if ($missing > 0) {
+            $status = ($currentCount == 0) ? 'danger' : 'warning';
+        }
+
+        return [
+            'jury_id' => $juryId,
+            'candidates' => $candidates,
+            'min_vigilantes' => $minVigilantes,
+            'current_count' => $currentCount,
+            'missing' => $missing,
+            'status' => $status, // success, warning, danger
+            'is_complete' => $missing === 0
+        ];
+    }
+
+    /**
+     * Auto-distribui vigilantes para uma lista de júris
+     * Wrapper para autoAllocateDiscipline que garante atualização das capacidades antes
+     */
+    public function autoDistributeVigilantes(array $juryIds, int $allocatedBy): array
+    {
+        $results = [
+            'success' => true,
+            'processed' => 0,
+            'allocated' => 0,
+            'errors' => []
+        ];
+
+        foreach ($juryIds as $juryId) {
+            // 1. Atualizar capacidade do júri baseada nos candidatos
+            $status = $this->getVigilanteAllocationStatus($juryId);
+            $minVigilantes = $status['min_vigilantes'];
+
+            // Atualizar capacity no banco se for menor que o mínimo necessário
+            $stmt = $this->db->prepare("UPDATE juries SET vigilantes_capacity = :cap WHERE id = :id AND vigilantes_capacity < :cap_check");
+            $stmt->execute(['cap' => $minVigilantes, 'id' => $juryId, 'cap_check' => $minVigilantes]);
+
+            // 2. Chamar auto-alocação existente para este júri
+            $allocationResult = $this->autoAllocateJury($juryId, $allocatedBy);
+
+            if ($allocationResult['success']) {
+                $results['processed']++;
+                $results['allocated'] += ($allocationResult['allocated'] ?? 0);
+            } else {
+                $results['errors'][] = "Júri $juryId: " . $allocationResult['message'];
+            }
+        }
+
+        return $results;
     }
 }

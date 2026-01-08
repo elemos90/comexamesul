@@ -53,9 +53,27 @@ if (!function_exists('view_path')) {
     }
 }
 
+if (!function_exists('url')) {
+    function url(string $path = ''): string
+    {
+        $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+        $basePath = str_replace('\\', '/', dirname($scriptName));
+
+        if ($basePath === '/' || $basePath === '.') {
+            $basePath = '';
+        }
+
+        return $basePath . '/' . ltrim($path, '/');
+    }
+}
+
 if (!function_exists('redirect')) {
     function redirect(string $url): void
     {
+        if (!preg_match('~^https?://~', $url)) {
+            $url = url($url);
+        }
+
         header('Location: ' . $url);
         exit;
     }

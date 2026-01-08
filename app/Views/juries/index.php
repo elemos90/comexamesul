@@ -16,7 +16,7 @@ $isVigilante = $user['role'] === 'vigilante';
         </div>
         <div class="flex gap-2">
             <?php if ($canManage): ?>
-            <a href="/juries/planning" class="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded hover:bg-primary-500 flex items-center gap-2">
+            <a href="<?= url('/juries/planning') ?>" class="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded hover:bg-primary-500 flex items-center gap-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
@@ -169,7 +169,7 @@ $isVigilante = $user['role'] === 'vigilante';
                                                 'candidates_quota' => $jury['candidates_quota'],
                                                 'notes' => $jury['notes'],
                                             ]) ?>' title="Edição completa">Completo</button>
-                                            <form method="POST" action="/juries/<?= $jury['id'] ?>/delete" onsubmit="return confirm('Eliminar este júri?');" class="inline">
+                                            <form method="POST" action="<?= url('/juries/' . $jury['id'] . '/delete') ?>" onsubmit="return confirm('Eliminar este júri?');" class="inline">
                                                 <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
                                                 <button type="submit" class="px-2 py-1.5 text-xs font-medium bg-red-100 text-red-600 rounded hover:bg-red-200">Eliminar</button>
                                             </form>
@@ -273,7 +273,7 @@ $isVigilante = $user['role'] === 'vigilante';
             <h2 class="text-lg font-semibold text-gray-800">Novo júri</h2>
             <button type="button" class="modal-close text-gray-500 hover:text-gray-700">&times;</button>
         </div>
-        <form method="POST" action="/juries" class="grid md:grid-cols-2 gap-4">
+        <form method="POST" action="<?= url('/juries') ?>" class="grid md:grid-cols-2 gap-4">
             <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
             <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700" for="jury_subject">Disciplina</label>
@@ -382,7 +382,7 @@ $isVigilante = $user['role'] === 'vigilante';
             <button type="button" class="modal-close text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
         </div>
         
-        <form method="POST" action="/juries/create-location-batch" id="form-create-location">
+        <form method="POST" action="<?= url('/juries/create-location-batch') ?>" id="form-create-location">
             <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
             
             <!-- Informações do Local -->
@@ -594,7 +594,7 @@ $isVigilante = $user['role'] === 'vigilante';
             <h2 class="text-lg font-semibold text-gray-800">Partilhar Lista por Email</h2>
             <button type="button" class="modal-close text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
         </div>
-        <form method="POST" action="/juries/share-email" class="space-y-4">
+        <form method="POST" action="<?= url('/juries/share-email') ?>" class="space-y-4">
             <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
             
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -652,8 +652,8 @@ $isVigilante = $user['role'] === 'vigilante';
 <!-- Script de drag-and-drop para a página de lista -->
 <?php if (!$isVigilante): ?>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-<script src="/js/jury-dnd.js"></script>
+<script src="<?= url('/js/jury-dnd.js') ?>"></script>
 <?php endif; ?>
 
 <!-- Script de modais -->
-<script src="/js/jury-modals.js"></script>
+<script src="<?= url('/js/jury-modals.js') ?>"></script>

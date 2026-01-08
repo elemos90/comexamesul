@@ -3,10 +3,17 @@
 # Desabilitar listagem de diretórios
 Options -Indexes
 
-# Redirecionar tudo para a pasta public/
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteRule ^(.*)$ public/$1 [L]
+    RewriteBase /comexamesul/
+    
+    # Permitir arquivos estáticos da pasta public
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+    
+    # Redirecionar tudo para index.php na raiz
+    RewriteRule ^(.*)$ index.php [L,QSA]
 </IfModule>
 
 # Bloquear acesso a arquivos sensíveis
@@ -14,5 +21,4 @@ Options -Indexes
     Require all denied
 </FilesMatch>
 
-# Bloquear acesso a pastas sensíveis
-RedirectMatch 403 ^/(app|storage|tests|scripts|vendor)(/.*)?$
+# Bloquear acesso direto a pastas sensíveis (usando RewriteRule dentro do módulo)

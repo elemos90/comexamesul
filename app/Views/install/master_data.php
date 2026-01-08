@@ -1,12 +1,18 @@
 <!DOCTYPE html>
 <html lang="pt">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Instalação - Dados Mestres</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
@@ -15,24 +21,28 @@
             align-items: center;
             justify-content: center;
         }
+
         .container {
             background: white;
             border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             max-width: 800px;
             width: 100%;
             padding: 40px;
         }
+
         h1 {
             color: #667eea;
             font-size: 32px;
             margin-bottom: 10px;
         }
+
         .subtitle {
             color: #666;
             margin-bottom: 30px;
             font-size: 16px;
         }
+
         .info-box {
             background: #f0f4ff;
             border-left: 4px solid #667eea;
@@ -40,18 +50,22 @@
             margin: 20px 0;
             border-radius: 8px;
         }
+
         .info-box h3 {
             color: #667eea;
             margin-bottom: 10px;
             font-size: 18px;
         }
+
         .info-box ul {
             margin-left: 20px;
         }
+
         .info-box li {
             margin: 8px 0;
             color: #333;
         }
+
         .warning-box {
             background: #fffbeb;
             border-left: 4px solid #f59e0b;
@@ -60,6 +74,7 @@
             border-radius: 8px;
             color: #92400e;
         }
+
         .btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -72,64 +87,78 @@
             width: 100%;
             transition: transform 0.2s;
         }
+
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
         }
+
         .btn:disabled {
             background: #ccc;
             cursor: not-allowed;
             transform: none;
         }
+
         .btn-secondary {
             background: #6b7280;
             margin-top: 10px;
         }
+
         .btn-secondary:hover {
             background: #4b5563;
         }
+
         .result {
             margin-top: 30px;
             padding: 20px;
             border-radius: 8px;
             display: none;
         }
+
         .result.success {
             background: #d1fae5;
             border: 2px solid #10b981;
             color: #065f46;
         }
+
         .result.error {
             background: #fee2e2;
             border: 2px solid #ef4444;
             color: #991b1b;
         }
+
         .result h3 {
             margin-bottom: 15px;
             font-size: 20px;
         }
+
         .result ul {
             margin-left: 20px;
         }
+
         .result li {
             margin: 8px 0;
         }
+
         .result pre {
-            background: rgba(0,0,0,0.05);
+            background: rgba(0, 0, 0, 0.05);
             padding: 10px;
             border-radius: 4px;
             overflow-x: auto;
             margin-top: 10px;
             font-size: 12px;
         }
+
         .loading {
             display: none;
             text-align: center;
             margin: 20px 0;
         }
+
         .loading.active {
             display: block;
         }
+
         .spinner {
             border: 4px solid #f3f3f3;
             border-top: 4px solid #667eea;
@@ -139,20 +168,29 @@
             animation: spin 1s linear infinite;
             margin: 0 auto 20px;
         }
+
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
+
         .links {
             margin-top: 30px;
             padding: 20px;
             background: #f9fafb;
             border-radius: 8px;
         }
+
         .links h4 {
             margin-bottom: 15px;
             color: #333;
         }
+
         .links a {
             display: inline-block;
             margin: 5px 10px 5px 0;
@@ -164,11 +202,13 @@
             font-size: 14px;
             transition: background 0.2s;
         }
+
         .links a:hover {
             background: #5568d3;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>🚀 Instalação: Dados Mestres</h1>
@@ -196,7 +236,8 @@
             <?= $installed ? '✅ Já Instalado' : '⚡ Executar Instalação' ?>
         </button>
 
-        <a href="/master-data/disciplines" class="btn btn-secondary" style="display: block; text-align: center; text-decoration: none;">
+        <a href="<?= url('/master-data/disciplines') ?>" class="btn btn-secondary"
+            style="display: block; text-align: center; text-decoration: none;">
             🏠 Voltar ao Sistema
         </a>
 
@@ -209,10 +250,10 @@
 
         <div id="links" class="links" style="display:none;">
             <h4>🎯 Próximos Passos:</h4>
-            <a href="/master-data/disciplines">📚 Ver Disciplinas</a>
-            <a href="/master-data/locations">📍 Ver Locais</a>
-            <a href="/master-data/rooms">🏛️ Ver Salas</a>
-            <a href="/juries/planning">📅 Criar Júris</a>
+            <a href="<?= url('/master-data/disciplines') ?>">📚 Ver Disciplinas</a>
+            <a href="<?= url('/master-data/locations') ?>">📍 Ver Locais</a>
+            <a href="<?= url('/master-data/rooms') ?>">🏛️ Ver Salas</a>
+            <a href="<?= url('/juries/planning') ?>">📅 Criar Júris</a>
         </div>
     </div>
 
@@ -228,7 +269,7 @@
             result.style.display = 'none';
 
             try {
-                const response = await fetch('/install/master-data/execute', {
+                const response = await fetch('<?= url('/install/master-data/execute') ?>', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -282,4 +323,5 @@
         }
     </script>
 </body>
+
 </html>

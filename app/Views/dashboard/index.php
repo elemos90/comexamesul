@@ -41,7 +41,7 @@ $helpPage = 'dashboard'; // Identificador para o sistema de ajuda
 
     <?php if ($isVigilante): ?>
         <div class="bg-blue-50 border border-blue-100 text-blue-800 text-sm rounded-lg px-4 py-3">
-            Actualize a sua <a href="/availability" class="underline font-medium">disponibilidade</a> sempre que necessitar. A comissao usa esta informacao para planear as vigias.
+            Actualize a sua <a href="url('/availability')" class="underline font-medium">disponibilidade</a> sempre que necessitar. A comissao usa esta informacao para planear as vigias.
         </div>
     <?php endif; ?>
 

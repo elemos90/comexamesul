@@ -10,7 +10,7 @@ class GuestMiddleware
     public function handle(Request $request, callable $next)
     {
         if (Auth::check()) {
-            header('Location: /dashboard');
+            redirect('/dashboard');
             exit;
         }
         return $next($request);

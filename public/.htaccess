@@ -4,7 +4,7 @@
     # Auto-detectar base path
     # Se acessar via localhost/ use /
     # Se acessar via localhost/comexamesul/public/ use /comexamesul/public/
-    RewriteBase /
+    RewriteBase /comexamesul/public/
     
     # Permitir acesso direto a arquivos existentes
     RewriteCond %{REQUEST_FILENAME} !-f

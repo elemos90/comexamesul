@@ -13,7 +13,7 @@ $breadcrumbs = [
             A comissao de exames utiliza esta informacao para alocar vigilantes nas vigias dos exames. Actualize sempre que houver mudancas na sua agenda.
         </p>
 
-        <form method="POST" action="/availability" class="space-y-5">
+        <form method="POST" action="<?= url('/availability') ?>" class="space-y-5">
             <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
             <div class="flex items-center gap-4">
                 <span class="text-sm font-medium text-gray-700">Estado actual:</span>

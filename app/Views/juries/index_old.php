@@ -86,7 +86,7 @@ $isVigilante = $user['role'] === 'vigilante';
                                     'candidates_quota' => $jury['candidates_quota'],
                                     'notes' => $jury['notes'],
                                 ]) ?>'>Editar</button>
-                                <form method="POST" action="/juries/<?= $jury['id'] ?>/delete" onsubmit="return confirm('Eliminar este júri?');">
+                                <form method="POST" action="<?= url('/juries/<?= $jury['id'] ?>/delete" onsubmit="return confirm('Eliminar este júri?');">
                                     <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
                                     <button type="submit" class="px-3 py-1.5 bg-red-100 text-red-600 rounded">Eliminar</button>
                                 </form>
@@ -162,7 +162,7 @@ $isVigilante = $user['role'] === 'vigilante';
             <h2 class="text-lg font-semibold text-gray-800">Novo júri</h2>
             <button type="button" class="modal-close text-gray-500 hover:text-gray-700">&times;</button>
         </div>
-        <form method="POST" action="/juries" class="grid md:grid-cols-2 gap-4">
+        <form method="POST" action="<?= url('/juries') ?>" class="grid md:grid-cols-2 gap-4">
             <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
             <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700" for="jury_subject">Disciplina</label>

@@ -1,0 +1,9 @@
+# Bloquear Acesso Web ao Diretorio Legacy
+# Estes sao scripts legados que nao devem ser acessiveis via web
+
+# Negar acesso a todos
+Order Deny,Allow
+Deny from all
+
+# Mensagem de erro
+ErrorDocument 403 "Acesso negado - Scripts legados nao acessiveis via web"

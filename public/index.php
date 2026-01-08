@@ -17,7 +17,7 @@ $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
 if (strpos($contentType, 'application/json') !== false) {
     $rawBody = file_get_contents('php://input');
     $jsonData = json_decode($rawBody, true);
-    
+
     if (json_last_error() === JSON_ERROR_NONE && is_array($jsonData)) {
         $body = $jsonData;
     }

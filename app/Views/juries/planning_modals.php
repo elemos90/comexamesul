@@ -6,7 +6,7 @@
             <h2 class="text-lg font-semibold text-gray-800">Novo júri</h2>
             <button type="button" class="modal-close text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
         </div>
-        <form method="POST" action="/juries" class="grid md:grid-cols-2 gap-4">
+        <form method="POST" action="<?= url('/juries') ?>" class="grid md:grid-cols-2 gap-4">
             <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
             <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700" for="jury_subject">Disciplina</label>
@@ -63,7 +63,7 @@
             <button type="button" class="modal-close text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
         </div>
         
-        <form method="POST" action="/juries/create-location-batch" id="form-create-location">
+        <form method="POST" action="<?= url('/juries/create-location-batch') ?>" id="form-create-location">
             <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
             
             <!-- Informações do Local -->

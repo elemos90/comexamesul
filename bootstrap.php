@@ -6,11 +6,18 @@ declare(strict_types=1);
 ini_set('display_errors', '0');
 ini_set('display_startup_errors', '0');
 ini_set('log_errors', '1');
-ini_set('error_log', 'C:\xampp\php\logs\php_error_log');
 error_reporting(E_ALL);
 
 define('BASE_PATH', __DIR__);
 define('APP_START', microtime(true));
+
+// Configuração portátil de logs
+$logDir = BASE_PATH . '/storage/logs';
+if (!is_dir($logDir)) {
+    @mkdir($logDir, 0755, true);
+}
+$logFile = $logDir . '/app.log';
+ini_set('error_log', $logFile);
 
 require_once BASE_PATH . '/app/Utils/Env.php';
 require_once BASE_PATH . '/app/Utils/helpers.php';
@@ -53,6 +60,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
         'cookie_httponly' => true,
         'cookie_secure' => filter_var(env('SESSION_SECURE', false), FILTER_VALIDATE_BOOL),
         'cookie_samesite' => 'Lax',
+        'cookie_path' => dirname($_SERVER['SCRIPT_NAME']),
     ]);
 }
 

@@ -3,7 +3,7 @@
  * Gerencia abertura/fechamento de modais e formulários
  */
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     initModals();
     initFormHandlers();
     console.log('✅ Sistema de modais inicializado');
@@ -15,35 +15,35 @@ document.addEventListener('DOMContentLoaded', function() {
 function initModals() {
     // Abrir modais via atributo data-modal-target
     document.querySelectorAll('[data-modal-target]').forEach(btn => {
-        btn.addEventListener('click', function(e) {
+        btn.addEventListener('click', function (e) {
             e.preventDefault();
             const modalId = this.getAttribute('data-modal-target');
             openModal(modalId);
         });
     });
-    
+
     // Fechar modais via botão .modal-close
     document.querySelectorAll('.modal-close').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function () {
             const modal = this.closest('.modal');
             if (modal) {
                 closeModal(modal.id);
             }
         });
     });
-    
+
     // Fechar modal ao clicar no backdrop
     document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
-        backdrop.addEventListener('click', function() {
+        backdrop.addEventListener('click', function () {
             const modal = this.closest('.modal');
             if (modal) {
                 closeModal(modal.id);
             }
         });
     });
-    
+
     // Fechar modal com tecla ESC
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
             const openModal = document.querySelector('.modal:not(.hidden)');
             if (openModal) {
@@ -74,7 +74,7 @@ function closeModal(modalId) {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
         document.body.style.overflow = '';
-        
+
         // Limpar formulário se houver
         const form = modal.querySelector('form');
         if (form && !form.hasAttribute('data-no-reset')) {
@@ -89,34 +89,34 @@ function closeModal(modalId) {
 function initFormHandlers() {
     // Handler de edição rápida (inline)
     document.querySelectorAll('.btn-edit-inline').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function () {
             const juryId = this.getAttribute('data-jury-id');
             openQuickEditModal(juryId);
         });
     });
-    
+
     // Handler de edição completa
     document.querySelectorAll('[data-action="open-edit-jury"]').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function () {
             const juryData = JSON.parse(this.getAttribute('data-jury'));
             openEditJuryModal(juryData);
         });
     });
-    
+
     // Handler de edição em lote de disciplina
     document.querySelectorAll('[data-action="edit-discipline-batch"]').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function () {
             const groupData = JSON.parse(this.getAttribute('data-group'));
             openBatchEditModal(groupData);
         });
     });
-    
+
     // Submit de formulário de edição rápida
     const quickEditForm = document.getElementById('form-quick-edit');
     if (quickEditForm) {
         quickEditForm.addEventListener('submit', handleQuickEdit);
     }
-    
+
     // Submit de formulário de edição em lote
     const batchEditForm = document.getElementById('form-batch-edit');
     if (batchEditForm) {
@@ -131,14 +131,14 @@ function openQuickEditModal(juryId) {
     // Buscar dados do júri via API (ou DOM)
     const juryCard = document.querySelector(`[data-jury="${juryId}"]`)?.closest('.border');
     if (!juryCard) return;
-    
+
     const room = juryCard.querySelector('.font-semibold')?.textContent?.replace('Sala ', '') || '';
     const quota = juryCard.querySelector('.text-xs')?.textContent?.match(/\d+/)?.[0] || '';
-    
+
     document.getElementById('quick_jury_id').value = juryId;
     document.getElementById('quick_room').value = room;
     document.getElementById('quick_quota').value = quota;
-    
+
     openModal('modal-quick-edit');
 }
 
@@ -153,12 +153,12 @@ function openEditJuryModal(juryData) {
     document.getElementById('edit_jury_location').value = juryData.location || '';
     document.getElementById('edit_jury_room').value = juryData.room || '';
     document.getElementById('edit_jury_quota').value = juryData.candidates_quota || '';
-    
+
     const form = document.querySelector('[data-form="edit-jury"]');
     if (form) {
-        form.action = `/juries/${juryData.id}/update`;
+        form.action = appUrl(`/juries/${juryData.id}/update`);
     }
-    
+
     openModal('modal-edit-jury');
 }
 
@@ -171,7 +171,7 @@ function openBatchEditModal(groupData) {
     document.getElementById('batch_start').value = groupData.start_time || '';
     document.getElementById('batch_end').value = groupData.end_time || '';
     document.getElementById('batch_location').value = groupData.location || '';
-    
+
     // Preencher salas
     const roomsList = document.getElementById('batch-rooms-list');
     if (roomsList && groupData.juries) {
@@ -195,12 +195,12 @@ function openBatchEditModal(groupData) {
             roomsList.appendChild(roomDiv);
         });
     }
-    
+
     const form = document.getElementById('form-batch-edit');
     if (form) {
-        form.action = '/juries/update-batch';
+        form.action = appUrl('/juries/update-batch');
     }
-    
+
     openModal('modal-batch-edit');
 }
 
@@ -209,12 +209,12 @@ function openBatchEditModal(groupData) {
  */
 async function handleQuickEdit(e) {
     e.preventDefault();
-    
+
     const formData = new FormData(e.target);
     const juryId = formData.get('jury_id');
-    
+
     try {
-        const response = await fetch(`/juries/${juryId}/update-quick`, {
+        const response = await fetch(appUrl(`/juries/${juryId}/update-quick`), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -226,9 +226,9 @@ async function handleQuickEdit(e) {
                 csrf: CSRF_TOKEN
             })
         });
-        
+
         const result = await response.json();
-        
+
         if (response.ok) {
             toastr.success(result.message || 'Júri atualizado');
             closeModal('modal-quick-edit');
@@ -247,10 +247,10 @@ async function handleQuickEdit(e) {
  */
 async function handleBatchEdit(e) {
     e.preventDefault();
-    
+
     const formData = new FormData(e.target);
     const data = {};
-    
+
     // Converter FormData para objeto
     for (let [key, value] of formData.entries()) {
         if (key.startsWith('juries[')) {
@@ -267,9 +267,9 @@ async function handleBatchEdit(e) {
             data[key] = value;
         }
     }
-    
+
     try {
-        const response = await fetch('/juries/update-batch', {
+        const response = await fetch(appUrl('/juries/update-batch'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -277,9 +277,9 @@ async function handleBatchEdit(e) {
             },
             body: JSON.stringify(data)
         });
-        
+
         const result = await response.json();
-        
+
         if (response.ok) {
             toastr.success(result.message || 'Disciplina atualizada');
             closeModal('modal-batch-edit');

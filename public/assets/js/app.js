@@ -1,7 +1,7 @@
 (function () {
     var csrfMeta = document.querySelector("meta[name='csrf-token']");
     var csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
-    
+
     // Flags para prevenir múltiplos event listeners
     var listenersInitialized = {
         vacancy: false,
@@ -68,15 +68,15 @@
     }
 
     function initModals() {
-        if (listenersInitialized.modals) { 
+        if (listenersInitialized.modals) {
             console.log('initModals já inicializado, pulando...');
-            return; 
+            return;
         }
         listenersInitialized.modals = true;
         console.log('Inicializando sistema de modais...');
-        
+
         // Usar delegação de eventos para botões de abertura de modais
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', function (event) {
             var button = event.target.closest('[data-modal-target]');
             if (button) {
                 event.preventDefault();
@@ -86,7 +86,7 @@
                 openModal(modalId);
             }
         });
-        
+
         // Botões de fechar modais
         document.body.addEventListener('click', function (event) {
             var closeBtn = event.target.closest('.modal-close');
@@ -97,7 +97,7 @@
                 closeModal(closeBtn.closest('.modal'));
             }
         });
-        
+
         // Fechar com ESC
         document.addEventListener('keydown', function (event) {
             if (event.key === 'Escape') {
@@ -105,7 +105,7 @@
                 document.querySelectorAll('.modal.open').forEach(closeModal);
             }
         });
-        
+
         console.log('Sistema de modais inicializado com sucesso!');
     }
 
@@ -139,19 +139,19 @@
     function initVacancyEditor() {
         var form = document.querySelector('form[data-form="edit-vacancy"]');
         if (!form || listenersInitialized.vacancy) { return; }
-        
+
         listenersInitialized.vacancy = true;
-        
+
         // Usar delegação de eventos no document
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             var button = e.target.closest('[data-action="open-edit-vacancy"]');
             if (!button) return;
-            
+
             e.preventDefault();
-            
+
             try {
                 var payload = JSON.parse(button.getAttribute('data-vacancy'));
-                form.setAttribute('action', '/vacancies/' + payload.id + '/update');
+                form.setAttribute('action', appUrl('/vacancies/' + payload.id + '/update'));
                 form.querySelector('#edit_vacancy_title').value = payload.title || '';
                 form.querySelector('#edit_vacancy_description').value = payload.description || '';
                 form.querySelector('#edit_vacancy_deadline').value = payload.deadline_at || '';
@@ -166,19 +166,19 @@
     function initJuryEditor() {
         var form = document.querySelector('form[data-form="edit-jury"]');
         if (!form || listenersInitialized.jury) { return; }
-        
+
         listenersInitialized.jury = true;
-        
+
         // Usar delegação de eventos no document
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             var button = e.target.closest('[data-action="open-edit-jury"]');
             if (!button) return;
-            
+
             e.preventDefault();
-            
+
             try {
                 var payload = JSON.parse(button.getAttribute('data-jury'));
-                form.setAttribute('action', '/juries/' + payload.id + '/update');
+                form.setAttribute('action', appUrl('/juries/' + payload.id + '/update'));
                 form.querySelector('#edit_jury_subject').value = payload.subject || '';
                 form.querySelector('#edit_jury_exam_date').value = payload.exam_date || '';
                 form.querySelector('#edit_jury_start').value = payload.start_time || '';
@@ -195,23 +195,23 @@
     }
 
     function initDragAndDrop() {
-        if (typeof Sortable === 'undefined') { 
+        if (typeof Sortable === 'undefined') {
             console.error('Sortable não está carregado!');
-            return; 
+            return;
         }
 
         console.log('Inicializando Drag and Drop...');
-        
+
         var draggableItems = document.querySelectorAll('.draggable-item');
         console.log('Itens arrastáveis encontrados:', draggableItems.length);
-        
+
         draggableItems.forEach(function (item) {
             item.classList.add('bg-white', 'border', 'border-gray-200', 'rounded', 'p-3', 'shadow-sm', 'focus:outline-none', 'focus:ring-2', 'focus:ring-primary-500', 'cursor-move', 'transition-all');
         });
 
         var dropzones = document.querySelectorAll('.dropzone');
         console.log('Zonas de drop encontradas:', dropzones.length);
-        
+
         dropzones.forEach(function (zone) {
             console.log('Inicializando dropzone:', zone.getAttribute('data-jury'));
             new Sortable(zone, {
@@ -226,9 +226,9 @@
                     var originJury = evt.from.getAttribute('data-jury');
                     var currentJury = zone.getAttribute('data-jury');
                     if (!assignUrl || !vigilanteId) { return; }
-                    
+
                     evt.item.classList.add('opacity-50', 'pointer-events-none');
-                    
+
                     sendRequest(assignUrl, { vigilante_id: vigilanteId }).then(function (success) {
                         evt.item.classList.remove('opacity-50', 'pointer-events-none');
                         if (!success) {
@@ -236,10 +236,10 @@
                             return;
                         }
                         evt.item.classList.add('bg-green-50', 'border-green-300');
-                        setTimeout(function() {
+                        setTimeout(function () {
                             evt.item.classList.remove('bg-green-50', 'border-green-300');
                         }, 1500);
-                        
+
                         if (originJury && originJury !== currentJury) {
                             var unassignUrl = evt.from.getAttribute('data-unassign-url');
                             if (unassignUrl) {
@@ -265,13 +265,13 @@
 
         var vigilantePool = document.getElementById('available-vigilantes');
         console.log('Pool de vigilantes:', vigilantePool ? 'Encontrado' : 'NÃO encontrado');
-        
+
         if (vigilantePool) {
             console.log('Inicializando pool de vigilantes...');
             new Sortable(vigilantePool, {
                 group: { name: 'vigilantes', pull: true, put: true },
                 animation: 150,
-                onStart: function() {
+                onStart: function () {
                     console.log('Começou a arrastar do pool');
                 }
             });
@@ -289,13 +289,13 @@
                     var url = zone.getAttribute('data-set-url');
                     var supervisorId = item.getAttribute('data-id');
                     if (!url || !supervisorId) { return; }
-                    
+
                     Array.from(zone.querySelectorAll('.draggable-item')).forEach(function (node, index) {
                         if (index > 0 && node !== item) { node.remove(); }
                     });
-                    
+
                     item.classList.add('opacity-50', 'pointer-events-none');
-                    
+
                     sendRequest(url, { supervisor_id: supervisorId }).then(function (success) {
                         item.classList.remove('opacity-50', 'pointer-events-none');
                         if (!success) {
@@ -360,13 +360,13 @@
     function initDisciplineRooms() {
         var btnAddDiscipline = document.getElementById('btn-add-discipline');
         var disciplinesContainer = document.getElementById('disciplines-container');
-        
+
         if (!btnAddDiscipline || !disciplinesContainer) { return; }
-        
+
         var disciplineIndex = 1;
-        
+
         // Adicionar nova disciplina
-        btnAddDiscipline.addEventListener('click', function() {
+        btnAddDiscipline.addEventListener('click', function () {
             var newDiscipline = document.createElement('div');
             newDiscipline.className = 'discipline-item border-2 border-primary-300 rounded-lg p-4 bg-primary-50 relative animate-fade-in';
             newDiscipline.innerHTML = `
@@ -421,14 +421,14 @@
                     </div>
                 </div>
             `;
-            
+
             disciplinesContainer.appendChild(newDiscipline);
             disciplineIndex++;
             updateDisciplineRemoveButtons();
         });
-        
+
         // Remover disciplina
-        disciplinesContainer.addEventListener('click', function(e) {
+        disciplinesContainer.addEventListener('click', function (e) {
             var removeDiscBtn = e.target.closest('.btn-remove-discipline');
             if (removeDiscBtn) {
                 var disciplineItem = removeDiscBtn.closest('.discipline-item');
@@ -436,14 +436,14 @@
                     disciplineItem.style.opacity = '0';
                     disciplineItem.style.transform = 'scale(0.95)';
                     disciplineItem.style.transition = 'all 0.2s';
-                    setTimeout(function() {
+                    setTimeout(function () {
                         disciplineItem.remove();
                         updateDisciplineRemoveButtons();
                         updateDisciplineNumbers();
                     }, 200);
                 }
             }
-            
+
             // Adicionar sala a disciplina específica
             var addRoomBtn = e.target.closest('.btn-add-room-to-discipline');
             if (addRoomBtn) {
@@ -452,7 +452,7 @@
                 if (roomsList) {
                     var currentRooms = roomsList.querySelectorAll('.room-row');
                     var roomIdx = currentRooms.length;
-                    
+
                     var newRoom = document.createElement('div');
                     newRoom.className = 'room-row flex gap-2 items-start';
                     newRoom.innerHTML = `
@@ -472,7 +472,7 @@
                     updateRoomRemoveButtons(roomsList);
                 }
             }
-            
+
             // Remover sala
             var removeRoomBtn = e.target.closest('.btn-remove-room');
             if (removeRoomBtn) {
@@ -481,7 +481,7 @@
                 if (roomRow) {
                     roomRow.style.opacity = '0';
                     roomRow.style.transition = 'opacity 0.2s';
-                    setTimeout(function() {
+                    setTimeout(function () {
                         roomRow.remove();
                         if (roomsList) {
                             updateRoomRemoveButtons(roomsList);
@@ -490,10 +490,10 @@
                 }
             }
         });
-        
+
         function updateDisciplineRemoveButtons() {
             var disciplines = disciplinesContainer.querySelectorAll('.discipline-item');
-            disciplines.forEach(function(disc) {
+            disciplines.forEach(function (disc) {
                 var removeBtn = disc.querySelector('.btn-remove-discipline');
                 if (removeBtn) {
                     if (disciplines.length === 1) {
@@ -504,20 +504,20 @@
                 }
             });
         }
-        
+
         function updateDisciplineNumbers() {
             var disciplines = disciplinesContainer.querySelectorAll('.discipline-item');
-            disciplines.forEach(function(disc, idx) {
+            disciplines.forEach(function (disc, idx) {
                 var header = disc.querySelector('h4');
                 if (header) {
                     header.textContent = 'Disciplina #' + (idx + 1);
                 }
             });
         }
-        
+
         function updateRoomRemoveButtons(roomsList) {
             var rooms = roomsList.querySelectorAll('.room-row');
-            rooms.forEach(function(room) {
+            rooms.forEach(function (room) {
                 var removeBtn = room.querySelector('.btn-remove-room');
                 if (removeBtn) {
                     if (rooms.length === 1) {
@@ -528,11 +528,11 @@
                 }
             });
         }
-        
+
         // Inicializar botões de remoção
         updateDisciplineRemoveButtons();
         var allRoomsLists = disciplinesContainer.querySelectorAll('.rooms-list');
-        allRoomsLists.forEach(function(list) {
+        allRoomsLists.forEach(function (list) {
             updateRoomRemoveButtons(list);
         });
     }
@@ -541,18 +541,18 @@
         // Template: Criar estrutura de disciplinas
         var btnAddTemplateDiscipline = document.getElementById('btn-add-template-discipline');
         var templateDisciplinesContainer = document.getElementById('template-disciplines-container');
-        
+
         if (!btnAddTemplateDiscipline || !templateDisciplinesContainer) { return; }
-        
+
         var templateDisciplineIndex = 0;
-        
+
         // Adicionar primeira disciplina automaticamente
         addTemplateDiscipline();
-        
-        btnAddTemplateDiscipline.addEventListener('click', function() {
+
+        btnAddTemplateDiscipline.addEventListener('click', function () {
             addTemplateDiscipline();
         });
-        
+
         function addTemplateDiscipline() {
             var newDiscipline = document.createElement('div');
             newDiscipline.className = 'discipline-item border-2 border-primary-300 rounded-lg p-4 bg-primary-50 relative';
@@ -608,14 +608,14 @@
                     </div>
                 </div>
             `;
-            
+
             templateDisciplinesContainer.appendChild(newDiscipline);
             templateDisciplineIndex++;
             updateTemplateDisciplineButtons();
         }
-        
+
         // Eventos delegados
-        templateDisciplinesContainer.addEventListener('click', function(e) {
+        templateDisciplinesContainer.addEventListener('click', function (e) {
             // Remover disciplina
             var removeDiscBtn = e.target.closest('.btn-remove-template-discipline');
             if (removeDiscBtn) {
@@ -626,7 +626,7 @@
                     updateTemplateDisciplineNumbers();
                 }
             }
-            
+
             // Adicionar sala
             var addRoomBtn = e.target.closest('.btn-add-template-room');
             if (addRoomBtn) {
@@ -635,7 +635,7 @@
                 if (roomsList) {
                     var currentRooms = roomsList.querySelectorAll('.room-row');
                     var roomIdx = currentRooms.length;
-                    
+
                     var newRoom = document.createElement('div');
                     newRoom.className = 'room-row flex gap-2 items-start';
                     newRoom.innerHTML = `
@@ -655,7 +655,7 @@
                     updateTemplateRoomButtons(roomsList);
                 }
             }
-            
+
             // Remover sala
             var removeRoomBtn = e.target.closest('.btn-remove-template-room');
             if (removeRoomBtn) {
@@ -669,10 +669,10 @@
                 }
             }
         });
-        
+
         function updateTemplateDisciplineButtons() {
             var disciplines = templateDisciplinesContainer.querySelectorAll('.discipline-item');
-            disciplines.forEach(function(disc) {
+            disciplines.forEach(function (disc) {
                 var removeBtn = disc.querySelector('.btn-remove-template-discipline');
                 if (removeBtn) {
                     if (disciplines.length === 1) {
@@ -683,20 +683,20 @@
                 }
             });
         }
-        
+
         function updateTemplateDisciplineNumbers() {
             var disciplines = templateDisciplinesContainer.querySelectorAll('.discipline-item');
-            disciplines.forEach(function(disc, idx) {
+            disciplines.forEach(function (disc, idx) {
                 var header = disc.querySelector('h4');
                 if (header) {
                     header.textContent = 'Disciplina #' + (idx + 1);
                 }
             });
         }
-        
+
         function updateTemplateRoomButtons(roomsList) {
             var rooms = roomsList.querySelectorAll('.room-row');
-            rooms.forEach(function(room) {
+            rooms.forEach(function (room) {
                 var removeBtn = room.querySelector('.btn-remove-template-room');
                 if (removeBtn) {
                     if (rooms.length === 1) {
@@ -707,37 +707,37 @@
                 }
             });
         }
-        
+
         // Carregar template - usar delegação de eventos
         if (!listenersInitialized.template) {
             listenersInitialized.template = true;
-            
-            document.addEventListener('click', function(e) {
+
+            document.addEventListener('click', function (e) {
                 var btn = e.target.closest('.btn-load-template');
                 if (!btn) return;
-                
+
                 e.preventDefault();
-                
+
                 var templateId = btn.getAttribute('data-template-id');
                 if (!templateId) return;
-                
-                fetch('/locations/templates/' + templateId + '/load', {
+
+                fetch(appUrl('/locations/templates/' + templateId + '/load'), {
                     method: 'GET',
-                    headers: {'Content-Type': 'application/json'}
+                    headers: { 'Content-Type': 'application/json' }
                 })
-                .then(function(response) { return response.json(); })
-                .then(function(data) {
-                    if (data.template) {
-                        loadTemplateIntoForm(data.template);
-                        showToast('success', 'Template carregado! Preencha a data e crie os júris.');
-                    }
-                })
-                .catch(function() {
-                    showToast('error', 'Erro ao carregar template.');
-                });
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) {
+                        if (data.template) {
+                            loadTemplateIntoForm(data.template);
+                            showToast('success', 'Template carregado! Preencha a data e crie os júris.');
+                        }
+                    })
+                    .catch(function () {
+                        showToast('error', 'Erro ao carregar template.');
+                    });
             });
         }
-        
+
         function loadTemplateIntoForm(template) {
             // Redirecionar para página de júris e preencher o modal
             window.location.href = '/juries?load_template=' + template.id;
@@ -747,98 +747,98 @@
     function initQuickEdit() {
         var modal = document.getElementById('modal-quick-edit');
         var form = document.getElementById('form-quick-edit');
-        
+
         if (!modal || !form || listenersInitialized.quick) { return; }
-        
+
         listenersInitialized.quick = true;
-        
+
         // Usar delegação de eventos no document para capturar cliques em botões dinâmicos
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             var btn = e.target.closest('.btn-edit-inline');
             if (!btn) return;
-            
+
             e.preventDefault();
-            
+
             var juryId = btn.getAttribute('data-jury-id');
             var roomEl = btn.closest('.border').querySelector('.text-sm.font-semibold');
             var quotaEl = btn.closest('.border').querySelector('.text-xs.text-gray-500');
-            
+
             // Extrair valores atuais
             var roomText = roomEl ? roomEl.textContent.replace('Sala ', '').trim() : '';
             var quotaText = quotaEl ? quotaEl.textContent.replace(' candidatos', '').trim() : '';
-            
+
             // Preencher formulário
             document.getElementById('quick_jury_id').value = juryId;
             document.getElementById('quick_room').value = roomText;
             document.getElementById('quick_quota').value = quotaText;
-            
+
             // Abrir modal
             openModal('modal-quick-edit');
         });
-        
+
         // Submit do formulário - remover listener anterior se existir
         var newForm = form.cloneNode(true);
         form.parentNode.replaceChild(newForm, form);
         form = newForm;
-        
-        form.addEventListener('submit', function(e) {
+
+        form.addEventListener('submit', function (e) {
             e.preventDefault();
-            
+
             var juryId = document.getElementById('quick_jury_id').value;
             var formData = new FormData(form);
-            
-            fetch('/juries/' + juryId + '/update-quick', {
+
+            fetch(appUrl('/juries/' + juryId + '/update-quick'), {
                 method: 'POST',
                 headers: {
                     'X-CSRF-Token': csrfToken
                 },
                 body: formData
             })
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                if (data.success) {
-                    showToast('success', 'Sala atualizada com sucesso!');
-                    closeModal('modal-quick-edit');
-                    setTimeout(function() { window.location.reload(); }, 1000);
-                } else {
-                    showToast('error', data.message || 'Erro ao atualizar sala.');
-                }
-            })
-            .catch(function() {
-                showToast('error', 'Erro ao processar pedido.');
-            });
+                .then(function (response) { return response.json(); })
+                .then(function (data) {
+                    if (data.success) {
+                        showToast('success', 'Sala atualizada com sucesso!');
+                        closeModal('modal-quick-edit');
+                        setTimeout(function () { window.location.reload(); }, 1000);
+                    } else {
+                        showToast('error', data.message || 'Erro ao atualizar sala.');
+                    }
+                })
+                .catch(function () {
+                    showToast('error', 'Erro ao processar pedido.');
+                });
         });
     }
 
     function initBatchEdit() {
         var modal = document.getElementById('modal-batch-edit');
         var form = document.getElementById('form-batch-edit');
-        
+
         if (!modal || !form || listenersInitialized.batch) { return; }
-        
+
         listenersInitialized.batch = true;
-        
+
         // Usar delegação de eventos no document
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             var btn = e.target.closest('[data-action="edit-discipline-batch"]');
             if (!btn) return;
-            
+
             e.preventDefault();
-            
+
             var groupData = JSON.parse(btn.getAttribute('data-group'));
-            
+
             // Preencher informações da disciplina
             document.getElementById('batch_subject').value = groupData.subject;
             document.getElementById('batch_date').value = groupData.exam_date;
             document.getElementById('batch_start').value = groupData.start_time;
             document.getElementById('batch_end').value = groupData.end_time;
             document.getElementById('batch_location').value = groupData.location;
-            
+
             // Criar lista de salas
             var roomsList = document.getElementById('batch-rooms-list');
             roomsList.innerHTML = '';
-            
-            groupData.juries.forEach(function(jury, index) {
+
+            groupData.juries.forEach(function (jury, index) {
                 var roomDiv = document.createElement('div');
                 roomDiv.className = 'grid grid-cols-3 gap-3 items-start bg-white border border-gray-200 rounded p-3';
                 roomDiv.innerHTML = `
@@ -857,41 +857,41 @@
                 `;
                 roomsList.appendChild(roomDiv);
             });
-            
+
             // Abrir modal
             openModal('modal-batch-edit');
         });
-        
+
         // Submit do formulário - remover listener anterior se existir
         var newForm = form.cloneNode(true);
         form.parentNode.replaceChild(newForm, form);
         form = newForm;
-        
-        form.addEventListener('submit', function(e) {
+
+        form.addEventListener('submit', function (e) {
             e.preventDefault();
-            
+
             var formData = new FormData(form);
-            
-            fetch('/juries/update-batch', {
+
+            fetch(appUrl('/juries/update-batch'), {
                 method: 'POST',
                 headers: {
                     'X-CSRF-Token': csrfToken
                 },
                 body: formData
             })
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                if (data.success) {
-                    showToast('success', 'Disciplina atualizada com sucesso!');
-                    closeModal('modal-batch-edit');
-                    setTimeout(function() { window.location.reload(); }, 1000);
-                } else {
-                    showToast('error', data.message || 'Erro ao atualizar disciplina.');
-                }
-            })
-            .catch(function() {
-                showToast('error', 'Erro ao processar pedido.');
-            });
+                .then(function (response) { return response.json(); })
+                .then(function (data) {
+                    if (data.success) {
+                        showToast('success', 'Disciplina atualizada com sucesso!');
+                        closeModal('modal-batch-edit');
+                        setTimeout(function () { window.location.reload(); }, 1000);
+                    } else {
+                        showToast('error', data.message || 'Erro ao atualizar disciplina.');
+                    }
+                })
+                .catch(function () {
+                    showToast('error', 'Erro ao processar pedido.');
+                });
         });
     }
 })();

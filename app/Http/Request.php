@@ -27,6 +27,15 @@ class Request
     {
         $uri = $this->server['REQUEST_URI'] ?? '/';
         $uri = strtok($uri, '?');
+
+        // Detectar e remover base path se estiver em subdiretório
+        $scriptName = $this->server['SCRIPT_NAME'] ?? '';
+        $basePath = str_replace('\\', '/', dirname($scriptName));
+
+        if ($basePath !== '/' && $basePath !== '.' && strpos($uri, $basePath) === 0) {
+            $uri = substr($uri, strlen($basePath));
+        }
+
         return '/' . ltrim($uri, '/');
     }
 

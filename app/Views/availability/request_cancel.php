@@ -1,7 +1,7 @@
 <?php
 $title = 'Solicitar Cancelamento';
 $breadcrumbs = [
-    ['label' => 'Disponibilidade', 'url' => '/availability'],
+    ['label' => 'Disponibilidade', 'url' => url('/availability')],
     ['label' => 'Solicitar Cancelamento']
 ];
 ?>
@@ -68,7 +68,7 @@ $breadcrumbs = [
             </div>
 
             <!-- Formulário -->
-            <form method="POST" action="/availability/<?= $application['id'] ?>/cancel/submit" enctype="multipart/form-data" class="space-y-6">
+            <form method="POST" action="<?= url('/availability/<?= $application['id'] ?>/cancel/submit" enctype="multipart/form-data" class="space-y-6">
                 <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
                 
                 <div>
@@ -129,7 +129,7 @@ $breadcrumbs = [
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t">
-                    <a href="/availability" class="px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors">
+                    <a href="url('/availability')" class="px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors">
                         Voltar
                     </a>
                     <button type="submit" class="px-5 py-2.5 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors shadow-sm">

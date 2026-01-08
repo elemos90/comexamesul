@@ -1,58 +1,181 @@
 <?php
 $title = 'Calendário de Vigilância - Extensão da Beira';
 $breadcrumbs = [
-    ['label' => 'Júris', 'url' => '/juries'],
+    ['label' => 'Júris', 'url' => url('/juries')],
     ['label' => 'Gestão de Alocações']
 ];
 $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
 ?>
 
 <style>
-    .allocation-table { border-collapse: collapse; width: 100%; font-size: 0.875rem; }
-    .allocation-table th { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; font-weight: 600; padding: 12px 8px; text-align: center; border: 1px solid #1e40af; font-size: 0.813rem; text-transform: uppercase; }
-    .allocation-table td { border: 1px solid #d1d5db; padding: 8px; vertical-align: middle; }
-    .allocation-table tbody tr:hover:not(.subtotal-row):not(.total-row) { background-color: #f9fafb; }
-    .group-header { background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%) !important; font-weight: 700; text-align: left; padding: 8px 12px !important; color: #374151; font-size: 0.875rem; letter-spacing: 0.025em; }
-    .subtotal-row { background-color: #fef3c7 !important; font-weight: 600; }
-    .subtotal-row td { border-top: 2px solid #f59e0b !important; border-bottom: 2px solid #f59e0b !important; }
-    .total-row { background-color: #fed7aa !important; font-weight: 700; font-size: 0.938rem; }
-    .total-row td { border-top: 3px solid #ea580c !important; border-bottom: 3px solid #ea580c !important; }
-    .contact-cell { background-color: #fef3c7; font-weight: 600; }
-    .btn-allocate { padding: 4px 10px; font-size: 0.75rem; border-radius: 4px; cursor: pointer; border: none; transition: all 0.2s; font-weight: 500; }
-    .btn-auto { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; }
-    .btn-auto:hover { transform: scale(1.05); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.4); }
-    .btn-manual { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; }
-    .btn-manual:hover { transform: scale(1.05); box-shadow: 0 4px 6px rgba(59, 130, 246, 0.4); }
-    .btn-remove { background: #ef4444; color: white; padding: 2px 6px; font-size: 0.688rem; border-radius: 3px; cursor: pointer; border: none; transition: all 0.2s; }
-    .btn-remove:hover { background: #dc2626; transform: scale(1.1); }
-    .empty-slot { color: #9ca3af; font-style: italic; text-align: center; padding: 4px 0; }
-    
-    /* Botões de ações (editar/eliminar) */
-    button[onclick*="editJuryInVacancy"], button[onclick*="deleteJury"] {
+    .allocation-table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 0.875rem;
+    }
+
+    .allocation-table th {
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        color: white;
+        font-weight: 600;
+        padding: 12px 8px;
+        text-align: center;
+        border: 1px solid #1e40af;
+        font-size: 0.813rem;
+        text-transform: uppercase;
+    }
+
+    .allocation-table td {
+        border: 1px solid #d1d5db;
+        padding: 8px;
+        vertical-align: middle;
+    }
+
+    .allocation-table tbody tr:hover:not(.subtotal-row):not(.total-row) {
+        background-color: #f9fafb;
+    }
+
+    .group-header {
+        background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%) !important;
+        font-weight: 700;
+        text-align: left;
+        padding: 8px 12px !important;
+        color: #374151;
+        font-size: 0.875rem;
+        letter-spacing: 0.025em;
+    }
+
+    .subtotal-row {
+        background-color: #fef3c7 !important;
+        font-weight: 600;
+    }
+
+    .subtotal-row td {
+        border-top: 2px solid #f59e0b !important;
+        border-bottom: 2px solid #f59e0b !important;
+    }
+
+    .total-row {
+        background-color: #fed7aa !important;
+        font-weight: 700;
+        font-size: 0.938rem;
+    }
+
+    .total-row td {
+        border-top: 3px solid #ea580c !important;
+        border-bottom: 3px solid #ea580c !important;
+    }
+
+    .contact-cell {
+        background-color: #fef3c7;
+        font-weight: 600;
+    }
+
+    .btn-allocate {
+        padding: 4px 10px;
+        font-size: 0.75rem;
+        border-radius: 4px;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+        font-weight: 500;
+    }
+
+    .btn-auto {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+    .btn-auto:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 6px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-manual {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+    }
+
+    .btn-manual:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-remove {
+        background: #ef4444;
+        color: white;
+        padding: 2px 6px;
+        font-size: 0.688rem;
+        border-radius: 3px;
+        cursor: pointer;
+        border: none;
         transition: all 0.2s;
     }
+
+    .btn-remove:hover {
+        background: #dc2626;
+        transform: scale(1.1);
+    }
+
+    .empty-slot {
+        color: #9ca3af;
+        font-style: italic;
+        text-align: center;
+        padding: 4px 0;
+    }
+
+    /* Botões de ações (editar/eliminar) */
+    button[onclick*="editJuryInVacancy"],
+    button[onclick*="deleteJury"] {
+        transition: all 0.2s;
+    }
+
     button[onclick*="editJuryInVacancy"]:hover {
         transform: scale(1.1);
         box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
     }
+
     button[onclick*="deleteJury"]:hover {
         transform: scale(1.1);
         box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
     }
-    
+
     /* Impressão */
     @media print {
-        .btn-allocate, .btn-remove, button[onclick*="editJuryInVacancy"], button[onclick*="deleteJury"] { display: none !important; }
-        .allocation-table th:last-child, .allocation-table td:last-child { display: none !important; }
-        .allocation-table { font-size: 0.75rem; }
-        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+        .btn-allocate,
+        .btn-remove,
+        button[onclick*="editJuryInVacancy"],
+        button[onclick*="deleteJury"] {
+            display: none !important;
+        }
+
+        .allocation-table th:last-child,
+        .allocation-table td:last-child {
+            display: none !important;
+        }
+
+        .allocation-table {
+            font-size: 0.75rem;
+        }
+
+        body {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
     }
-    
+
     /* Animação de spinner */
     @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
     }
+
     .animate-spin {
         animation: spin 1s linear infinite;
     }
@@ -63,13 +186,13 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
         <?php include view_path('partials/breadcrumbs.php'); ?>
         <?php include view_path('partials/help_button.php'); ?>
     </div>
-    
+
     <div class="max-w-full mx-auto px-4">
         <!-- Cabeçalho -->
         <div class="bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-lg shadow-lg p-6 mb-6">
             <div class="flex justify-between items-start">
                 <div>
-                    <?php 
+                    <?php
                     // Título dinâmico baseado na vaga selecionada
                     if (!empty($vacancy)) {
                         $pageTitle = '📅 ' . htmlspecialchars($vacancy['title']);
@@ -78,19 +201,23 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
                     }
                     ?>
                     <h1 class="text-3xl font-bold mb-2"><?= $pageTitle ?></h1>
-                    <p class="text-blue-100 text-sm">Extensão da Beira - Comissão de Coordenação dos Exames de Admissão</p>
+                    <p class="text-blue-100 text-sm">Extensão da Beira - Comissão de Coordenação dos Exames de Admissão
+                    </p>
                 </div>
                 <div class="flex gap-2">
                     <?php if (!empty($vacancyId)): ?>
-                    <a href="/juries/vacancy/<?= $vacancyId ?>/manage" class="px-4 py-2 bg-white text-blue-900 text-sm font-medium rounded hover:bg-blue-50 inline-flex items-center gap-2">
-                        ➕ Criar Júris para Esta Vaga
-                    </a>
+                        <a href="<?= url('/juries/vacancy/' . $vacancyId . '/manage') ?>"
+                            class="px-4 py-2 bg-white text-blue-900 text-sm font-medium rounded hover:bg-blue-50 inline-flex items-center gap-2">
+                            ➕ Criar Júris para Esta Vaga
+                        </a>
                     <?php else: ?>
-                    <a href="/juries/planning-by-vacancy" class="px-4 py-2 bg-white text-blue-900 text-sm font-medium rounded hover:bg-blue-50 inline-flex items-center gap-2">
-                        ➕ Criar Júris
-                    </a>
+                        <a href="<?= url('/juries/planning-by-vacancy') ?>"
+                            class="px-4 py-2 bg-white text-blue-900 text-sm font-medium rounded hover:bg-blue-50 inline-flex items-center gap-2">
+                            ➕ Criar Júris
+                        </a>
                     <?php endif; ?>
-                    <button type="button" onclick="window.print()" class="px-4 py-2 bg-white text-blue-900 text-sm font-medium rounded hover:bg-blue-50">
+                    <button type="button" onclick="window.print()"
+                        class="px-4 py-2 bg-white text-blue-900 text-sm font-medium rounded hover:bg-blue-50">
                         🖨️ Imprimir
                     </button>
                 </div>
@@ -99,94 +226,107 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
 
         <!-- NOVO: Banner de Filtro por Vaga com Dropdown -->
         <?php if (!empty($vacancy)): ?>
-        <div class="bg-blue-50 border-l-4 border-blue-600 p-4 mb-6 rounded-lg shadow-sm">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <svg class="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
-                    </svg>
-                    <div>
-                        <p class="text-sm font-semibold text-blue-900">📋 Mostrando júris de:</p>
-                        <p class="text-sm text-blue-800 font-medium"><?= htmlspecialchars($vacancy['title']) ?></p>
+            <div class="bg-blue-50 border-l-4 border-blue-600 p-4 mb-6 rounded-lg shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                        </svg>
+                        <div>
+                            <p class="text-sm font-semibold text-blue-900">📋 Mostrando júris de:</p>
+                            <p class="text-sm text-blue-800 font-medium"><?= htmlspecialchars($vacancy['title']) ?></p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <select onchange="window.location.href='<?= url('/juries/planning?vacancy_id=') ?>'+this.value"
+                            class="px-3 py-2 text-sm border border-blue-300 rounded-lg bg-white text-gray-700 hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="current" <?= ($vacancyId ?? 'current') === $vacancyId ? 'selected' : '' ?>>📌 Vaga
+                                Atual</option>
+                            <option value="all" <?= empty($vacancyId) ? 'selected' : '' ?>>📚 Todas as Vagas</option>
+                            <optgroup label="Histórico">
+                                <?php foreach ($allVacancies ?? [] as $v): ?>
+                                    <?php if ($v['status'] !== 'aberta'): ?>
+                                        <option value="<?= $v['id'] ?>" <?= ($vacancyId ?? 0) == $v['id'] ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($v['title']) ?> (<?= ucfirst($v['status']) ?>)
+                                        </option>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </optgroup>
+                        </select>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <select onchange="window.location.href='/juries/planning?vacancy_id='+this.value" class="px-3 py-2 text-sm border border-blue-300 rounded-lg bg-white text-gray-700 hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="current" <?= ($vacancyId ?? 'current') === $vacancyId ? 'selected' : '' ?>>📌 Vaga Atual</option>
-                        <option value="all" <?= empty($vacancyId) ? 'selected' : '' ?>>📚 Todas as Vagas</option>
-                        <optgroup label="Histórico">
-                            <?php foreach ($allVacancies ?? [] as $v): ?>
-                                <?php if ($v['status'] !== 'aberta'): ?>
-                                <option value="<?= $v['id'] ?>" <?= ($vacancyId ?? 0) == $v['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($v['title']) ?> (<?= ucfirst($v['status']) ?>)
-                                </option>
-                                <?php endif; ?>
-                            <?php endforeach; ?>
-                        </optgroup>
-                    </select>
-                </div>
             </div>
-        </div>
         <?php else: ?>
-        <!-- Sem vaga aberta - Mostrar alerta -->
-        <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6 rounded-lg shadow-sm">
-            <div class="flex items-center gap-3">
-                <svg class="w-5 h-5 text-yellow-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                </svg>
-                <div class="flex-1">
-                    <p class="text-sm font-semibold text-yellow-900">⚠️ Nenhuma vaga aberta no momento</p>
-                    <p class="text-xs text-yellow-800 mt-1">Não há vagas abertas. Crie uma nova vaga ou selecione do histórico.</p>
+            <!-- Sem vaga aberta - Mostrar alerta -->
+            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6 rounded-lg shadow-sm">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 text-yellow-600 flex-shrink-0" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-yellow-900">⚠️ Nenhuma vaga aberta no momento</p>
+                        <p class="text-xs text-yellow-800 mt-1">Não há vagas abertas. Crie uma nova vaga ou selecione do
+                            histórico.</p>
+                    </div>
+                    <?php if (!empty($allVacancies)): ?>
+                        <select onchange="window.location.href='<?= url('/juries/planning?vacancy_id=') ?>'+this.value"
+                            class="px-3 py-2 text-sm border border-yellow-300 rounded-lg bg-white text-gray-700">
+                            <option value="">Ver Histórico</option>
+                            <?php foreach ($allVacancies as $v): ?>
+                                <option value="<?= $v['id'] ?>"><?= htmlspecialchars($v['title']) ?> (<?= ucfirst($v['status']) ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    <?php endif; ?>
                 </div>
-                <?php if (!empty($allVacancies)): ?>
-                <select onchange="window.location.href='/juries/planning?vacancy_id='+this.value" class="px-3 py-2 text-sm border border-yellow-300 rounded-lg bg-white text-gray-700">
-                    <option value="">Ver Histórico</option>
-                    <?php foreach ($allVacancies as $v): ?>
-                    <option value="<?= $v['id'] ?>"><?= htmlspecialchars($v['title']) ?> (<?= ucfirst($v['status']) ?>)</option>
-                    <?php endforeach; ?>
-                </select>
-                <?php endif; ?>
             </div>
-        </div>
         <?php endif; ?>
 
         <!-- Banner de Filtro por Vaga (OLD - Remover depois se não precisar) -->
         <?php if (false && !empty($vacancy)): ?>
-        <div class="bg-indigo-50 border-l-4 border-indigo-600 p-4 mb-6 rounded-lg shadow-sm">
-            <div class="flex items-start justify-between">
-                <div class="flex items-start gap-3">
-                    <svg class="w-6 h-6 text-indigo-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
-                    </svg>
-                    <div>
-                        <h3 class="text-sm font-semibold text-indigo-900">🎯 Filtrando por Vaga</h3>
-                        <p class="text-sm text-indigo-800 mt-1">
-                            <strong><?= e($vacancy['title']) ?></strong><br>
-                            <span class="text-xs">Mostrando apenas júris e vigilantes desta vaga específica</span>
-                        </p>
-                        <div class="flex gap-2 mt-2">
-                            <a href="/juries/vacancy/<?= $vacancy['id'] ?>/manage" 
-                               class="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded hover:bg-indigo-700">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                                </svg>
-                                Gestão de Júris desta Vaga
-                            </a>
-                            <a href="/juries/planning" 
-                               class="inline-flex items-center gap-1 px-3 py-1.5 border border-indigo-600 text-indigo-700 text-xs font-medium rounded hover:bg-indigo-50">
-                                Remover Filtro (Ver Todos)
-                            </a>
+            <div class="bg-indigo-50 border-l-4 border-indigo-600 p-4 mb-6 rounded-lg shadow-sm">
+                <div class="flex items-start justify-between">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-6 h-6 text-indigo-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                        </svg>
+                        <div>
+                            <h3 class="text-sm font-semibold text-indigo-900">🎯 Filtrando por Vaga</h3>
+                            <p class="text-sm text-indigo-800 mt-1">
+                                <strong><?= e($vacancy['title']) ?></strong><br>
+                                <span class="text-xs">Mostrando apenas júris e vigilantes desta vaga específica</span>
+                            </p>
+                            <div class="flex gap-2 mt-2">
+                                <a href="<?= url('/juries/vacancy/' . $vacancy['id'] . '/manage') ?>"
+                                    class="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded hover:bg-indigo-700">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                    </svg>
+                                    Gestão de Júris desta Vaga
+                                </a>
+                                <a href="<?= url('/juries/planning') ?>"
+                                    class="inline-flex items-center gap-1 px-3 py-1.5 border border-indigo-600 text-indigo-700 text-xs font-medium rounded hover:bg-indigo-50">
+                                    Remover Filtro (Ver Todos)
+                                </a>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <button onclick="this.closest('div[class*=bg-indigo-50]').style.display='none'" 
+                    <button onclick="this.closest('div[class*=bg-indigo-50]').style.display='none'"
                         class="text-indigo-600 hover:text-indigo-800">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
             </div>
-        </div>
         <?php endif; ?>
 
         <!-- Estatísticas Rápidas -->
@@ -201,7 +341,9 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
             </div>
             <div class="bg-white p-4 rounded-lg shadow border-l-4 border-orange-600">
                 <div class="text-xs text-gray-500 uppercase font-semibold">Vagas Livres</div>
-                <div class="text-2xl font-bold text-orange-600"><?= ($stats['slots_available'] ?? 0) - ($stats['total_allocated'] ?? 0) ?></div>
+                <div class="text-2xl font-bold text-orange-600">
+                    <?= ($stats['slots_available'] ?? 0) - ($stats['total_allocated'] ?? 0) ?>
+                </div>
             </div>
             <div class="bg-white p-4 rounded-lg shadow border-l-4 border-red-600">
                 <div class="text-xs text-gray-500 uppercase font-semibold">Sem Supervisor</div>
@@ -223,6 +365,7 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
                             <th style="width: 80px;">HORA</th>
                             <th style="width: 180px;">EXAME</th>
                             <th style="width: 200px;">SALAS</th>
+
                             <th style="width: 80px;">Nº Cand</th>
                             <th style="min-width: 300px;">VIGILANTE</th>
                             <th style="width: 60px;">Nº Vig</th>
@@ -231,35 +374,39 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
                     </thead>
                     <tbody>
                         <?php if (empty($groupedJuries)): ?>
-                        <tr>
-                            <td colspan="8" class="text-center text-gray-500 py-8">
-                                <div class="flex flex-col items-center gap-3">
-                                    <svg class="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                    </svg>
-                                    <p class="text-lg font-medium">Nenhum júri criado ainda</p>
-                                    <?php if (!empty($vacancyId)): ?>
-                                    <a href="/juries/vacancy/<?= $vacancyId ?>/manage" class="btn-allocate btn-manual inline-block">
-                                        ➕ Criar Júris para Esta Vaga
-                                    </a>
-                                    <?php else: ?>
-                                    <a href="/juries/planning-by-vacancy" class="btn-allocate btn-manual inline-block">
-                                        ➕ Criar Júris Agora
-                                    </a>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-                        </tr>
+                            <tr>
+                                <td colspan="8" class="text-center text-gray-500 py-8">
+                                    <div class="flex flex-col items-center gap-3">
+                                        <svg class="w-16 h-16 text-gray-300" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <p class="text-lg font-medium">Nenhum júri criado ainda</p>
+                                        <?php if (!empty($vacancyId)): ?>
+                                            <a href="<?= url('/juries/vacancy/' . $vacancyId . '/manage') ?>"
+                                                class="btn-allocate btn-manual inline-block">
+                                                ➕ Criar Júris para Esta Vaga
+                                            </a>
+                                        <?php else: ?>
+                                            <a href="<?= url('/juries/planning-by-vacancy') ?>"
+                                                class="btn-allocate btn-manual inline-block">
+                                                ➕ Criar Júris Agora
+                                            </a>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                            </tr>
                         <?php else:
                             // Agrupar júris por local dentro de cada exame
                             $lastSupervisor = null;
                             $totalCandidatos = 0;
                             $totalVigilantes = 0;
-                            
+
                             foreach ($groupedJuries as $groupIndex => $group):
                                 // Resetar supervisor para cada grupo de exame
                                 $lastSupervisor = null;
-                                
+
                                 // Reagrupar júris por local
                                 $juriesByLocation = [];
                                 foreach ($group['juries'] as $jury) {
@@ -269,13 +416,13 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
                                     }
                                     $juriesByLocation[$location][] = $jury;
                                 }
-                                
+
                                 // Contar total de júris para rowspan
                                 $totalJuriesInGroup = count($group['juries']);
                                 $juryCounter = 0;
                                 $examCandidates = 0;
                                 $examVigilantes = 0;
-                                
+
                                 // Renderizar cada local
                                 foreach ($juriesByLocation as $location => $juries):
                                     // Cabeçalho do local
@@ -284,7 +431,7 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
                                         <td colspan="8" class="group-header">📍 <?= strtoupper(htmlspecialchars($location)) ?></td>
                                     </tr>
                                     <?php
-                                    
+
                                     // Renderizar cada júri do local
                                     foreach ($juries as $juryIndex => $jury):
                                         $isFirstJury = ($juryCounter === 0);
@@ -293,14 +440,14 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
                                         $examVigilantes += $vigilantesCount;
                                         $totalCandidatos += $jury['candidates_quota'];
                                         $totalVigilantes += $vigilantesCount;
-                                        
+
                                         // Atualizar supervisor apenas se supervisor_id não for null
                                         if (!empty($jury['supervisor_id']) && !empty($jury['supervisor_name'])) {
                                             $lastSupervisor = $jury['supervisor_name'];
                                         }
                                         ?>
                                         <tr data-jury-id="<?= $jury['id'] ?>">
-                                            <?php if ($isFirstJury): 
+                                            <?php if ($isFirstJury):
                                                 // Dias da semana em Português de Portugal
                                                 $diasSemana = [
                                                     'Monday' => 'Segunda-feira',
@@ -313,79 +460,109 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
                                                 ];
                                                 $diaIngles = date('l', strtotime($jury['exam_date']));
                                                 $diaPortugues = $diasSemana[$diaIngles] ?? $diaIngles;
-                                            ?>
-                                            <td rowspan="<?= $totalJuriesInGroup ?>" style="text-align: center; font-weight: 600; vertical-align: middle; border-right: 2px solid #d1d5db;">
-                                                <?= date('d/m/Y', strtotime($jury['exam_date'])) ?><br>
-                                                <span style="font-size: 0.75rem; color: #6b7280;">(<?= $diaPortugues ?>)</span>
-                                            </td>
-                                            <td rowspan="<?= $totalJuriesInGroup ?>" style="text-align: center; font-weight: 600; vertical-align: middle; border-right: 2px solid #d1d5db;">
-                                                <?= date('H:i', strtotime($jury['start_time'])) ?>
-                                            </td>
-                                            <td rowspan="<?= $totalJuriesInGroup ?>" style="text-align: center; font-weight: 600; vertical-align: middle; background-color: #f3f4f6; border-right: 2px solid #d1d5db;">
-                                                <?= e($group['subject']) ?>
-                                            </td>
+                                                ?>
+                                                <td rowspan="<?= $totalJuriesInGroup ?>"
+                                                    style="text-align: center; font-weight: 600; vertical-align: middle; border-right: 2px solid #d1d5db;">
+                                                    <?= date('d/m/Y', strtotime($jury['exam_date'])) ?><br>
+                                                    <span style="font-size: 0.75rem; color: #6b7280;">(<?= $diaPortugues ?>)</span>
+                                                </td>
+                                                <td rowspan="<?= $totalJuriesInGroup ?>"
+                                                    style="text-align: center; font-weight: 600; vertical-align: middle; border-right: 2px solid #d1d5db;">
+                                                    <?= date('H:i', strtotime($jury['start_time'])) ?>
+                                                </td>
+                                                <td rowspan="<?= $totalJuriesInGroup ?>"
+                                                    style="text-align: center; font-weight: 600; vertical-align: middle; background-color: #f3f4f6; border-right: 2px solid #d1d5db;">
+                                                    <?= e($group['subject']) ?>
+                                                </td>
                                             <?php endif; ?>
-                                            
+
                                             <td style="padding: 8px 12px;">
                                                 <div>
                                                     <div class="font-semibold text-gray-900" style="font-size: 0.875rem;">
                                                         <?= e($jury['room']) ?>
                                                     </div>
                                                     <?php if (!empty($jury['room_capacity'])): ?>
-                                                    <div class="text-xs text-gray-600 mt-1">
-                                                        <span class="inline-flex items-center">
-                                                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                                <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
-                                                            </svg>
-                                                            Capacidade: <?= $jury['room_capacity'] ?>
-                                                        </span>
-                                                    </div>
+                                                        <div class="text-xs text-gray-600 mt-1">
+                                                            <span class="inline-flex items-center">
+                                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path
+                                                                        d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                                                                </svg>
+                                                                Capacidade: <?= $jury['room_capacity'] ?>
+                                                            </span>
+                                                        </div>
                                                     <?php endif; ?>
                                                     <?php if (!empty($jury['notes'])): ?>
-                                                    <div class="text-xs text-blue-600 mt-1 italic">
-                                                        <span class="inline-flex items-start">
-                                                            <svg class="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-                                                            </svg>
-                                                            <span class="flex-1"><?= e($jury['notes']) ?></span>
-                                                        </span>
-                                                    </div>
+                                                        <div class="text-xs text-blue-600 mt-1 italic">
+                                                            <span class="inline-flex items-start">
+                                                                <svg class="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" fill="currentColor"
+                                                                    viewBox="0 0 20 20">
+                                                                    <path fill-rule="evenodd"
+                                                                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                                                        clip-rule="evenodd" />
+                                                                </svg>
+                                                                <span class="flex-1"><?= e($jury['notes']) ?></span>
+                                                            </span>
+                                                        </div>
                                                     <?php endif; ?>
                                                 </div>
                                             </td>
-                                            <td style="text-align: center; font-weight: 500;"><?= number_format($jury['candidates_quota'], 0) ?></td>
+
+                                            <td style="text-align: center; font-weight: 500;">
+                                                <div class="flex flex-col items-center">
+                                                    <span class="text-lg"><?= number_format($jury['candidates_quota'], 0) ?></span>
+                                                    <?php
+                                                    $minVigilantes = ceil(($jury['candidates_quota'] ?: 0) / 30);
+                                                    $minVigilantes = max($minVigilantes, 1); // Mínimo absoluto de 1
+                                                    $currentVigilantes = count($jury['vigilantes'] ?? []);
+                                                    $isComplete = $currentVigilantes >= $minVigilantes;
+                                                    ?>
+                                                    <div class="text-xs mt-1 px-2 py-0.5 rounded-full border <?= $isComplete ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200' ?>"
+                                                        title="Mínimo de <?= $minVigilantes ?> vigilantes para <?= $jury['candidates_quota'] ?> candidatos">
+                                                        <span class="font-bold">Mín: <?= $minVigilantes ?></span>
+                                                        <span class="ml-1"><?= $isComplete ? '✅' : '⚠️' ?></span>
+                                                    </div>
+                                                </div>
+                                            </td>
                                             <td style="padding: 4px 8px;">
                                                 <?php if (!empty($jury['vigilantes'])): ?>
                                                     <?php foreach ($jury['vigilantes'] as $v): ?>
-                                                        <div class="flex items-center justify-between mb-1 bg-blue-50 px-2 py-1 rounded" style="font-size: 0.813rem;">
+                                                        <div class="flex items-center justify-between mb-1 bg-blue-50 px-2 py-1 rounded"
+                                                            style="font-size: 0.813rem;">
                                                             <span><?= e($v['name']) ?></span>
-                                                            <button onclick="removeVigilante(<?= $jury['id'] ?>, <?= $v['id'] ?>)" class="btn-remove" title="Remover vigilante">✕</button>
+                                                            <button onclick="removeVigilante(<?= $jury['id'] ?>, <?= $v['id'] ?>)"
+                                                                class="btn-remove" title="Remover vigilante">✕</button>
                                                         </div>
                                                     <?php endforeach; ?>
                                                 <?php else: ?>
-                                                    <div class="empty-slot" style="text-align: center; font-style: italic; color: #9ca3af;">Sem vigilante</div>
+                                                    <div class="empty-slot" style="text-align: center; font-style: italic; color: #9ca3af;">
+                                                        Sem vigilante</div>
                                                 <?php endif; ?>
                                                 <?php if ($vigilantesCount < 2): ?>
-                                                <div style="display: flex; gap: 4px; margin-top: 4px; justify-content: center;">
-                                                    <button onclick="openManualModal(<?= $jury['id'] ?>)" class="btn-allocate btn-manual">✋ Manual</button>
-                                                </div>
+                                                    <div style="display: flex; gap: 4px; margin-top: 4px; justify-content: center;">
+                                                        <button onclick="openManualModal(<?= $jury['id'] ?>)"
+                                                            class="btn-allocate btn-manual">✋ Manual</button>
+                                                    </div>
                                                 <?php endif; ?>
                                             </td>
                                             <td style="text-align: center; font-weight: 600;"><?= $vigilantesCount ?></td>
                                             <td style="text-align: center; padding: 8px;">
                                                 <div class="flex items-center justify-center gap-1">
-                                                    <button onclick="editJuryInVacancy(<?= $jury['vacancy_id'] ?? 0 ?>, <?= $jury['id'] ?>)" 
-                                                            class="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors" 
-                                                            title="Editar júri">
+                                                    <button
+                                                        onclick="editJuryInVacancy(<?= $jury['vacancy_id'] ?? 0 ?>, <?= $jury['id'] ?>)"
+                                                        class="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
+                                                        title="Editar júri">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                         </svg>
                                                     </button>
-                                                    <button onclick="deleteJury(<?= $jury['id'] ?>, '<?= e($jury['room']) ?>')" 
-                                                            class="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors" 
-                                                            title="Eliminar júri">
+                                                    <button onclick="deleteJury(<?= $jury['id'] ?>, '<?= e($jury['room']) ?>')"
+                                                        class="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
+                                                        title="Eliminar júri">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                         </svg>
                                                     </button>
                                                 </div>
@@ -395,7 +572,7 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
                                         $juryCounter++;
                                     endforeach;
                                 endforeach;
-                                
+
                                 // Subtotal do exame
                                 // Encontrar ID do júri representativo para alocação de supervisor
                                 $firstJuryOfExam = $group['juries'][0] ?? null;
@@ -403,30 +580,78 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
                                 $supervisorId = $firstJuryOfExam['supervisor_id'] ?? null;
                                 ?>
                                 <tr class="subtotal-row">
-                                    <td colspan="4" style="text-align: right; padding-right: 16px; font-weight: 600;">Subtotal</td>
-                                    <td style="text-align: center; font-weight: 600;"><?= number_format($examCandidates, 0) ?></td>
+                                    <td colspan="4" style="text-align: right; padding-right: 16px; font-weight: 600;">Subtotal
+                                    </td>
+                                    <td style="text-align: center; font-weight: 600;"><?= number_format($examCandidates, 0) ?>
+                                    </td>
                                     <td style="padding: 8px; font-weight: 600;">
                                         <div style="display: flex; flex-direction: column; gap: 6px; align-items: center;">
-                                            <span style="color: #6b7280; font-style: italic; font-size: 0.875rem;">
-                                                <?php if ($lastSupervisor): ?>
-                                                    Supervisor: <?= e($lastSupervisor) ?>
-                                                <?php else: ?>
+                                            <?php
+                                            // Contar supervisores únicos neste bloco
+                                            $supervisorCounts = [];
+                                            foreach ($group['juries'] as $j) {
+                                                if (!empty($j['supervisor_id']) && !empty($j['supervisor_name'])) {
+                                                    $sid = $j['supervisor_id'];
+                                                    if (!isset($supervisorCounts[$sid])) {
+                                                        $supervisorCounts[$sid] = ['name' => $j['supervisor_name'], 'count' => 0];
+                                                    }
+                                                    $supervisorCounts[$sid]['count']++;
+                                                }
+                                            }
+                                            $maxJuriesPerSupervisor = 10; // Default, seria buscado da config
+                                            ?>
+
+                                            <?php if (!empty($supervisorCounts)): ?>
+                                                <?php foreach ($supervisorCounts as $supId => $supInfo): ?>
+                                                    <div class="flex items-center gap-2">
+                                                        <span style="color: #374151; font-size: 0.875rem; font-weight: 600;">
+                                                            👔 <?= e($supInfo['name']) ?>
+                                                        </span>
+                                                        <span
+                                                            class="px-2 py-0.5 text-xs rounded-full <?= $supInfo['count'] > $maxJuriesPerSupervisor ? 'bg-red-100 text-red-700' : ($supInfo['count'] == $maxJuriesPerSupervisor ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700') ?>">
+                                                            <?= $supInfo['count'] ?>/<?= $maxJuriesPerSupervisor ?> júris
+                                                        </span>
+                                                        <button
+                                                            onclick="removeSupervisorFromAllJuries(<?= $supervisorJuryId ?>, '<?= e($supInfo['name']) ?>')"
+                                                            class="text-red-600 hover:text-red-800 text-xs"
+                                                            title="Remover supervisor">✕</button>
+                                                    </div>
+                                                <?php endforeach; ?>
+                                            <?php else: ?>
+                                                <span style="color: #9ca3af; font-style: italic; font-size: 0.875rem;">
                                                     Sem supervisor
-                                                <?php endif; ?>
-                                            </span>
-                                            <?php if (!$lastSupervisor && $supervisorJuryId > 0): ?>
-                                                <button onclick="openSupervisorModal(<?= $supervisorJuryId ?>)" 
-                                                        class="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
-                                                        title="Alocar supervisor">
-                                                    👔 Alocar Supervisor
-                                                </button>
-                                            <?php elseif ($lastSupervisor && $supervisorId && $supervisorJuryId > 0): ?>
-                                                <button onclick="removeSupervisor(<?= $supervisorJuryId ?>)" 
-                                                        class="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
-                                                        title="Remover supervisor">
-                                                    ✕ Remover
-                                                </button>
+                                                </span>
                                             <?php endif; ?>
+
+                                            <div style="display: flex; gap: 4px; margin-top: 4px;">
+                                                <?php
+                                                // Dados para auto-distribuição
+                                                $firstJury = $group['juries'][0] ?? null;
+                                                $juryCount = count($group['juries']);
+                                                ?>
+                                                <?php if ($juryCount > 1 && $firstJury): ?>
+                                                    <button
+                                                        onclick="autoDistributeVigilantes('<?= e($firstJury['subject']) ?>', '<?= $firstJury['exam_date'] ?>', '<?= $firstJury['start_time'] ?>', '<?= $firstJury['end_time'] ?>', <?= $firstJury['vacancy_id'] ?? 'null' ?>)"
+                                                        class="px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs rounded hover:from-blue-700 hover:to-indigo-700 transition-all shadow-sm flex items-center gap-1"
+                                                        title="Distribuir vigilantes automaticamente">
+                                                        👮 Auto-vigilantes
+                                                    </button>
+                                                    <button
+                                                        onclick="autoDistributeSupervisors('<?= e($firstJury['subject']) ?>', '<?= $firstJury['exam_date'] ?>', '<?= $firstJury['start_time'] ?>', '<?= $firstJury['end_time'] ?>', <?= $firstJury['vacancy_id'] ?? 'null' ?>)"
+                                                        class="px-3 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs rounded hover:from-emerald-700 hover:to-teal-700 transition-all shadow-sm flex items-center gap-1"
+                                                        title="Distribuir supervisores automaticamente (<?= $juryCount ?> júris)">
+                                                        🤖 Auto-distribuir (<?= $juryCount ?>)
+                                                    </button>
+                                                <?php endif; ?>
+
+                                                <?php if (empty($supervisorCounts) && $supervisorJuryId > 0): ?>
+                                                    <button onclick="openSupervisorModal(<?= $supervisorJuryId ?>)"
+                                                        class="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
+                                                        title="Alocar supervisor manualmente">
+                                                        👔 Manual
+                                                    </button>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
                                     </td>
                                     <td style="text-align: center; font-weight: 700;"><?= $examVigilantes ?></td>
@@ -434,13 +659,14 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
                                 </tr>
                                 <?php
                             endforeach;
-                            
+
                             // Total Geral
                             if ($totalCandidatos > 0):
                                 ?>
                                 <tr class="total-row">
                                     <td colspan="4" style="text-align: right; padding-right: 16px; font-weight: 700;">TOTAL</td>
-                                    <td style="text-align: center; font-weight: 700;"><?= number_format($totalCandidatos, 0) ?></td>
+                                    <td style="text-align: center; font-weight: 700;"><?= number_format($totalCandidatos, 0) ?>
+                                    </td>
                                     <td></td>
                                     <td style="text-align: center; font-weight: 700;"><?= $totalVigilantes ?></td>
                                     <td></td>
@@ -493,6 +719,45 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
     </div>
 </div>
 
+<!-- Modal: Seleccionar Supervisor para Júri Individual -->
+<div class="modal fixed inset-0 hidden items-center justify-center z-50" id="modal-supervisor-select">
+    <div class="modal-backdrop absolute inset-0 bg-gray-900/50" onclick="closeSupervisorSelectModal()"></div>
+    <div class="modal-content relative bg-white w-full max-w-lg mx-4 rounded-lg shadow-xl">
+        <div class="flex justify-between items-center p-4 border-b bg-purple-600 text-white rounded-t-lg">
+            <h2 class="text-lg font-semibold flex items-center gap-2">
+                👔 Definir Supervisor
+            </h2>
+            <button type="button" onclick="closeSupervisorSelectModal()"
+                class="text-white hover:text-purple-200 text-2xl">&times;</button>
+        </div>
+        <div class="p-4">
+            <div id="supervisor-select-room" class="mb-4 p-3 bg-gray-50 rounded-lg">
+                <span class="text-sm text-gray-600">Sala:</span>
+                <span class="font-semibold text-gray-900" id="supervisor-select-room-name"></span>
+            </div>
+
+            <div id="supervisor-select-content" class="max-h-96 overflow-y-auto">
+                <div class="flex items-center justify-center py-8">
+                    <svg class="animate-spin w-8 h-8 text-purple-600" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z">
+                        </path>
+                    </svg>
+                    <span class="ml-2 text-gray-600">Carregando supervisores disponíveis...</span>
+                </div>
+            </div>
+        </div>
+        <div class="flex justify-end gap-2 p-4 border-t bg-gray-50 rounded-b-lg">
+            <button type="button" onclick="closeSupervisorSelectModal()"
+                class="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-100">
+                Cancelar
+            </button>
+        </div>
+    </div>
+</div>
+
+
 <!-- Modal: Editar Júri -->
 <div id="modal-edit-jury" class="modal hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-50 items-center justify-center">
     <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -500,7 +765,7 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
             <h2 class="text-xl font-bold text-gray-900">✏️ Editar Júri</h2>
             <button type="button" onclick="closeEditJuryModal()" class="text-gray-400 hover:text-gray-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
         </div>
@@ -508,92 +773,92 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
         <form id="form-edit-jury" onsubmit="saveJuryChanges(event)" class="p-6">
             <input type="hidden" id="edit_jury_id" name="jury_id">
             <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-            
+
             <!-- Informações Básicas -->
             <div class="mb-6">
                 <h3 class="text-sm font-semibold text-gray-700 mb-3 uppercase">📚 Disciplina</h3>
-                
+
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Disciplina *</label>
-                    <input type="text" id="edit_subject" name="subject" 
-                           class="w-full rounded border border-gray-300 px-3 py-2" required>
+                    <input type="text" id="edit_subject" name="subject"
+                        class="w-full rounded border border-gray-300 px-3 py-2" required>
                 </div>
             </div>
-            
+
             <!-- Data e Horário -->
             <div class="mb-6">
                 <h3 class="text-sm font-semibold text-gray-700 mb-3 uppercase">📅 Data e Horário</h3>
-                
+
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Data *</label>
-                        <input type="date" id="edit_exam_date" name="exam_date" 
-                               class="w-full rounded border border-gray-300 px-3 py-2" required>
+                        <input type="date" id="edit_exam_date" name="exam_date"
+                            class="w-full rounded border border-gray-300 px-3 py-2" required>
                     </div>
-                    
+
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Início *</label>
-                        <input type="time" id="edit_start_time" name="start_time" 
-                               class="w-full rounded border border-gray-300 px-3 py-2" required>
+                        <input type="time" id="edit_start_time" name="start_time"
+                            class="w-full rounded border border-gray-300 px-3 py-2" required>
                     </div>
-                    
+
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Fim *</label>
-                        <input type="time" id="edit_end_time" name="end_time" 
-                               class="w-full rounded border border-gray-300 px-3 py-2" required>
+                        <input type="time" id="edit_end_time" name="end_time"
+                            class="w-full rounded border border-gray-300 px-3 py-2" required>
                     </div>
                 </div>
             </div>
-            
+
             <!-- Local e Sala -->
             <div class="mb-6">
                 <h3 class="text-sm font-semibold text-gray-700 mb-3 uppercase">📍 Local e Sala</h3>
-                
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Local *</label>
-                        <select id="edit_location_id" name="location_id" onchange="loadEditRoomsByLocation()" 
-                                class="w-full rounded border border-gray-300 px-3 py-2" required>
+                        <select id="edit_location_id" name="location_id" onchange="loadEditRoomsByLocation()"
+                            class="w-full rounded border border-gray-300 px-3 py-2" required>
                             <option value="">Carregando locais...</option>
                         </select>
                     </div>
-                    
+
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Sala *</label>
-                        <select id="edit_room_id" name="room_id" 
-                                class="w-full rounded border border-gray-300 px-3 py-2" required>
+                        <select id="edit_room_id" name="room_id" class="w-full rounded border border-gray-300 px-3 py-2"
+                            required>
                             <option value="">Selecione um local primeiro</option>
                         </select>
                     </div>
                 </div>
             </div>
-            
+
             <!-- Candidatos -->
             <div class="mb-6">
                 <h3 class="text-sm font-semibold text-gray-700 mb-3 uppercase">👥 Candidatos</h3>
-                
+
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Nº Candidatos *</label>
-                    <input type="number" id="edit_candidates_quota" name="candidates_quota" 
-                           min="1" max="300"
-                           class="w-full rounded border border-gray-300 px-3 py-2" required>
+                    <input type="number" id="edit_candidates_quota" name="candidates_quota" min="1" max="300"
+                        class="w-full rounded border border-gray-300 px-3 py-2" required>
                     <p id="edit-vigilantes-needed" class="text-xs text-blue-600 mt-1 font-medium"></p>
                 </div>
             </div>
-            
+
             <!-- Observações -->
             <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Observações</label>
-                <textarea id="edit_notes" name="notes" rows="3"
-                          class="w-full rounded border border-gray-300 px-3 py-2"
-                          placeholder="Observações adicionais sobre este júri..."></textarea>
+                <textarea id="edit_notes" name="notes" rows="3" class="w-full rounded border border-gray-300 px-3 py-2"
+                    placeholder="Observações adicionais sobre este júri..."></textarea>
             </div>
-            
+
             <!-- Aviso de Impacto -->
             <div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <div class="flex items-start gap-2">
-                    <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                     <div class="flex-1">
                         <h4 class="text-sm font-semibold text-yellow-900">⚠️ Atenção ao Editar</h4>
@@ -607,12 +872,14 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
             </div>
 
             <div class="flex items-center justify-end gap-3 pt-4 border-t">
-                <button type="button" onclick="closeEditJuryModal()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50">
+                <button type="button" onclick="closeEditJuryModal()"
+                    class="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50">
                     Cancelar
                 </button>
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2">
+                <button type="submit"
+                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
                     Salvar Alterações
                 </button>
@@ -621,371 +888,481 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
     </div>
 </div>
 
+<!-- Modal: Confirmação de Exclusão -->
+<div id="modal-confirm-delete"
+    class="modal hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-[60] items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 transform transition-all">
+        <div class="p-6">
+            <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+            <h3 id="confirm-title" class="text-lg font-semibold text-gray-900 text-center mb-2">Confirmar Exclusão</h3>
+            <p id="confirm-message" class="text-sm text-gray-600 text-center mb-6">Tem certeza que deseja realizar esta
+                ação?</p>
+            <div class="flex gap-3">
+                <button type="button" id="btn-confirm-cancel"
+                    class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors">
+                    Cancelar
+                </button>
+                <button type="button" id="btn-confirm-ok"
+                    class="flex-1 px-4 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-const csrfToken = '<?= csrf_token() ?>';
+    const csrfToken = '<?= csrf_token() ?>';
+    const baseUrl = '<?= rtrim(dirname($_SERVER['SCRIPT_NAME']), '/') ?>';
 
-/**
- * Escape HTML para prevenir XSS em JavaScript
- */
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function editJury(juryId) {
-    // Redirecionar para a página de gestão de júris onde a edição está implementada
-    const currentUrl = new URL(window.location.href);
-    const vacancyId = currentUrl.searchParams.get('vacancy_id');
-    
-    if (vacancyId) {
-        window.location.href = `/juries/vacancy/${vacancyId}/manage`;
-    } else {
-        alert('ℹ️ Para editar júris, acesse via "Planeamento por Vaga"');
+    /**
+     * Escape HTML para prevenir XSS em JavaScript
+     */
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
-}
 
-// Variáveis globais para o modal de edição
-let editMasterData = {
-    locations: [],
-    rooms: []
-};
+    /**
+     * Exibir modal de confirmação personalizado
+     */
+    function showConfirmModal(title, message, onConfirm) {
+        const modal = document.getElementById('modal-confirm-delete');
+        const titleEl = document.getElementById('confirm-title');
+        const messageEl = document.getElementById('confirm-message');
+        const btnOk = document.getElementById('btn-confirm-ok');
+        const btnCancel = document.getElementById('btn-confirm-cancel');
 
-async function editJuryInVacancy(vacancyId, juryId) {
-    if (!vacancyId || vacancyId == 0) {
-        alert('⚠️ Este júri não está associado a uma vaga específica.\n\nPara editar, acesse via:\n"Planeamento por Vaga" → Selecione a vaga → Gerir Júris');
-        return;
-    }
-    
-    // Abrir modal de edição
-    await openEditJuryModal(juryId);
-}
+        titleEl.textContent = title;
+        messageEl.innerHTML = message;
 
-async function openEditJuryModal(juryId) {
-    const modal = document.getElementById('modal-edit-jury');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    
-    try {
-        // Carregar dados mestre (locais e salas) se ainda não carregados
-        if (editMasterData.locations.length === 0) {
-            const masterResponse = await fetch('/api/master-data/locations-rooms');
-            const masterResult = await masterResponse.json();
-            
-            if (masterResult.success) {
-                editMasterData.locations = masterResult.locations;
-                editMasterData.rooms = masterResult.rooms;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        // Remover listeners antigos
+        const newBtnOk = btnOk.cloneNode(true);
+        const newBtnCancel = btnCancel.cloneNode(true);
+        btnOk.parentNode.replaceChild(newBtnOk, btnOk);
+        btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
+
+        // Novo listener para confirmar
+        newBtnOk.addEventListener('click', () => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            onConfirm();
+        });
+
+        // Listener para cancelar
+        newBtnCancel.addEventListener('click', () => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        });
+
+        // Fechar ao clicar fora
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
             }
+        });
+    }
+
+    function editJury(juryId) {
+        // Redirecionar para a página de gestão de júris onde a edição está implementada
+        const currentUrl = new URL(window.location.href);
+        const vacancyId = currentUrl.searchParams.get('vacancy_id');
+
+        if (vacancyId) {
+            window.location.href = `<?= url('/juries/vacancy/') ?>${vacancyId}/manage`;
+        } else {
+            alert('ℹ️ Para editar júris, acesse via "Planeamento por Vaga"');
         }
-        
-        // Carregar dados do júri
-        const juryResponse = await fetch(`/juries/${juryId}/details`);
-        const juryResult = await juryResponse.json();
-        
-        if (!juryResult.success) {
-            throw new Error(juryResult.message || 'Erro ao carregar júri');
+    }
+
+    // Variáveis globais para o modal de edição
+    let editMasterData = {
+        locations: [],
+        rooms: []
+    };
+
+    async function editJuryInVacancy(vacancyId, juryId) {
+        if (!vacancyId || vacancyId == 0) {
+            alert('⚠️ Este júri não está associado a uma vaga específica.\n\nPara editar, acesse via:\n"Planeamento por Vaga" → Selecione a vaga → Gerir Júris');
+            return;
         }
-        
-        const jury = juryResult.jury;
-        console.log('Dados do júri:', jury);
-        
-        // Preencher formulário
-        document.getElementById('edit_jury_id').value = jury.id;
-        document.getElementById('edit_subject').value = jury.subject || '';
-        document.getElementById('edit_exam_date').value = jury.exam_date || '';
-        document.getElementById('edit_start_time').value = jury.start_time || '';
-        document.getElementById('edit_end_time').value = jury.end_time || '';
-        document.getElementById('edit_candidates_quota').value = jury.candidates_quota || '';
-        document.getElementById('edit_notes').value = jury.notes || '';
-        
-        // Calcular vigilantes necessários
-        const vigilantesNeeded = Math.ceil((jury.candidates_quota || 0) / 30);
-        document.getElementById('edit-vigilantes-needed').textContent = 
-            `Vigilantes necessários: ${vigilantesNeeded} (baseado em 1 vigilante / 30 candidatos)`;
-        
-        // Preencher dropdown de locais
-        const locationSelect = document.getElementById('edit_location_id');
-        locationSelect.innerHTML = '<option value="">Selecione um local...</option>';
-        
-        editMasterData.locations.forEach(loc => {
+
+        // Abrir modal de edição
+        await openEditJuryModal(juryId);
+    }
+
+    async function openEditJuryModal(juryId) {
+        const modal = document.getElementById('modal-edit-jury');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        try {
+            // Carregar dados mestre (locais e salas) se ainda não carregados
+            if (editMasterData.locations.length === 0) {
+                const masterResponse = await fetch(`${baseUrl}/api/master-data/locations-rooms`);
+                const masterResult = await masterResponse.json();
+
+                if (masterResult.success) {
+                    editMasterData.locations = masterResult.locations;
+                    editMasterData.rooms = masterResult.rooms;
+                }
+            }
+
+            // Carregar dados do júri
+            const juryResponse = await fetch(`${baseUrl}/juries/${juryId}/details`);
+            const juryResult = await juryResponse.json();
+
+            if (!juryResult.success) {
+                throw new Error(juryResult.message || 'Erro ao carregar júri');
+            }
+
+            const jury = juryResult.jury;
+            console.log('Dados do júri:', jury);
+
+            // Preencher formulário
+            document.getElementById('edit_jury_id').value = jury.id;
+            document.getElementById('edit_subject').value = jury.subject || '';
+            document.getElementById('edit_exam_date').value = jury.exam_date || '';
+            document.getElementById('edit_start_time').value = jury.start_time || '';
+            document.getElementById('edit_end_time').value = jury.end_time || '';
+            document.getElementById('edit_candidates_quota').value = jury.candidates_quota || '';
+            document.getElementById('edit_notes').value = jury.notes || '';
+
+            // Calcular vigilantes necessários
+            const vigilantesNeeded = Math.ceil((jury.candidates_quota || 0) / 30);
+            document.getElementById('edit-vigilantes-needed').textContent =
+                `Vigilantes necessários: ${vigilantesNeeded} (baseado em 1 vigilante / 30 candidatos)`;
+
+            // Preencher dropdown de locais
+            const locationSelect = document.getElementById('edit_location_id');
+            locationSelect.innerHTML = '<option value="">Selecione um local...</option>';
+
+            editMasterData.locations.forEach(loc => {
+                const option = document.createElement('option');
+                option.value = loc.id;
+                option.textContent = loc.name;
+                if (loc.id == jury.location_id) {
+                    option.selected = true;
+                }
+                locationSelect.appendChild(option);
+            });
+
+            // Carregar salas do local
+            await loadEditRoomsByLocation();
+
+            // Selecionar sala atual
+            if (jury.room_id) {
+                document.getElementById('edit_room_id').value = jury.room_id;
+            }
+
+        } catch (error) {
+            console.error('Erro ao carregar dados do júri:', error);
+            alert('❌ Erro ao carregar dados do júri: ' + error.message);
+            closeEditJuryModal();
+        }
+    }
+
+    async function loadEditRoomsByLocation() {
+        const locationId = document.getElementById('edit_location_id').value;
+        const roomSelect = document.getElementById('edit_room_id');
+
+        roomSelect.innerHTML = '<option value="">Selecione uma sala...</option>';
+
+        if (!locationId) {
+            return;
+        }
+
+        // Filtrar salas do local selecionado
+        const locationRooms = editMasterData.rooms.filter(r => r.location_id == locationId);
+
+        if (locationRooms.length === 0) {
+            roomSelect.innerHTML = '<option value="">Nenhuma sala cadastrada</option>';
+            return;
+        }
+
+        locationRooms.forEach(room => {
             const option = document.createElement('option');
-            option.value = loc.id;
-            option.textContent = loc.name;
-            if (loc.id == jury.location_id) {
-                option.selected = true;
+            option.value = room.id;
+
+            // Formato: Nome (Building | Piso) - Cap: XX
+            let displayText = room.name || room.code;
+
+            if (room.building && room.floor) {
+                displayText += ` (${room.building} | ${room.floor})`;
+            } else if (room.building) {
+                displayText += ` (${room.building})`;
+            } else if (room.floor) {
+                displayText += ` (${room.floor})`;
             }
-            locationSelect.appendChild(option);
+
+            displayText += ` - Cap: ${room.capacity}`;
+
+            option.textContent = displayText;
+            roomSelect.appendChild(option);
         });
-        
-        // Carregar salas do local
-        await loadEditRoomsByLocation();
-        
-        // Selecionar sala atual
-        if (jury.room_id) {
-            document.getElementById('edit_room_id').value = jury.room_id;
-        }
-        
-    } catch (error) {
-        console.error('Erro ao carregar dados do júri:', error);
-        alert('❌ Erro ao carregar dados do júri: ' + error.message);
-        closeEditJuryModal();
     }
-}
 
-async function loadEditRoomsByLocation() {
-    const locationId = document.getElementById('edit_location_id').value;
-    const roomSelect = document.getElementById('edit_room_id');
-    
-    roomSelect.innerHTML = '<option value="">Selecione uma sala...</option>';
-    
-    if (!locationId) {
-        return;
+    function closeEditJuryModal() {
+        const modal = document.getElementById('modal-edit-jury');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
     }
-    
-    // Filtrar salas do local selecionado
-    const locationRooms = editMasterData.rooms.filter(r => r.location_id == locationId);
-    
-    if (locationRooms.length === 0) {
-        roomSelect.innerHTML = '<option value="">Nenhuma sala cadastrada</option>';
-        return;
-    }
-    
-    locationRooms.forEach(room => {
-        const option = document.createElement('option');
-        option.value = room.id;
-        
-        // Formato: Nome (Building | Piso) - Cap: XX
-        let displayText = room.name || room.code;
-        
-        if (room.building && room.floor) {
-            displayText += ` (${room.building} | ${room.floor})`;
-        } else if (room.building) {
-            displayText += ` (${room.building})`;
-        } else if (room.floor) {
-            displayText += ` (${room.floor})`;
-        }
-        
-        displayText += ` - Cap: ${room.capacity}`;
-        
-        option.textContent = displayText;
-        roomSelect.appendChild(option);
-    });
-}
 
-function closeEditJuryModal() {
-    const modal = document.getElementById('modal-edit-jury');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-}
+    async function saveJuryChanges(event) {
+        event.preventDefault();
 
-async function saveJuryChanges(event) {
-    event.preventDefault();
-    
-    const form = event.target;
-    const juryId = document.getElementById('edit_jury_id').value;
-    const formData = new FormData(form);
-    
-    // Desabilitar botão de submit
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const originalHTML = submitBtn.innerHTML;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<svg class="animate-spin w-4 h-4 mr-2 inline-block" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Salvando...';
-    
-    try {
-        const response = await fetch(`/juries/${juryId}/update`, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: formData
-        });
-        
-        console.log('Resposta:', response.status);
-        
-        if (response.ok) {
-            const result = await response.json();
-            console.log('Resultado:', result);
-            
-            // Feedback de sucesso
-            const successDiv = document.createElement('div');
-            successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2';
-            successDiv.innerHTML = `
+        const form = event.target;
+        const juryId = document.getElementById('edit_jury_id').value;
+        const formData = new FormData(form);
+
+        // Desabilitar botão de submit
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalHTML = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<svg class="animate-spin w-4 h-4 mr-2 inline-block" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Salvando...';
+
+        try {
+            const response = await fetch(`${baseUrl}/juries/${juryId}/update`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            });
+
+            console.log('Resposta:', response.status);
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log('Resultado:', result);
+
+                // Feedback de sucesso
+                const successDiv = document.createElement('div');
+                successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2';
+                successDiv.innerHTML = `
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                 </svg>
                 ${result.message || 'Júri atualizado com sucesso!'}
             `;
-            document.body.appendChild(successDiv);
-            
-            // Fechar modal
-            closeEditJuryModal();
-            
-            // Recarregar página após 1s
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
-            
-        } else {
-            const error = await response.json();
-            alert('❌ ' + (error.message || 'Erro ao atualizar júri'));
+                document.body.appendChild(successDiv);
+
+                // Fechar modal
+                closeEditJuryModal();
+
+                // Recarregar página após 1s
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+
+            } else {
+                const error = await response.json();
+                alert('❌ ' + (error.message || 'Erro ao atualizar júri'));
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalHTML;
+            }
+        } catch (error) {
+            console.error('Erro ao salvar:', error);
+            alert('❌ Erro de conexão ao salvar alterações');
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalHTML;
         }
-    } catch (error) {
-        console.error('Erro ao salvar:', error);
-        alert('❌ Erro de conexão ao salvar alterações');
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalHTML;
     }
-}
 
-async function deleteJury(juryId, roomName) {
-    if (!confirm(`⚠️ ATENÇÃO: Eliminar júri "${roomName}"?\n\n⚠️ Esta ação irá:\n- Remover o júri permanentemente\n- Desalocar todos os vigilantes associados\n- Esta ação NÃO PODE ser desfeita!\n\nTem certeza?`)) {
-        return;
+    async function deleteJury(juryId, roomName) {
+        showConfirmModal(
+            '🗑️ Eliminar Júri',
+            `<strong>${escapeHtml(roomName)}</strong><br><br>
+            <span class="text-red-600">⚠️ Esta ação irá:</span>
+            <ul class="text-left mt-2 space-y-1 text-sm">
+                <li>• Remover o júri permanentemente</li>
+                <li>• Desalocar todos os vigilantes associados</li>
+                <li>• Esta ação <strong>NÃO PODE</strong> ser desfeita!</li>
+            </ul>`,
+            () => executeDeleteJury(juryId)
+        );
     }
-    
-    try {
-        const response = await fetch(`/juries/${juryId}/delete`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: new URLSearchParams({ 
-                csrf: csrfToken 
-            })
-        });
-        
-        console.log('Resposta recebida:', response.status, response.statusText);
-        
-        if (response.ok) {
-            const contentType = response.headers.get('content-type');
-            console.log('Content-Type:', contentType);
-            
-            if (contentType && contentType.includes('application/json')) {
-                const result = await response.json();
-                console.log('Resultado:', result);
-                
-                // Feedback visual
-                const row = document.querySelector(`tr[data-jury-id="${juryId}"]`);
-                if (row) {
-                    row.style.backgroundColor = '#fee2e2'; // Vermelho claro
-                    row.style.transition = 'background-color 0.3s';
-                }
-                
-                // Mostrar mensagem de sucesso
-                const successDiv = document.createElement('div');
-                successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2';
-                successDiv.innerHTML = `
+
+    async function executeDeleteJury(juryId) {
+        try {
+            const response = await fetch(`${baseUrl}/juries/${juryId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: new URLSearchParams({
+                    csrf: csrfToken
+                })
+            });
+
+            console.log('Resposta recebida:', response.status, response.statusText);
+
+            if (response.ok) {
+                const contentType = response.headers.get('content-type');
+                console.log('Content-Type:', contentType);
+
+                if (contentType && contentType.includes('application/json')) {
+                    const result = await response.json();
+                    console.log('Resultado:', result);
+
+                    // Feedback visual
+                    const row = document.querySelector(`tr[data-jury-id="${juryId}"]`);
+                    if (row) {
+                        row.style.backgroundColor = '#fee2e2'; // Vermelho claro
+                        row.style.transition = 'background-color 0.3s';
+                    }
+
+                    // Mostrar mensagem de sucesso
+                    const successDiv = document.createElement('div');
+                    successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2';
+                    successDiv.innerHTML = `
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
                     ${result.message || 'Júri eliminado com sucesso!'}
                 `;
-                document.body.appendChild(successDiv);
-                
-                // Recarregar após 1s
+                    document.body.appendChild(successDiv);
+
+                    // Recarregar após 1s
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    const text = await response.text();
+                    console.error('Resposta não é JSON:', text.substring(0, 500));
+                    alert('❌ Erro: resposta inválida do servidor (não-JSON). Verifique o console.');
+                }
+
+            } else {
+                console.error('Resposta com erro:', response.status);
+                try {
+                    const error = await response.json();
+                    alert('❌ ' + (error.message || 'Erro ao eliminar júri.'));
+                } catch (e) {
+                    const text = await response.text();
+                    console.error('Erro ao parsear resposta:', text.substring(0, 500));
+                    alert('❌ Erro ao eliminar júri. Status: ' + response.status);
+                }
+            }
+        } catch (error) {
+            console.error('Erro detalhado ao eliminar júri:', error);
+            alert('❌ Erro de conexão: ' + error.message + '\nVerifique o console do navegador (F12).');
+        }
+    }
+
+    async function removeVigilante(juryId, vigilanteId, vigilanteName = 'este vigilante') {
+        showConfirmModal(
+            '👤 Remover Vigilante',
+            `<strong>${escapeHtml(vigilanteName)}</strong><br><br>
+            <span class="text-amber-600">⚠️ O vigilante será desalocado deste júri.</span><br>
+            <span class="text-sm text-gray-500">Esta ação pode ser revertida alocando novamente.</span>`,
+            () => executeRemoveVigilante(juryId, vigilanteId)
+        );
+    }
+
+    async function executeRemoveVigilante(juryId, vigilanteId) {
+        try {
+            const response = await fetch(`${baseUrl}/juries/${juryId}/unassign`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: new URLSearchParams({
+                    vigilante_id: vigilanteId,
+                    csrf: csrfToken
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+
+                // Mostrar feedback visual temporário
+                const row = document.querySelector(`tr[data-jury-id="${juryId}"]`);
+                if (row) {
+                    row.style.backgroundColor = '#dcfce7'; // Verde claro
+                    row.style.transition = 'background-color 0.3s';
+                }
+
+                // Recarregar após 500ms
                 setTimeout(() => {
                     location.reload();
-                }, 1000);
+                }, 500);
+
             } else {
-                const text = await response.text();
-                console.error('Resposta não é JSON:', text.substring(0, 500));
-                alert('❌ Erro: resposta inválida do servidor (não-JSON). Verifique o console.');
-            }
-            
-        } else {
-            console.error('Resposta com erro:', response.status);
-            try {
                 const error = await response.json();
-                alert('❌ ' + (error.message || 'Erro ao eliminar júri.'));
+                alert('❌ ' + (error.message || 'Erro ao remover vigilante.'));
+            }
+        } catch (error) {
+            console.error('Erro ao remover vigilante:', error);
+            alert('❌ Erro de conexão ao remover vigilante.');
+        }
+    }
+
+    async function openSupervisorModal(juryId) {
+        const modal = document.getElementById('modal-supervisor-allocation');
+        if (!modal) {
+            // Criar modal dinamicamente se não existir
+            createSupervisorModal();
+        }
+
+        const content = document.getElementById('supervisor-allocation-content');
+        const modalElement = document.getElementById('modal-supervisor-allocation');
+
+        modalElement.classList.remove('hidden');
+        modalElement.classList.add('flex');
+
+        content.innerHTML = '<p class="text-center py-4">Carregando candidatos aprovados...</p>';
+
+        try {
+            const response = await fetch(`${baseUrl}/api/allocation/eligible-vigilantes/${juryId}`);
+
+            // Verificar se a resposta é JSON antes de tentar parsear
+            const contentType = response.headers.get('content-type');
+            const textResponse = await response.text();
+
+            console.log('Response status:', response.status);
+            console.log('Content-Type:', contentType);
+
+            if (!contentType || !contentType.includes('application/json')) {
+                console.error('Resposta não é JSON:', textResponse.substring(0, 500));
+                throw new Error('Servidor retornou resposta inválida. Verifique os logs do servidor.');
+            }
+
+            let data;
+            try {
+                data = JSON.parse(textResponse);
             } catch (e) {
-                const text = await response.text();
-                console.error('Erro ao parsear resposta:', text.substring(0, 500));
-                alert('❌ Erro ao eliminar júri. Status: ' + response.status);
+                console.error('Erro ao parsear JSON:', e);
+                console.error('Resposta:', textResponse.substring(0, 500));
+                throw new Error('Resposta do servidor não é JSON válido.');
             }
-        }
-    } catch (error) {
-        console.error('Erro detalhado ao eliminar júri:', error);
-        alert('❌ Erro de conexão: ' + error.message + '\nVerifique o console do navegador (F12).');
-    }
-}
 
-async function removeVigilante(juryId, vigilanteId) {
-    if (!confirm('⚠️ Remover este vigilante?\n\nEsta ação não pode ser desfeita.')) return;
-    
-    try {
-        const response = await fetch(`/juries/${juryId}/unassign`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: new URLSearchParams({ 
-                vigilante_id: vigilanteId, 
-                csrf: csrfToken 
-            })
-        });
-        
-        if (response.ok) {
-            const result = await response.json();
-            
-            // Mostrar feedback visual temporário
-            const row = document.querySelector(`tr[data-jury-id="${juryId}"]`);
-            if (row) {
-                row.style.backgroundColor = '#dcfce7'; // Verde claro
-                row.style.transition = 'background-color 0.3s';
+            console.log('Dados recebidos:', data); // Debug
+
+            if (!data.success) {
+                content.innerHTML = '<p class="text-center text-red-500 py-4">Erro: ' + (data.message || 'Erro desconhecido') + '</p>';
+                return;
             }
-            
-            // Recarregar após 500ms
-            setTimeout(() => {
-                location.reload();
-            }, 500);
-            
-        } else {
-            const error = await response.json();
-            alert('❌ ' + (error.message || 'Erro ao remover vigilante.'));
-        }
-    } catch (error) {
-        console.error('Erro ao remover vigilante:', error);
-        alert('❌ Erro de conexão ao remover vigilante.');
-    }
-}
 
-async function openSupervisorModal(juryId) {
-    const modal = document.getElementById('modal-supervisor-allocation');
-    if (!modal) {
-        // Criar modal dinamicamente se não existir
-        createSupervisorModal();
-    }
-    
-    const content = document.getElementById('supervisor-allocation-content');
-    const modalElement = document.getElementById('modal-supervisor-allocation');
-    
-    modalElement.classList.remove('hidden');
-    modalElement.classList.add('flex');
-    
-    content.innerHTML = '<p class="text-center py-4">Carregando candidatos aprovados...</p>';
-    
-    try {
-        const response = await fetch(`/api/allocation/eligible-vigilantes/${juryId}`);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        
-        console.log('Dados recebidos:', data); // Debug
-        
-        if (!data.success) {
-            content.innerHTML = '<p class="text-center text-red-500 py-4">Erro: ' + (data.message || 'Erro desconhecido') + '</p>';
-            return;
-        }
-        
-        if (!data.vigilantes || data.vigilantes.length === 0) {
-            content.innerHTML = `
+            if (!data.vigilantes || data.vigilantes.length === 0) {
+                content.innerHTML = `
                 <div class="text-center py-8">
                     <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
@@ -994,16 +1371,16 @@ async function openSupervisorModal(juryId) {
                     <p class="text-gray-400 text-sm mt-2">Aprove candidaturas primeiro em "Candidaturas de Vigilantes"</p>
                 </div>
             `;
-            return;
-        }
-        
-        let html = '<div class="space-y-2 max-h-96 overflow-y-auto">';
-        data.vigilantes.forEach(vigilante => {
-            const isEligible = vigilante.supervisor_eligible == 1;
-            const borderClass = isEligible ? 'border-2 border-purple-300 bg-purple-50' : 'border border-gray-200';
-            const buttonClass = isEligible ? 'bg-purple-600 hover:bg-purple-700 shadow-md' : 'bg-gray-600 hover:bg-gray-700';
-            
-            html += `
+                return;
+            }
+
+            let html = '<div class="space-y-2 max-h-96 overflow-y-auto">';
+            data.vigilantes.forEach(vigilante => {
+                const isEligible = vigilante.supervisor_eligible == 1;
+                const borderClass = isEligible ? 'border-2 border-purple-300 bg-purple-50' : 'border border-gray-200';
+                const buttonClass = isEligible ? 'bg-purple-600 hover:bg-purple-700 shadow-md' : 'bg-gray-600 hover:bg-gray-700';
+
+                html += `
                 <div class="flex items-center justify-between p-3 ${borderClass} rounded-lg hover:shadow-sm transition-all">
                     <div class="flex-1">
                         <div class="flex items-center gap-2">
@@ -1018,14 +1395,14 @@ async function openSupervisorModal(juryId) {
                     </button>
                 </div>
             `;
-        });
-        html += '</div>';
-        
-        content.innerHTML = html;
-        
-    } catch (error) {
-        console.error('Erro completo ao carregar candidatos:', error);
-        content.innerHTML = `
+            });
+            html += '</div>';
+
+            content.innerHTML = html;
+
+        } catch (error) {
+            console.error('Erro completo ao carregar candidatos:', error);
+            content.innerHTML = `
             <div class="text-center py-8">
                 <svg class="w-16 h-16 mx-auto text-red-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -1034,87 +1411,107 @@ async function openSupervisorModal(juryId) {
                 <p class="text-gray-500 text-sm mt-2">${error.message}</p>
             </div>
         `;
+        }
     }
-}
 
-async function allocateSupervisor(juryId, supervisorId) {
-    console.log('Alocando supervisor:', { juryId, supervisorId }); // Debug
-    
-    try {
-        const response = await fetch(`/juries/${juryId}/set-supervisor`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: new URLSearchParams({ 
-                supervisor_id: supervisorId, 
-                csrf: csrfToken 
-            })
-        });
-        
-        console.log('Response status:', response.status); // Debug
-        console.log('Response headers:', response.headers); // Debug
-        
-        // Tentar ler a resposta como texto primeiro
-        const textResponse = await response.text();
-        console.log('Response text:', textResponse); // Debug
-        
-        // Tentar parsear como JSON
-        let result;
+    async function allocateSupervisor(juryId, supervisorId) {
+        console.log('Alocando supervisor:', { juryId, supervisorId }); // Debug
+
         try {
-            result = JSON.parse(textResponse);
-        } catch (e) {
-            console.error('Erro ao parsear JSON:', e);
-            alert('❌ Resposta inválida do servidor.\n\n' + textResponse.substring(0, 200));
-            return;
-        }
-        
-        if (response.ok) {
-            closeSupervisorModal();
-            alert('✅ ' + result.message);
-            setTimeout(() => location.reload(), 500);
-        } else {
-            alert('❌ ' + (result.message || 'Erro ao alocar supervisor.'));
-        }
-    } catch (error) {
-        console.error('Erro completo ao alocar supervisor:', error);
-        alert('❌ Erro de conexão: ' + error.message);
-    }
-}
+            const response = await fetch(`${baseUrl}/juries/${juryId}/set-supervisor`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: new URLSearchParams({
+                    supervisor_id: supervisorId,
+                    csrf: csrfToken
+                })
+            });
 
-async function removeSupervisor(juryId) {
-    if (!confirm('⚠️ Remover supervisor?\n\nEsta ação removerá o supervisor de TODOS os júris deste exame.\n\nDeseja continuar?')) return;
-    
-    try {
-        const response = await fetch(`/juries/${juryId}/set-supervisor`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: new URLSearchParams({ 
-                supervisor_id: 0, 
-                csrf: csrfToken 
-            })
-        });
-        
-        const result = await response.json();
-        
-        if (response.ok) {
-            alert('✅ ' + result.message);
-            setTimeout(() => location.reload(), 500);
-        } else {
-            alert('❌ ' + (result.message || 'Erro ao remover supervisor.'));
-        }
-    } catch (error) {
-        console.error('Erro ao remover supervisor:', error);
-        alert('❌ Erro de conexão ao remover supervisor.');
-    }
-}
+            console.log('Response status:', response.status); // Debug
+            console.log('Response headers:', response.headers); // Debug
 
-function createSupervisorModal() {
-    const modalHTML = `
+            // Tentar ler a resposta como texto primeiro
+            const textResponse = await response.text();
+            console.log('Response text:', textResponse); // Debug
+
+            // Tentar parsear como JSON
+            let result;
+            try {
+                result = JSON.parse(textResponse);
+            } catch (e) {
+                console.error('Erro ao parsear JSON:', e);
+                alert('❌ Resposta inválida do servidor.\n\n' + textResponse.substring(0, 200));
+                return;
+            }
+
+            if (response.ok) {
+                closeSupervisorModal();
+                alert('✅ ' + result.message);
+                setTimeout(() => location.reload(), 500);
+            } else {
+                alert('❌ ' + (result.message || 'Erro ao alocar supervisor.'));
+            }
+        } catch (error) {
+            console.error('Erro completo ao alocar supervisor:', error);
+            alert('❌ Erro de conexão: ' + error.message);
+        }
+    }
+
+    async function removeSupervisor(juryId) {
+        showConfirmModal(
+            '⚠️ Remover Supervisor',
+            `<span class="text-red-600 font-semibold">Esta ação removerá o supervisor de TODOS os júris deste exame.</span><br><br>
+            <span class="text-gray-600">O supervisor deixará de estar associado às salas deste horário.</span>`,
+            () => executeRemoveSupervisor(juryId),
+            'danger'
+        );
+    }
+
+    async function executeRemoveSupervisor(juryId) {
+        try {
+            const response = await fetch(`${baseUrl}/juries/${juryId}/set-supervisor`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: new URLSearchParams({
+                    supervisor_id: 0,
+                    csrf: csrfToken
+                })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                if (typeof toastr !== 'undefined') {
+                    toastr.success(result.message, '✅ Sucesso');
+                } else {
+                    alert('✅ ' + result.message);
+                }
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                if (typeof toastr !== 'undefined') {
+                    toastr.error(result.message || 'Erro ao remover supervisor.', '❌ Erro');
+                } else {
+                    alert('❌ ' + (result.message || 'Erro ao remover supervisor.'));
+                }
+            }
+        } catch (error) {
+            console.error('Erro ao remover supervisor:', error);
+            if (typeof toastr !== 'undefined') {
+                toastr.error('Erro de conexão ao remover supervisor.', '❌ Erro');
+            } else {
+                alert('❌ Erro de conexão ao remover supervisor.');
+            }
+        }
+    }
+
+    function createSupervisorModal() {
+        const modalHTML = `
         <div id="modal-supervisor-allocation" class="modal hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-50 items-center justify-center">
             <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
                 <div class="flex items-center justify-between p-6 border-b">
@@ -1131,48 +1528,48 @@ function createSupervisorModal() {
             </div>
         </div>
     `;
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-}
-
-function closeSupervisorModal() {
-    const modal = document.getElementById('modal-supervisor-allocation');
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
     }
-}
 
-async function openManualModal(juryId) {
-    const modal = document.getElementById('modal-manual-allocation');
-    const content = document.getElementById('manual-allocation-content');
-    
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    
-    content.innerHTML = '<p class="text-center py-4">Carregando vigilantes disponíveis...</p>';
-    
-    try {
-        const response = await fetch(`/juries/${juryId}/eligible-vigilantes`);
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Erro HTTP:', response.status, errorText);
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    function closeSupervisorModal() {
+        const modal = document.getElementById('modal-supervisor-allocation');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
         }
-        
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            const text = await response.text();
-            console.error('Resposta não é JSON:', text.substring(0, 500));
-            throw new Error('Servidor retornou resposta inválida (não-JSON)');
-        }
-        
-        const data = await response.json();
-        console.log('Dados recebidos:', data);
-        const vigilantes = data.vigilantes || data;
-        
-        if (!vigilantes || vigilantes.length === 0) {
-            content.innerHTML = `
+    }
+
+    async function openManualModal(juryId) {
+        const modal = document.getElementById('modal-manual-allocation');
+        const content = document.getElementById('manual-allocation-content');
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        content.innerHTML = '<p class="text-center py-4">Carregando vigilantes disponíveis...</p>';
+
+        try {
+            const response = await fetch(`${baseUrl}/juries/${juryId}/eligible-vigilantes`);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Erro HTTP:', response.status, errorText);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Resposta não é JSON:', text.substring(0, 500));
+                throw new Error('Servidor retornou resposta inválida (não-JSON)');
+            }
+
+            const data = await response.json();
+            console.log('Dados recebidos:', data);
+            const vigilantes = data.vigilantes || data;
+
+            if (!vigilantes || vigilantes.length === 0) {
+                content.innerHTML = `
                 <div class="text-center py-8">
                     <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
@@ -1181,15 +1578,15 @@ async function openManualModal(juryId) {
                     <p class="text-gray-400 text-sm mt-2">Todos os vigilantes já estão alocados ou têm conflitos de horário.</p>
                 </div>
             `;
-            return;
-        }
-        
-        let html = '<div class="space-y-2 max-h-96 overflow-y-auto">';
-        vigilantes.forEach(v => {
-            const workload = v.workload_score || 0;
-            const workloadClass = workload === 0 ? 'bg-green-100 text-green-800' : (workload <= 2 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800');
-            
-            html += `
+                return;
+            }
+
+            let html = '<div class="space-y-2 max-h-96 overflow-y-auto">';
+            vigilantes.forEach(v => {
+                const workload = v.workload_score || 0;
+                const workloadClass = workload === 0 ? 'bg-green-100 text-green-800' : (workload <= 2 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800');
+
+                html += `
                 <div class="border rounded-lg p-4 hover:bg-blue-50 cursor-pointer transition"
                      onclick="allocateVigilanteManual(${juryId}, ${v.id})">
                     <div class="flex justify-between items-start">
@@ -1207,14 +1604,14 @@ async function openManualModal(juryId) {
                     </div>
                 </div>
             `;
-        });
-        html += '</div>';
-        
-        content.innerHTML = html;
-    } catch (error) {
-        console.error('Erro detalhado ao carregar vigilantes:', error);
-        const errorMsg = error.message || 'Erro desconhecido. Verifique o console do navegador.';
-        content.innerHTML = `
+            });
+            html += '</div>';
+
+            content.innerHTML = html;
+        } catch (error) {
+            console.error('Erro detalhado ao carregar vigilantes:', error);
+            const errorMsg = error.message || 'Erro desconhecido. Verifique o console do navegador.';
+            content.innerHTML = `
             <div class="text-center py-8">
                 <svg class="w-16 h-16 text-red-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -1226,86 +1623,472 @@ async function openManualModal(juryId) {
                 </button>
             </div>
         `;
-    }
-}
-
-async function allocateVigilanteManual(juryId, vigilanteId) {
-    try {
-        const response = await fetch(`/juries/${juryId}/assign`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: new URLSearchParams({ 
-                vigilante_id: vigilanteId, 
-                csrf: csrfToken 
-            })
-        });
-        
-        if (response.ok) {
-            const result = await response.json();
-            
-            // Fechar modal
-            const modal = document.getElementById('modal-manual-allocation');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            
-            // Feedback visual
-            const row = document.querySelector(`tr[data-jury-id="${juryId}"]`);
-            if (row) {
-                row.style.backgroundColor = '#dcfce7'; // Verde claro
-                row.style.transition = 'background-color 0.3s';
-            }
-            
-            // Mostrar mensagem de sucesso
-            const successDiv = document.createElement('div');
-            successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-            successDiv.innerHTML = '✅ ' + (result.message || 'Vigilante alocado com sucesso!');
-            document.body.appendChild(successDiv);
-            
-            // Recarregar após 1s
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
-            
-        } else {
-            const error = await response.json();
-            alert('❌ ' + (error.message || 'Erro ao alocar vigilante.'));
         }
-    } catch (error) {
-        console.error('Erro ao alocar vigilante:', error);
-        alert('❌ Erro de conexão ao alocar vigilante.');
     }
-}
 
-function escapeHtml(text) {
-    const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-    };
-    return text ? text.replace(/[&<>"']/g, m => map[m]) : '';
-}
+    async function allocateVigilanteManual(juryId, vigilanteId) {
+        try {
+            const response = await fetch(`${baseUrl}/juries/${juryId}/assign`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: new URLSearchParams({
+                    vigilante_id: vigilanteId,
+                    csrf: csrfToken
+                })
+            });
 
-// Event listeners para fechar modal
-document.addEventListener('DOMContentLoaded', function() {
-    const manualModal = document.getElementById('modal-manual-allocation');
-    const closeButtons = manualModal?.querySelectorAll('.modal-close');
-    const backdrop = manualModal?.querySelector('.modal-backdrop');
-    
-    closeButtons?.forEach(btn => {
-        btn.addEventListener('click', () => {
+            if (response.ok) {
+                const result = await response.json();
+
+                // Fechar modal
+                const modal = document.getElementById('modal-manual-allocation');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+
+                // Feedback visual
+                const row = document.querySelector(`tr[data-jury-id="${juryId}"]`);
+                if (row) {
+                    row.style.backgroundColor = '#dcfce7'; // Verde claro
+                    row.style.transition = 'background-color 0.3s';
+                }
+
+                // Mostrar mensagem de sucesso
+                const successDiv = document.createElement('div');
+                successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+                successDiv.innerHTML = '✅ ' + (result.message || 'Vigilante alocado com sucesso!');
+                document.body.appendChild(successDiv);
+
+                // Recarregar após 1s
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+
+            } else {
+                const error = await response.json();
+                alert('❌ ' + (error.message || 'Erro ao alocar vigilante.'));
+            }
+        } catch (error) {
+            console.error('Erro ao alocar vigilante:', error);
+            alert('❌ Erro de conexão ao alocar vigilante.');
+        }
+    }
+
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text ? text.replace(/[&<>"']/g, m => map[m]) : '';
+    }
+
+    /**
+     * Auto-distribuir supervisores equilibradamente por um bloco de exame
+     */
+    async function autoDistributeSupervisors(subject, examDate, startTime, endTime, vacancyId) {
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+
+        try {
+            btn.disabled = true;
+            btn.innerHTML = '<svg class="animate-spin w-4 h-4 inline-block" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Distribuindo...';
+
+            const params = new URLSearchParams({
+                csrf: csrfToken,
+                subject: subject,
+                exam_date: examDate,
+                start_time: startTime,
+                end_time: endTime
+            });
+
+            if (vacancyId) {
+                params.append('vacancy_id', vacancyId);
+            }
+
+            const response = await fetch(`${baseUrl}/juries/supervisors/auto-allocate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: params
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Mostrar resumo da distribuição
+                let distributionHTML = '<div class="text-left mt-2 space-y-1">';
+                if (result.distribution && result.distribution.length > 0) {
+                    result.distribution.forEach(d => {
+                        distributionHTML += `<div class="flex items-center gap-2">
+                            <span class="font-medium">👔 ${escapeHtml(d.supervisor_name)}</span>
+                            <span class="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">${d.jury_count} júris</span>
+                        </div>`;
+                    });
+                }
+                distributionHTML += '</div>';
+
+                // Toast de sucesso
+                const successDiv = document.createElement('div');
+                successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 max-w-md';
+                successDiv.innerHTML = `
+                    <div class="flex items-start gap-3">
+                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <div>
+                            <div class="font-bold mb-1">✅ Supervisores Distribuídos!</div>
+                            <div class="text-sm">${result.message}</div>
+                            ${distributionHTML}
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(successDiv);
+
+                // Recarregar página após 2s para ver os resultados
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            } else {
+                alert('❌ ' + (result.message || 'Erro ao distribuir supervisores'));
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        } catch (error) {
+            console.error('Erro ao auto-distribuir supervisores:', error);
+            alert('❌ Erro de conexão ao distribuir supervisores');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+
+    /**
+     * Auto-distribuir vigilantes equilibradamente por um bloco de exame
+     */
+    async function autoDistributeVigilantes(subject, examDate, startTime, endTime, vacancyId) {
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+
+        try {
+            btn.disabled = true;
+            btn.innerHTML = '<svg class="animate-spin w-4 h-4 inline-block" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Distribuindo...';
+
+            const params = new URLSearchParams({
+                csrf: csrfToken,
+                subject: subject,
+                exam_date: examDate,
+                start_time: startTime,
+                end_time: endTime
+            });
+
+            if (vacancyId) {
+                params.append('vacancy_id', vacancyId);
+            }
+
+            const response = await fetch(`${baseUrl}/juries/vigilantes/auto-distribute`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: params
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                const successDiv = document.createElement('div');
+                successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+                successDiv.innerHTML = `✅ ${result.message || 'Vigilantes distribuídos com sucesso!'}`;
+                document.body.appendChild(successDiv);
+
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                alert('❌ ' + (result.message || 'Erro ao distribuir vigilantes'));
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        } catch (error) {
+            console.error('Erro ao auto-distribuir vigilantes:', error);
+            alert('❌ Erro de conexão ao distribuir vigilantes');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+
+    // Variáveis globais para o modal de selecção de supervisor
+    let currentSupervisorSelectJuryId = null;
+    let currentSupervisorSelectVacancyId = null;
+
+    /**
+     * Abrir modal para seleccionar supervisor de um júri individual
+     */
+    async function openSupervisorSelectModal(juryId, roomName, vacancyId, examDate, startTime, endTime) {
+        const modal = document.getElementById('modal-supervisor-select');
+        const roomNameEl = document.getElementById('supervisor-select-room-name');
+        const contentEl = document.getElementById('supervisor-select-content');
+
+        currentSupervisorSelectJuryId = juryId;
+        currentSupervisorSelectVacancyId = vacancyId;
+
+        roomNameEl.textContent = roomName;
+
+        // Mostrar modal com loading
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        contentEl.innerHTML = `
+            <div class="flex items-center justify-center py-8">
+                <svg class="animate-spin w-8 h-8 text-purple-600" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <span class="ml-2 text-gray-600">Carregando supervisores disponíveis...</span>
+            </div>
+        `;
+
+        // Carregar supervisores disponíveis
+        await loadAvailableSupervisors(examDate, startTime, endTime, vacancyId);
+    }
+
+    /**
+     * Fechar modal de selecção de supervisor
+     */
+    function closeSupervisorSelectModal() {
+        const modal = document.getElementById('modal-supervisor-select');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        currentSupervisorSelectJuryId = null;
+        currentSupervisorSelectVacancyId = null;
+    }
+
+    /**
+     * Carregar supervisores disponíveis do servidor
+     */
+    async function loadAvailableSupervisors(examDate, startTime, endTime, vacancyId) {
+        const contentEl = document.getElementById('supervisor-select-content');
+
+        try {
+            const response = await fetch(`${baseUrl}/api/users/supervisors`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (!response.ok) throw new Error('Erro ao carregar supervisores');
+
+            const supervisors = await response.json();
+
+            if (supervisors.length === 0) {
+                contentEl.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                        </svg>
+                        <p class="font-medium">Nenhum supervisor elegível encontrado</p>
+                        <p class="text-sm mt-1">Verifique se existem vigilantes com a opção "Elegível para supervisão" activa.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Renderizar lista de supervisores
+            let html = '<div class="space-y-2">';
+
+            for (const sup of supervisors) {
+                const loadClass = sup.load >= 10 ? 'bg-red-100 text-red-700' :
+                    (sup.load >= 8 ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700');
+                const loadText = sup.load !== undefined ? `${sup.load}/10 júris` : 'Disponível';
+
+                html += `
+                    <div class="flex items-center justify-between p-3 border rounded-lg hover:bg-purple-50 transition cursor-pointer"
+                         onclick="assignSupervisorToJury(${sup.id}, '${escapeHtml(sup.name || sup.nome)}')">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-sm">
+                                ${(sup.name || sup.nome || '?').charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <div class="font-medium text-gray-900">${escapeHtml(sup.name || sup.nome)}</div>
+                                <div class="text-xs text-gray-500">${escapeHtml(sup.phone || sup.telefone || 'Sem telefone')}</div>
+                            </div>
+                        </div>
+                        <span class="px-3 py-1 text-xs rounded-full font-medium ${loadClass}">
+                            ${loadText}
+                        </span>
+                    </div>
+                `;
+            }
+
+            html += '</div>';
+
+            // Opção para remover supervisor
+            html += `
+                <div class="mt-4 pt-4 border-t">
+                    <button onclick="assignSupervisorToJury(0, 'Nenhum')" 
+                        class="w-full p-3 text-center text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition">
+                        ✕ Remover Supervisor
+                    </button>
+                </div>
+            `;
+
+            contentEl.innerHTML = html;
+
+        } catch (error) {
+            console.error('Erro ao carregar supervisores:', error);
+            contentEl.innerHTML = `
+                <div class="text-center py-8 text-red-500">
+                    <p class="font-medium">❌ Erro ao carregar supervisores</p>
+                    <p class="text-sm mt-1">${error.message}</p>
+                </div>
+            `;
+        }
+    }
+
+    /**
+     * Atribuir supervisor a um júri individual
+     */
+    async function assignSupervisorToJury(supervisorId, supervisorName) {
+        if (!currentSupervisorSelectJuryId) return;
+
+        try {
+            const response = await fetch(`${baseUrl}/juries/${currentSupervisorSelectJuryId}/supervisor/single`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: new URLSearchParams({
+                    csrf: csrfToken,
+                    supervisor_id: supervisorId
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                closeSupervisorSelectModal();
+
+                const successDiv = document.createElement('div');
+                successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+                successDiv.innerHTML = supervisorId ?
+                    `✅ Supervisor "${escapeHtml(supervisorName)}" atribuído!` :
+                    '✅ Supervisor removido!';
+                document.body.appendChild(successDiv);
+
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                alert('❌ ' + (result.message || 'Erro ao atribuir supervisor'));
+            }
+        } catch (error) {
+            console.error('Erro ao atribuir supervisor:', error);
+            alert('❌ Erro de conexão ao atribuir supervisor');
+        }
+    }
+
+    /**
+     * Remover supervisor de um júri individual (chamado pelo botão X na célula)
+     */
+    async function removeSupervisorFromJury(juryId) {
+        if (!confirm('Remover supervisor deste júri?')) return;
+
+        try {
+            const response = await fetch(`${baseUrl}/juries/${juryId}/supervisor/single`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: new URLSearchParams({
+                    csrf: csrfToken,
+                    supervisor_id: 0
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                const successDiv = document.createElement('div');
+                successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+                successDiv.innerHTML = '✅ Supervisor removido!';
+                document.body.appendChild(successDiv);
+
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                alert('❌ ' + (result.message || 'Erro ao remover supervisor'));
+            }
+        } catch (error) {
+            console.error('Erro ao remover supervisor:', error);
+            alert('❌ Erro de conexão ao remover supervisor');
+        }
+    }
+
+
+    /**
+     * Remover supervisor de todos os júris de um bloco de exame
+     */
+    async function removeSupervisorFromAllJuries(juryId, supervisorName) {
+        showConfirmModal(
+            '🚫 Remover Supervisor',
+            `<strong>${escapeHtml(supervisorName)}</strong><br><br>
+            <span class="text-amber-600">⚠️ Esta ação irá:</span>
+            <ul class="text-left mt-2 space-y-1 text-sm">
+                <li>• Remover o supervisor de todos os júris deste exame</li>
+                <li>• Os júris ficarão sem supervisor atribuído</li>
+            </ul>`,
+            async () => {
+                try {
+                    const response = await fetch(`${baseUrl}/juries/${juryId}/supervisor/remove`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: new URLSearchParams({ csrf: csrfToken })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        const successDiv = document.createElement('div');
+                        successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+                        successDiv.innerHTML = '✅ Supervisor removido com sucesso!';
+                        document.body.appendChild(successDiv);
+
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        alert('❌ ' + (result.message || 'Erro ao remover supervisor'));
+                    }
+                } catch (error) {
+                    console.error('Erro ao remover supervisor:', error);
+                    alert('❌ Erro de conexão ao remover supervisor');
+                }
+            }
+        );
+    }
+
+    // Event listeners para fechar modal
+    document.addEventListener('DOMContentLoaded', function () {
+        const manualModal = document.getElementById('modal-manual-allocation');
+        const closeButtons = manualModal?.querySelectorAll('.modal-close');
+        const backdrop = manualModal?.querySelector('.modal-backdrop');
+
+        closeButtons?.forEach(btn => {
+            btn.addEventListener('click', () => {
+                manualModal.classList.add('hidden');
+                manualModal.classList.remove('flex');
+            });
+        });
+
+        backdrop?.addEventListener('click', () => {
             manualModal.classList.add('hidden');
             manualModal.classList.remove('flex');
         });
     });
-    
-    backdrop?.addEventListener('click', () => {
-        manualModal.classList.add('hidden');
-        manualModal.classList.remove('flex');
-    });
-});
 </script>

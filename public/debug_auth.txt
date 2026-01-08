@@ -1,0 +1,4 @@
+Index.php hit: 2025-11-24 11:43:52 URI: /comexamesul/public/login
+Router dispatch: GET /login
+Index.php hit: 2025-11-24 11:46:09 URI: /comexamesul/public/login
+Router dispatch: GET /login

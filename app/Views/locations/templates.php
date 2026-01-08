@@ -1,7 +1,7 @@
 <?php
 $title = 'Templates de Júris';
 $breadcrumbs = [
-    ['label' => 'Júris por Local', 'url' => '/locations'],
+    ['label' => 'Júris por Local', 'url' => url('/locations')],
     ['label' => 'Templates']
 ];
 $canManage = in_array($user['role'], ['coordenador', 'membro'], true);
@@ -88,13 +88,13 @@ $canManage = in_array($user['role'], ['coordenador', 'membro'], true);
                                     <button type="button" class="btn-load-template px-3 py-1.5 text-xs font-medium bg-blue-100 text-blue-700 rounded hover:bg-blue-200" data-template-id="<?= $template['id'] ?>">
                                         Usar
                                     </button>
-                                    <form method="POST" action="/locations/templates/<?= $template['id'] ?>/toggle" class="inline">
+                                    <form method="POST" action="<?= url('/locations/templates/<?= $template['id'] ?>/toggle" class="inline">
                                         <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
                                         <button type="submit" class="px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 rounded hover:bg-gray-200">
                                             <?= (int)$template['is_active'] === 1 ? 'Desativar' : 'Ativar' ?>
                                         </button>
                                     </form>
-                                    <form method="POST" action="/locations/templates/<?= $template['id'] ?>/delete" onsubmit="return confirm('Eliminar este template?');" class="inline">
+                                    <form method="POST" action="<?= url('/locations/templates/<?= $template['id'] ?>/delete" onsubmit="return confirm('Eliminar este template?');" class="inline">
                                         <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
                                         <button type="submit" class="px-3 py-1.5 text-xs font-medium bg-red-100 text-red-600 rounded hover:bg-red-200">
                                             Eliminar
@@ -123,7 +123,7 @@ $canManage = in_array($user['role'], ['coordenador', 'membro'], true);
             <button type="button" class="modal-close text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
         </div>
         
-        <form method="POST" action="/locations/templates" id="form-create-template">
+        <form method="POST" action="<?= url('/locations/templates') ?>" id="form-create-template">
             <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
             
             <!-- Info do Template -->

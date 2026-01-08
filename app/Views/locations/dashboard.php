@@ -1,7 +1,7 @@
 <?php
 $title = 'Dashboard de Júris por Local';
 $breadcrumbs = [
-    ['label' => 'Júris por Local', 'url' => '/locations'],
+    ['label' => 'Júris por Local', 'url' => url('/locations')],
     ['label' => 'Dashboard']
 ];
 ?>
@@ -13,7 +13,8 @@ $breadcrumbs = [
             <h1 class="text-2xl font-semibold text-gray-800">Dashboard de Júris por Local</h1>
             <p class="text-sm text-gray-500">Estatísticas e análise de júris por local de realização</p>
         </div>
-        <a href="/locations" class="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded hover:bg-gray-500">Voltar</a>
+        <a href="url('/locations')"
+            class="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded hover:bg-gray-500">Voltar</a>
     </div>
 
     <!-- Top Locais -->
@@ -36,11 +37,15 @@ $breadcrumbs = [
                         <?php foreach ($topLocations as $index => $loc): ?>
                             <tr class="hover:bg-gray-50">
                                 <td class="px-4 py-3 text-sm font-bold text-gray-900"><?= $index + 1 ?></td>
-                                <td class="px-4 py-3 text-sm font-medium text-gray-700"><?= htmlspecialchars($loc['location']) ?></td>
-                                <td class="px-4 py-3 text-sm text-right text-gray-600"><?= number_format((int)$loc['total_juries']) ?></td>
-                                <td class="px-4 py-3 text-sm text-right font-semibold text-blue-600"><?= number_format((int)$loc['total_candidates']) ?></td>
-                                <td class="px-4 py-3 text-sm text-right text-gray-600"><?= number_format((int)$loc['total_vigilantes']) ?></td>
-                                <td class="px-4 py-3 text-sm text-right text-gray-600"><?= (int)$loc['exam_days'] ?></td>
+                                <td class="px-4 py-3 text-sm font-medium text-gray-700">
+                                    <?= htmlspecialchars($loc['location']) ?></td>
+                                <td class="px-4 py-3 text-sm text-right text-gray-600">
+                                    <?= number_format((int) $loc['total_juries']) ?></td>
+                                <td class="px-4 py-3 text-sm text-right font-semibold text-blue-600">
+                                    <?= number_format((int) $loc['total_candidates']) ?></td>
+                                <td class="px-4 py-3 text-sm text-right text-gray-600">
+                                    <?= number_format((int) $loc['total_vigilantes']) ?></td>
+                                <td class="px-4 py-3 text-sm text-right text-gray-600"><?= (int) $loc['exam_days'] ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -59,7 +64,9 @@ $breadcrumbs = [
                         <div class="flex items-center gap-3">
                             <div class="flex items-center justify-center w-10 h-10 bg-blue-600 text-white rounded-lg">
                                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+                                    <path fill-rule="evenodd"
+                                        d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                                        clip-rule="evenodd" />
                                 </svg>
                             </div>
                             <div class="flex-1">
@@ -93,9 +100,12 @@ $breadcrumbs = [
                                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
                                     <div class="flex items-center gap-2">
                                         <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+                                            <path fill-rule="evenodd"
+                                                d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                                                clip-rule="evenodd" />
                                         </svg>
-                                        <span class="text-sm font-medium text-gray-700"><?= date('d/m/Y', strtotime($dateStat['exam_date'])) ?></span>
+                                        <span
+                                            class="text-sm font-medium text-gray-700"><?= date('d/m/Y', strtotime($dateStat['exam_date'])) ?></span>
                                     </div>
                                     <div class="flex items-center gap-3 text-xs text-gray-600">
                                         <span><?= $dateStat['total_disciplines'] ?> disc.</span>
@@ -111,7 +121,8 @@ $breadcrumbs = [
     <?php else: ?>
         <div class="bg-white border border-gray-200 rounded-lg p-12 text-center">
             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
             <p class="mt-4 text-sm text-gray-500">Nenhuma estatística disponível ainda.</p>
         </div>

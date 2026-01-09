@@ -69,10 +69,10 @@ $router->get('/juries', 'JuryController@index', ['AuthMiddleware']);
 // Módulo de Pagamentos
 $router->get('/payments', 'PaymentController@index', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
 $router->get('/payments/rates', 'PaymentController@rates', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
-$router->post('/payments/rates', 'PaymentController@storeRate', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+$router->post('/payments/rates', 'PaymentController@storeRate', ['AuthMiddleware', 'RoleMiddleware:coordenador', 'CsrfMiddleware']);
 $router->get('/payments/preview/{vacancyId}', 'PaymentController@preview', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
-$router->post('/payments/generate/{vacancyId}', 'PaymentController@generate', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
-$router->post('/payments/validate/{vacancyId}', 'PaymentController@validate', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+$router->post('/payments/generate/{vacancyId}', 'PaymentController@generate', ['AuthMiddleware', 'RoleMiddleware:coordenador', 'CsrfMiddleware']);
+$router->post('/payments/validate/{vacancyId}', 'PaymentController@validate', ['AuthMiddleware', 'RoleMiddleware:coordenador', 'CsrfMiddleware']);
 $router->get('/payments/export/{vacancyId}', 'PaymentController@export', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
 
 // Meu Mapa de Pagamento (Individual - Vigilante/Supervisor)
@@ -93,11 +93,16 @@ $router->post('/juries/create-for-vacancy', 'JuryController@createJuriesForVacan
 $router->post('/juries/vacancy/auto-allocate', 'JuryController@autoAllocateVacancy', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
 $router->post('/juries/vacancy/clear-allocations', 'JuryController@clearVacancyAllocations', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
 $router->get('/juries/vacancy/{id}/stats', 'JuryController@getVacancyStats', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->post('/juries/vacancy/{id}/validate', 'JuryController@validateVacancyPlanning', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
 $router->get('/juries/{id}/eligible-vigilantes', 'JuryController@getEligibleForJury', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
 $router->get('/juries/vacancy/{id}/approved-candidates', 'JuryController@getVacancyApprovedCandidates', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
 
 // API para supervisores
 $router->get('/api/users/supervisors', 'JuryController@getEligibleSupervisors', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+
+// API para o Wizard de Criação de Júris
+$router->get('/api/vigilantes/eligible', 'JuryController@getEligibleVigilantesForWizard', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->get('/api/supervisors/eligible', 'JuryController@getEligibleSupervisorsForWizard', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
 $router->post('/juries/bulk-assign-supervisor', 'JuryController@bulkAssignSupervisor', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
 
 // API para alocação de supervisores por blocos (v2.7)
@@ -206,3 +211,9 @@ $router->get('/locations/export/template', 'LocationController@exportTemplate', 
 
 // Settings: Logo da Instituição
 $router->post('/settings/upload-logo', 'SettingsController@uploadLogo', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+
+// Feature Flags (Admin/Coordenador only)
+$router->get('/admin/features', 'FeatureFlagController@index', ['AuthMiddleware', 'RoleMiddleware:coordenador']);
+$router->post('/admin/features/toggle', 'FeatureFlagController@toggle', ['AuthMiddleware', 'RoleMiddleware:coordenador', 'CsrfMiddleware']);
+$router->get('/api/features', 'FeatureFlagController@getAll', ['AuthMiddleware', 'RoleMiddleware:coordenador']);
+$router->post('/admin/features/reset', 'FeatureFlagController@reset', ['AuthMiddleware', 'RoleMiddleware:coordenador', 'CsrfMiddleware']);

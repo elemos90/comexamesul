@@ -127,133 +127,438 @@ $breadcrumbs = [
     <?php endif; ?>
 </div>
 
-<!-- Modal: Criar Júris (Wizard Simples) -->
+<!-- Modal: Criar Júris (Wizard 5 Etapas) -->
 <div id="modal-create-juries"
     class="modal hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-50 items-center justify-center">
-    <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between p-6 border-b">
-            <h2 class="text-xl font-bold text-gray-900">Criar Júris para Vaga</h2>
-            <button type="button" class="modal-close text-gray-400 hover:text-gray-600">
+    <div class="bg-white rounded-lg shadow-xl max-w-5xl w-full mx-4 max-h-[95vh] overflow-hidden flex flex-col">
+        <!-- Header com Indicador de Passos -->
+        <div class="p-6 border-b bg-gradient-to-r from-primary-600 to-primary-700">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-white">Criar Júris Completos</h2>
+                <button type="button" class="modal-close text-white/80 hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Step Indicator -->
+            <div class="flex items-center justify-between">
+                <div class="step-indicator flex items-center gap-2" data-step="1">
+                    <div
+                        class="step-circle w-8 h-8 rounded-full bg-white text-primary-600 font-bold flex items-center justify-center text-sm">
+                        1</div>
+                    <span class="text-white text-sm font-medium hidden md:block">Dados Gerais</span>
+                </div>
+                <div class="flex-1 h-0.5 bg-white/30 mx-2"></div>
+                <div class="step-indicator flex items-center gap-2 opacity-50" data-step="2">
+                    <div
+                        class="step-circle w-8 h-8 rounded-full bg-white/30 text-white font-bold flex items-center justify-center text-sm">
+                        2</div>
+                    <span class="text-white/70 text-sm font-medium hidden md:block">Salas</span>
+                </div>
+                <div class="flex-1 h-0.5 bg-white/30 mx-2"></div>
+                <div class="step-indicator flex items-center gap-2 opacity-50" data-step="3">
+                    <div
+                        class="step-circle w-8 h-8 rounded-full bg-white/30 text-white font-bold flex items-center justify-center text-sm">
+                        3</div>
+                    <span class="text-white/70 text-sm font-medium hidden md:block">Vigilantes</span>
+                </div>
+                <div class="flex-1 h-0.5 bg-white/30 mx-2"></div>
+                <div class="step-indicator flex items-center gap-2 opacity-50" data-step="4">
+                    <div
+                        class="step-circle w-8 h-8 rounded-full bg-white/30 text-white font-bold flex items-center justify-center text-sm">
+                        4</div>
+                    <span class="text-white/70 text-sm font-medium hidden md:block">Supervisores</span>
+                </div>
+                <div class="flex-1 h-0.5 bg-white/30 mx-2"></div>
+                <div class="step-indicator flex items-center gap-2 opacity-50" data-step="5">
+                    <div
+                        class="step-circle w-8 h-8 rounded-full bg-white/30 text-white font-bold flex items-center justify-center text-sm">
+                        5</div>
+                    <span class="text-white/70 text-sm font-medium hidden md:block">Revisão</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wizard Content -->
+        <div class="flex-1 overflow-y-auto p-6">
+            <form id="form-create-juries">
+                <input type="hidden" id="create_vacancy_id" name="vacancy_id">
+                <input type="hidden" name="csrf" value="<?= \App\Utils\Csrf::token() ?>">
+
+                <!-- STEP 1: Dados Gerais -->
+                <div class="wizard-step" data-step="1">
+                    <!-- Vaga Selecionada -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div>
+                                <div class="font-semibold text-blue-900" id="selected_vacancy_title"></div>
+                                <div class="text-sm text-blue-700">Júris serão vinculados a esta vaga</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">📍 Local e Data</h3>
+                    <div class="grid md:grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Local *</label>
+                            <select name="location" id="select-location"
+                                class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:ring-2 focus:ring-primary-500"
+                                required>
+                                <option value="">Selecione o local...</option>
+                                <?php foreach ($locations as $loc): ?>
+                                    <option value="<?= htmlspecialchars($loc['name']) ?>"
+                                        data-location-id="<?= $loc['id'] ?>">
+                                        <?= htmlspecialchars($loc['name']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Data do Exame *</label>
+                            <input type="date" name="exam_date"
+                                class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:ring-2 focus:ring-primary-500"
+                                required>
+                        </div>
+                    </div>
+
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">📚 Disciplina e Horário</h3>
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Disciplina *</label>
+                            <select name="subject"
+                                class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:ring-2 focus:ring-primary-500"
+                                required>
+                                <option value="">Selecione...</option>
+                                <?php foreach ($disciplines as $disc): ?>
+                                    <option value="<?= htmlspecialchars($disc['name']) ?>">
+                                        <?= htmlspecialchars($disc['name']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Horário Início *</label>
+                            <input type="time" name="start_time" id="start_time"
+                                class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:ring-2 focus:ring-primary-500"
+                                required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Horário Fim *</label>
+                            <input type="time" name="end_time" id="end_time"
+                                class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:ring-2 focus:ring-primary-500"
+                                required>
+                            <p id="time-validation-error" class="mt-1 text-xs text-red-600 hidden"></p>
+                            <p id="time-validation-success" class="mt-1 text-xs text-green-600 hidden"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 2: Salas -->
+                <div class="wizard-step hidden" data-step="2">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">🏫 Salas e Candidatos</h3>
+                        <button type="button" id="btn-add-room"
+                            class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-500 flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4v16m8-8H4" />
+                            </svg>
+                            Adicionar Sala
+                        </button>
+                    </div>
+
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 text-sm text-amber-800">
+                        <strong>💡 Dica:</strong> Para cada 30 candidatos, será necessário 1 vigilante.
+                    </div>
+
+                    <div id="rooms-container" class="space-y-3">
+                        <!-- Primeira sala -->
+                        <div class="flex gap-3 items-start room-row bg-gray-50 p-4 rounded-lg border">
+                            <div class="flex-1">
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Sala *</label>
+                                <select name="rooms[0][room]"
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 room-select"
+                                    onchange="updateRoomCapacity(this)" required>
+                                    <option value="">Selecione a sala...</option>
+                                </select>
+                            </div>
+                            <div class="w-32">
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Candidatos *</label>
+                                <input type="number" name="rooms[0][candidates_quota]" min="1"
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 room-capacity"
+                                    oninput="updateVigilantesPreview()" required>
+                            </div>
+                            <div class="w-24 text-center">
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Mín. Vig.</label>
+                                <div class="room-min-vigilantes text-lg font-bold text-primary-600 py-1">-</div>
+                            </div>
+                            <div class="w-10 pt-6">
+                                <!-- Primeira sala não tem botão remover -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resumo de Salas -->
+                    <div class="mt-4 p-4 bg-gray-100 rounded-lg">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Total de Salas:</span>
+                            <span class="font-bold" id="total-rooms">1</span>
+                        </div>
+                        <div class="flex justify-between text-sm mt-1">
+                            <span class="text-gray-600">Total de Candidatos:</span>
+                            <span class="font-bold" id="total-candidates">0</span>
+                        </div>
+                        <div class="flex justify-between text-sm mt-1">
+                            <span class="text-gray-600">Vigilantes Necessários:</span>
+                            <span class="font-bold text-primary-600" id="total-vigilantes-needed">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 3: Vigilantes -->
+                <div class="wizard-step hidden" data-step="3">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">👁️ Alocação de Vigilantes</h3>
+                        <button type="button" id="btn-auto-vigilantes"
+                            class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-500 flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            Auto-Alocar Todos
+                        </button>
+                    </div>
+
+                    <div id="vigilantes-allocation-container" class="space-y-4">
+                        <!-- Será preenchido dinamicamente -->
+                        <div class="text-center py-8 text-gray-500">
+                            <p>Carregando informações das salas...</p>
+                        </div>
+                    </div>
+
+                    <!-- Status Geral -->
+                    <div class="mt-6 p-4 rounded-lg border-2" id="vigilantes-status">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div id="vigilantes-status-icon"
+                                    class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-gray-900" id="vigilantes-status-title">Alocação
+                                        Incompleta</div>
+                                    <div class="text-sm text-gray-600" id="vigilantes-status-desc">Aloque vigilantes
+                                        para todas as salas</div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-2xl font-bold" id="vigilantes-allocated-count">0</div>
+                                <div class="text-xs text-gray-500">de <span id="vigilantes-needed-count">0</span>
+                                    necessários</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 4: Supervisores -->
+                <div class="wizard-step hidden" data-step="4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">👔 Alocação de Supervisores</h3>
+                        <button type="button" id="btn-auto-supervisors"
+                            class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-500 flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            Auto-Distribuir
+                        </button>
+                    </div>
+
+                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-4 text-sm text-purple-800">
+                        <strong>ℹ️ Regra:</strong> Cada supervisor pode supervisionar até 10 júris. Salas: <span
+                            id="supervisor-juries-count">0</span> → Supervisores necessários: <span
+                            id="supervisors-needed" class="font-bold">0</span>
+                    </div>
+
+                    <div id="supervisors-allocation-container" class="space-y-4">
+                        <!-- Será preenchido dinamicamente -->
+                        <div class="text-center py-8 text-gray-500">
+                            <p>Carregando supervisores elegíveis...</p>
+                        </div>
+                    </div>
+
+                    <!-- Status Geral -->
+                    <div class="mt-6 p-4 rounded-lg border-2" id="supervisors-status">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div id="supervisors-status-icon"
+                                    class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-gray-900" id="supervisors-status-title">Sem
+                                        Supervisor</div>
+                                    <div class="text-sm text-gray-600" id="supervisors-status-desc">Selecione
+                                        supervisores para os júris</div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-2xl font-bold" id="supervisors-allocated-count">0</div>
+                                <div class="text-xs text-gray-500">de <span id="supervisors-min-count">0</span> mínimo
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 5: Revisão Final -->
+                <div class="wizard-step hidden" data-step="5">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">📋 Revisão Final</h3>
+
+                    <!-- Alertas -->
+                    <div id="review-alerts" class="mb-6 space-y-2">
+                        <!-- Alertas serão inseridos aqui -->
+                    </div>
+
+                    <!-- Resumo Geral -->
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-800 mb-3">📍 Informações do Exame</h4>
+                            <dl class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <dt class="text-gray-600">Local:</dt>
+                                    <dd class="font-medium" id="review-location">-</dd>
+                                </div>
+                                <div class="flex justify-between">
+                                    <dt class="text-gray-600">Data:</dt>
+                                    <dd class="font-medium" id="review-date">-</dd>
+                                </div>
+                                <div class="flex justify-between">
+                                    <dt class="text-gray-600">Disciplina:</dt>
+                                    <dd class="font-medium" id="review-subject">-</dd>
+                                </div>
+                                <div class="flex justify-between">
+                                    <dt class="text-gray-600">Horário:</dt>
+                                    <dd class="font-medium" id="review-time">-</dd>
+                                </div>
+                            </dl>
+                        </div>
+
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-800 mb-3">📊 Totais</h4>
+                            <dl class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <dt class="text-gray-600">Salas/Júris:</dt>
+                                    <dd class="font-medium" id="review-rooms">-</dd>
+                                </div>
+                                <div class="flex justify-between">
+                                    <dt class="text-gray-600">Candidatos:</dt>
+                                    <dd class="font-medium" id="review-candidates">-</dd>
+                                </div>
+                                <div class="flex justify-between">
+                                    <dt class="text-gray-600">Vigilantes:</dt>
+                                    <dd class="font-medium text-primary-600" id="review-vigilantes">-</dd>
+                                </div>
+                                <div class="flex justify-between">
+                                    <dt class="text-gray-600">Supervisores:</dt>
+                                    <dd class="font-medium text-purple-600" id="review-supervisors">-</dd>
+                                </div>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <!-- Detalhes das Salas -->
+                    <div class="mt-6">
+                        <h4 class="font-semibold text-gray-800 mb-3">🏫 Detalhes por Sala</h4>
+                        <div id="review-rooms-detail" class="space-y-2">
+                            <!-- Será preenchido dinamicamente -->
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Footer com Navegação -->
+        <div class="p-4 border-t bg-gray-50 flex items-center justify-between">
+            <button type="button" id="btn-wizard-back"
+                class="px-4 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-100 flex items-center gap-2 hidden">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                Voltar
+            </button>
+            <div class="flex-1"></div>
+            <div class="flex gap-3">
+                <button type="button"
+                    class="modal-close px-4 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-100">
+                    Cancelar
+                </button>
+                <button type="button" id="btn-wizard-next"
+                    class="px-6 py-2.5 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-500 flex items-center gap-2">
+                    Próximo
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
+                <button type="button" id="btn-wizard-create"
+                    class="hidden px-6 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-500 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Criar Júris
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Selecionar Vigilante -->
+<div id="vigilante-selector-modal"
+    class="modal hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-[60] items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 overflow-hidden">
+        <div class="p-4 border-b bg-gray-50 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-900">Selecionar Vigilante</h3>
+            <button type="button" onclick="closeVigilanteSelector()" class="text-gray-400 hover:text-gray-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
         </div>
-
-        <form id="form-create-juries" class="p-6 space-y-6">
-            <input type="hidden" id="create_vacancy_id" name="vacancy_id">
-            <input type="hidden" name="csrf" value="<?= \App\Utils\Csrf::token() ?>">
-
-            <!-- Vaga Selecionada -->
-            <div class="bg-blue-50 border border-blue-200 rounded p-4">
-                <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div>
-                        <div class="font-semibold text-blue-900" id="selected_vacancy_title"></div>
-                        <div class="text-sm text-blue-700">Júris serão vinculados a esta vaga</div>
-                    </div>
-                </div>
+        <div class="p-4">
+            <div class="relative mb-4">
+                <input type="text" id="vigilante-search" placeholder="Pesquisar por nome ou email..."
+                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none"
+                    stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
             </div>
-
-            <!-- Informações Básicas -->
-            <div class="grid md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Local *</label>
-                    <select name="location" id="select-location" class="w-full rounded border border-gray-300 px-3 py-2"
-                        required>
-                        <option value="">Selecione o local...</option>
-                        <?php foreach ($locations as $loc): ?>
-                            <option value="<?= htmlspecialchars($loc['name']) ?>" data-location-id="<?= $loc['id'] ?>">
-                                <?= htmlspecialchars($loc['name']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Data do Exame *</label>
-                    <input type="date" name="exam_date" class="w-full rounded border border-gray-300 px-3 py-2"
-                        required>
-                </div>
+            <div id="vigilante-list" class="max-h-64 overflow-y-auto space-y-1">
+                <!-- Lista de vigilantes será injetada aqui -->
             </div>
-
-            <!-- Disciplina -->
-            <div class="border-t pt-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">📚 Disciplina e Horário</h3>
-
-                <div class="grid md:grid-cols-3 gap-4 mb-6">
-                    <div class="md:col-span-1">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Disciplina *</label>
-                        <select name="subject" class="w-full rounded border border-gray-300 px-3 py-2" required>
-                            <option value="">Selecione...</option>
-                            <?php foreach ($disciplines as $disc): ?>
-                                <option value="<?= htmlspecialchars($disc['name']) ?>">
-                                    <?= htmlspecialchars($disc['name']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Horário Início *</label>
-                        <input type="time" name="start_time" id="start_time"
-                            class="w-full rounded border border-gray-300 px-3 py-2" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Horário Fim *</label>
-                        <input type="time" name="end_time" id="end_time"
-                            class="w-full rounded border border-gray-300 px-3 py-2" required>
-                        <p id="time-validation-error" class="mt-1 text-xs text-red-600 hidden"></p>
-                        <p id="time-validation-success" class="mt-1 text-xs text-green-600 hidden"></p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Salas -->
-            <div class="border-t pt-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-gray-900">🏫 Salas</h3>
-                    <button type="button" id="btn-add-room"
-                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-500">
-                        + Adicionar Sala
-                    </button>
-                </div>
-
-                <div id="rooms-container" class="space-y-3">
-                    <!-- Primeira sala -->
-                    <div class="flex gap-3 items-start room-row">
-                        <div class="flex-1">
-                            <label class="block text-xs font-medium text-gray-700 mb-1">Sala *</label>
-                            <select name="rooms[0][room]"
-                                class="w-full rounded border border-gray-300 px-3 py-2 room-select"
-                                onchange="updateRoomCapacity(this)" required>
-                                <option value="">Selecione a sala...</option>
-                            </select>
-                        </div>
-                        <div class="w-32">
-                            <label class="block text-xs font-medium text-gray-700 mb-1">Candidatos *</label>
-                            <input type="number" name="rooms[0][candidates_quota]" min="1"
-                                class="w-full rounded border border-gray-300 px-3 py-2 room-capacity" required>
-                        </div>
-                        <div class="w-10 pt-7">
-                            <!-- Primeira sala não tem botão remover -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Ações -->
-            <div class="flex items-center justify-end gap-3 pt-4 border-t">
-                <button type="button"
-                    class="modal-close px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50">
-                    Cancelar
-                </button>
-                <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-500">
-                    Criar Júris
-                </button>
-            </div>
-        </form>
+        </div>
+        <div class="p-3 border-t bg-gray-50">
+            <button type="button" onclick="closeVigilanteSelector()"
+                class="w-full px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors">
+                Cancelar
+            </button>
+        </div>
     </div>
 </div>
 
@@ -358,14 +663,25 @@ $breadcrumbs = [
         document.getElementById('modal-create-juries').classList.add('flex');
     }
 
-    function getRoomOptions(locationId) {
+    function getRoomOptions(locationId, excludeRoomCode = null) {
         let html = '<option value="">Selecione a sala...</option>';
 
         if (!locationId) {
             return '<option value="">Selecione um local primeiro</option>';
         }
 
-        const filteredRooms = masterRooms.filter(room => room.location_id == locationId);
+        // Get all currently selected room codes (except the one we're editing)
+        const selectedRoomCodes = Array.from(document.querySelectorAll('.room-select'))
+            .map(select => select.value)
+            .filter(code => code && code !== excludeRoomCode);
+
+        const filteredRooms = masterRooms.filter(room =>
+            room.location_id == locationId && !selectedRoomCodes.includes(room.code)
+        );
+
+        if (filteredRooms.length === 0 && selectedRoomCodes.length > 0) {
+            return '<option value="">Todas as salas já selecionadas</option>';
+        }
 
         if (filteredRooms.length === 0) {
             return '<option value="">Nenhuma sala cadastrada para este local</option>';
@@ -382,9 +698,21 @@ $breadcrumbs = [
         const roomSelects = document.querySelectorAll('.room-select');
         roomSelects.forEach(select => {
             const currentValue = select.value;
-            select.innerHTML = getRoomOptions(selectedLocationId);
-            // Tentar manter o valor selecionado
+            select.innerHTML = getRoomOptions(selectedLocationId, currentValue);
+            // Manter o valor selecionado se existir
             if (currentValue) {
+                // Re-add the current selection as an option if it was filtered out
+                const hasOption = Array.from(select.options).some(opt => opt.value === currentValue);
+                if (!hasOption) {
+                    const room = masterRooms.find(r => r.code === currentValue);
+                    if (room) {
+                        const opt = document.createElement('option');
+                        opt.value = room.code;
+                        opt.textContent = `${room.code} - ${room.name} (Cap: ${room.capacity})`;
+                        opt.dataset.capacity = room.capacity;
+                        select.insertBefore(opt, select.options[1]);
+                    }
+                }
                 select.value = currentValue;
             }
         });
@@ -399,6 +727,10 @@ $breadcrumbs = [
             capacityInput.value = capacity;
             capacityInput.placeholder = `Sugestão: ${capacity}`;
         }
+
+        // Update other room selects to remove this room from options
+        updateAllRoomSelects();
+        updateVigilantesPreview();
     }
 
     function addRoom() {
@@ -409,20 +741,24 @@ $breadcrumbs = [
 
         const roomsContainer = document.getElementById('rooms-container');
         const roomDiv = document.createElement('div');
-        roomDiv.className = 'flex gap-3 items-start room-row';
+        roomDiv.className = 'flex gap-3 items-start room-row bg-gray-50 p-4 rounded-lg border';
         roomDiv.innerHTML = `
         <div class="flex-1">
             <label class="block text-xs font-medium text-gray-700 mb-1">Sala *</label>
-            <select name="rooms[${roomCount}][room]" class="w-full rounded border border-gray-300 px-3 py-2 room-select" onchange="updateRoomCapacity(this)" required>
+            <select name="rooms[${roomCount}][room]" class="w-full rounded-lg border border-gray-300 px-3 py-2 room-select" onchange="updateRoomCapacity(this)" required>
                 ${getRoomOptions(selectedLocationId)}
             </select>
         </div>
         <div class="w-32">
             <label class="block text-xs font-medium text-gray-700 mb-1">Candidatos *</label>
-            <input type="number" name="rooms[${roomCount}][candidates_quota]" min="1" class="w-full rounded border border-gray-300 px-3 py-2 room-capacity" required>
+            <input type="number" name="rooms[${roomCount}][candidates_quota]" min="1" class="w-full rounded-lg border border-gray-300 px-3 py-2 room-capacity" oninput="updateVigilantesPreview()" required>
         </div>
-        <div class="w-10 pt-7">
-            <button type="button" onclick="this.closest('.room-row').remove()" class="text-red-600 hover:text-red-800">
+        <div class="w-24 text-center">
+            <label class="block text-xs font-medium text-gray-700 mb-1">Mín. Vig.</label>
+            <div class="room-min-vigilantes text-lg font-bold text-primary-600 py-1">-</div>
+        </div>
+        <div class="w-10 pt-6">
+            <button type="button" onclick="removeRoom(this)" class="text-red-600 hover:text-red-800">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
@@ -432,60 +768,848 @@ $breadcrumbs = [
 
         roomsContainer.appendChild(roomDiv);
         roomCount++;
+        updateVigilantesPreview();
+    }
+
+    function removeRoom(btn) {
+        btn.closest('.room-row').remove();
+        updateAllRoomSelects();
+        updateVigilantesPreview();
     }
 
     document.getElementById('btn-add-room').addEventListener('click', addRoom);
 
-    document.getElementById('form-create-juries').addEventListener('submit', async function (e) {
-        e.preventDefault();
+    // =========================================
+    // WIZARD NAVIGATION
+    // =========================================
+    let currentStep = 1;
+    const totalSteps = 5;
 
-        const formData = new FormData(this);
+    // Dados do wizard
+    let wizardData = {
+        rooms: [],
+        vigilantes: {},  // roomIndex -> [vigilante_ids]
+        supervisors: []  // [user_ids]
+    };
 
-        // Validar campos básicos
-        if (!formData.get('location') || !formData.get('exam_date') || !formData.get('subject') ||
-            !formData.get('start_time') || !formData.get('end_time')) {
-            alert('❌ Por favor, preencha todos os campos obrigatórios');
+    // Elegíveis carregados do servidor
+    let eligibleVigilantes = [];
+    let eligibleSupervisors = [];
+
+    function goToStep(step) {
+        if (step < 1 || step > totalSteps) return;
+
+        // Validar antes de avançar
+        if (step > currentStep && !validateCurrentStep()) {
             return;
         }
 
-        // Coletar salas
-        const rooms = [];
-        let roomIndex = 0;
-        while (formData.has(`rooms[${roomIndex}][room]`)) {
-            const room = formData.get(`rooms[${roomIndex}][room]`);
-            const quota = formData.get(`rooms[${roomIndex}][candidates_quota]`);
+        // Esconder step atual
+        document.querySelector(`.wizard-step[data-step="${currentStep}"]`)?.classList.add('hidden');
 
-            if (room && quota) {
-                rooms.push({
+        // Mostrar novo step
+        document.querySelector(`.wizard-step[data-step="${step}"]`)?.classList.remove('hidden');
+
+        // Atualizar indicadores
+        updateStepIndicators(step);
+
+        // Atualizar botões de navegação
+        updateNavigationButtons(step);
+
+        // Ações específicas ao entrar no step
+        onStepEnter(step);
+
+        currentStep = step;
+    }
+
+    function updateStepIndicators(activeStep) {
+        document.querySelectorAll('.step-indicator').forEach(indicator => {
+            const step = parseInt(indicator.dataset.step);
+            const circle = indicator.querySelector('.step-circle');
+
+            if (step < activeStep) {
+                // Completed
+                indicator.classList.remove('opacity-50');
+                circle.classList.remove('bg-white/30', 'text-white');
+                circle.classList.add('bg-green-500', 'text-white');
+                circle.innerHTML = '✓';
+            } else if (step === activeStep) {
+                // Active
+                indicator.classList.remove('opacity-50');
+                circle.classList.remove('bg-white/30', 'text-white', 'bg-green-500');
+                circle.classList.add('bg-white', 'text-primary-600');
+                circle.innerHTML = step;
+            } else {
+                // Future
+                indicator.classList.add('opacity-50');
+                circle.classList.remove('bg-white', 'text-primary-600', 'bg-green-500');
+                circle.classList.add('bg-white/30', 'text-white');
+                circle.innerHTML = step;
+            }
+        });
+    }
+
+    function updateNavigationButtons(step) {
+        const btnBack = document.getElementById('btn-wizard-back');
+        const btnNext = document.getElementById('btn-wizard-next');
+        const btnCreate = document.getElementById('btn-wizard-create');
+
+        // Botão Voltar
+        if (step === 1) {
+            btnBack.classList.add('hidden');
+        } else {
+            btnBack.classList.remove('hidden');
+        }
+
+        // Botões Próximo / Criar
+        if (step === totalSteps) {
+            btnNext.classList.add('hidden');
+            btnCreate.classList.remove('hidden');
+        } else {
+            btnNext.classList.remove('hidden');
+            btnCreate.classList.add('hidden');
+        }
+    }
+
+    function validateCurrentStep() {
+        switch (currentStep) {
+            case 1:
+                return validateStep1();
+            case 2:
+                return validateStep2();
+            case 3:
+                return validateStep3();
+            case 4:
+                return validateStep4();
+            default:
+                return true;
+        }
+    }
+
+    function validateStep1() {
+        const location = document.querySelector('select[name="location"]').value;
+        const examDate = document.querySelector('input[name="exam_date"]').value;
+        const subject = document.querySelector('select[name="subject"]').value;
+        const startTime = document.querySelector('input[name="start_time"]').value;
+        const endTime = document.querySelector('input[name="end_time"]').value;
+
+        if (!location || !examDate || !subject || !startTime || !endTime) {
+            alert('❌ Por favor, preencha todos os campos obrigatórios');
+            return false;
+        }
+
+        if (!validateTimeRange()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    function validateStep2() {
+        const roomRows = document.querySelectorAll('.room-row');
+        let valid = true;
+        let totalCandidates = 0;
+
+        roomRows.forEach(row => {
+            const room = row.querySelector('.room-select').value;
+            const candidates = parseInt(row.querySelector('.room-capacity').value) || 0;
+
+            if (!room || candidates < 1) {
+                valid = false;
+            }
+            totalCandidates += candidates;
+        });
+
+        if (!valid) {
+            alert('❌ Por favor, preencha todas as salas com dados válidos');
+            return false;
+        }
+
+        if (roomRows.length === 0) {
+            alert('❌ Adicione pelo menos uma sala');
+            return false;
+        }
+
+        // Salvar dados das salas
+        collectRoomsData();
+
+        return true;
+    }
+
+    function validateStep3() {
+        // Verificar se todas as salas têm vigilantes suficientes
+        let allComplete = true;
+        let incompleteRooms = [];
+
+        wizardData.rooms.forEach((room, index) => {
+            const allocated = (wizardData.vigilantes[index] || []).length;
+            const required = calculateMinVigilantes(room.candidates);
+            if (allocated < required) {
+                allComplete = false;
+                incompleteRooms.push(`${room.room}: ${allocated}/${required} vigilantes`);
+            }
+        });
+
+        if (!allComplete) {
+            alert(`❌ Não é possível avançar. Salas incompletas:\n\n${incompleteRooms.join('\n')}\n\nPor favor aloque vigilantes suficientes antes de continuar.`);
+            return false;
+        }
+
+        return true;
+    }
+
+    function validateStep4() {
+        const totalRooms = wizardData.rooms.length;
+        const MAX_JURIS_POR_SUPERVISOR = 10;
+        const numBlocks = Math.ceil(totalRooms / MAX_JURIS_POR_SUPERVISOR);
+
+        // Initialize blockSupervisors if needed
+        if (!wizardData.blockSupervisors) {
+            wizardData.blockSupervisors = new Array(numBlocks).fill(null);
+        }
+
+        // Check which blocks are missing supervisors
+        const missingBlocks = [];
+        for (let i = 0; i < numBlocks; i++) {
+            if (!wizardData.blockSupervisors[i]) {
+                const startRoom = i * MAX_JURIS_POR_SUPERVISOR;
+                const endRoom = Math.min(startRoom + MAX_JURIS_POR_SUPERVISOR, totalRooms);
+                const blockRooms = wizardData.rooms.slice(startRoom, endRoom).map(r => r.room);
+                missingBlocks.push(`Bloco ${i + 1} (${blockRooms.join(', ')})`);
+            }
+        }
+
+        if (missingBlocks.length > 0) {
+            alert(`❌ Não é possível avançar. Blocos sem supervisor:\n\n${missingBlocks.join('\n')}\n\nPor favor atribua um supervisor a cada bloco.`);
+            return false;
+        }
+
+        return true;
+    }
+
+    function onStepEnter(step) {
+        switch (step) {
+            case 3:
+                buildVigilantesStep();
+                break;
+            case 4:
+                buildSupervisorsStep();
+                break;
+            case 5:
+                buildReviewStep();
+                break;
+        }
+    }
+
+    // =========================================
+    // CÁLCULOS E COLETA DE DADOS
+    // =========================================
+
+    function calculateMinVigilantes(candidates) {
+        return Math.ceil(candidates / 30);
+    }
+
+    function updateVigilantesPreview() {
+        let totalRooms = 0;
+        let totalCandidates = 0;
+        let totalVigilantes = 0;
+
+        document.querySelectorAll('.room-row').forEach(row => {
+            const candidates = parseInt(row.querySelector('.room-capacity')?.value) || 0;
+            const minVigDisplay = row.querySelector('.room-min-vigilantes');
+
+            if (candidates > 0) {
+                const minVig = calculateMinVigilantes(candidates);
+                if (minVigDisplay) minVigDisplay.textContent = minVig;
+                totalVigilantes += minVig;
+                totalCandidates += candidates;
+            } else {
+                if (minVigDisplay) minVigDisplay.textContent = '-';
+            }
+            totalRooms++;
+        });
+
+        // Atualizar resumo
+        document.getElementById('total-rooms').textContent = totalRooms;
+        document.getElementById('total-candidates').textContent = totalCandidates;
+        document.getElementById('total-vigilantes-needed').textContent = totalVigilantes;
+    }
+
+    function collectRoomsData() {
+        wizardData.rooms = [];
+        document.querySelectorAll('.room-row').forEach((row, index) => {
+            const room = row.querySelector('.room-select').value;
+            const candidates = parseInt(row.querySelector('.room-capacity').value) || 0;
+
+            if (room && candidates > 0) {
+                wizardData.rooms.push({
                     room: room,
-                    candidates_quota: parseInt(quota)
+                    candidates: candidates,
+                    minVigilantes: calculateMinVigilantes(candidates)
                 });
             }
-            roomIndex++;
+        });
+    }
+
+    // =========================================
+    // STEP 3: VIGILANTES
+    // =========================================
+
+    async function buildVigilantesStep() {
+        const container = document.getElementById('vigilantes-allocation-container');
+        container.innerHTML = '<div class="text-center py-4"><span class="animate-spin inline-block w-6 h-6 border-2 border-primary-600 border-t-transparent rounded-full"></span> Carregando vigilantes elegíveis...</div>';
+
+        // Carregar vigilantes elegíveis
+        try {
+            const vacancyId = document.getElementById('create_vacancy_id').value;
+            console.log('DEBUG: Fetching vigilantes for vacancy_id =', vacancyId);
+            // Using full path to avoid URL truncation issues
+            const basePath = window.location.pathname.split('/public/')[0] || '';
+            const url = `${basePath}/public/api/vigilantes/eligible?vacancy_id=${vacancyId}`;
+            console.log('DEBUG: API URL =', url);
+            const response = await fetch(url);
+            const result = await response.json();
+            console.log('DEBUG: API result =', result);
+
+            if (result.success) {
+                eligibleVigilantes = result.vigilantes || [];
+                console.log('DEBUG: Found', eligibleVigilantes.length, 'vigilantes');
+            } else {
+                console.error('DEBUG: API returned error:', result.message);
+                eligibleVigilantes = [];
+            }
+        } catch (error) {
+            console.error('Erro ao carregar vigilantes:', error);
+            eligibleVigilantes = [];
         }
 
-        if (rooms.length === 0) {
-            alert('❌ Adicione pelo menos uma sala');
+        // Construir UI para cada sala
+        let html = '';
+        wizardData.rooms.forEach((room, index) => {
+            const allocated = wizardData.vigilantes[index] || [];
+            const required = room.minVigilantes;
+            const isComplete = allocated.length >= required;
+
+            html += `
+                <div class="p-4 border rounded-lg ${isComplete ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg ${isComplete ? 'bg-green-100' : 'bg-red-100'} flex items-center justify-center">
+                                <span class="font-bold ${isComplete ? 'text-green-700' : 'text-red-700'}">${room.room}</span>
+                            </div>
+                            <div>
+                                <div class="font-semibold text-gray-900">${room.room}</div>
+                                <div class="text-sm text-gray-600">${room.candidates} candidatos · Mín. ${required} vigilante(s)</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-3 py-1 rounded-full text-sm font-medium ${isComplete ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                                ${allocated.length}/${required}
+                            </span>
+                            <button type="button" onclick="autoAllocateRoom(${index})" class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-500">
+                                ⚡ Auto
+                            </button>
+                            <button type="button" onclick="openVigilanteSelector(${index})" class="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-500">
+                                ✋ Manual
+                            </button>
+                        </div>
+                    </div>
+                    <div id="room-${index}-vigilantes" class="flex flex-wrap gap-2">
+                        ${allocated.map(v => `
+                            <span class="inline-flex items-center gap-1 px-2 py-1 bg-white border rounded text-sm">
+                                ${getVigilanteName(v)}
+                                <button type="button" onclick="removeVigilante(${index}, ${v})" class="text-red-500 hover:text-red-700">×</button>
+                            </span>
+                        `).join('')}
+                        ${allocated.length === 0 ? '<span class="text-sm text-gray-500 italic">Nenhum vigilante alocado</span>' : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html || '<p class="text-gray-500 text-center py-4">Nenhuma sala configurada</p>';
+        updateVigilantesStatus();
+    }
+
+    function getVigilanteName(id) {
+        const v = eligibleVigilantes.find(vig => vig.id == id);
+        return v ? v.name : `Vigilante #${id}`;
+    }
+
+    function autoAllocateRoom(roomIndex) {
+        const room = wizardData.rooms[roomIndex];
+        if (!room) return;
+
+        const required = room.minVigilantes;
+        const currentlyAllocated = wizardData.vigilantes[roomIndex] || [];
+        const allAllocated = Object.values(wizardData.vigilantes).flat();
+
+        // Encontrar vigilantes disponíveis
+        const available = eligibleVigilantes.filter(v => !allAllocated.includes(v.id));
+
+        // Alocar até atingir o mínimo
+        const needed = required - currentlyAllocated.length;
+        const toAllocate = available.slice(0, needed).map(v => v.id);
+
+        wizardData.vigilantes[roomIndex] = [...currentlyAllocated, ...toAllocate];
+
+        buildVigilantesStep();
+    }
+
+    function removeVigilante(roomIndex, vigilanteId) {
+        if (!wizardData.vigilantes[roomIndex]) return;
+        wizardData.vigilantes[roomIndex] = wizardData.vigilantes[roomIndex].filter(id => id !== vigilanteId);
+        buildVigilantesStep();
+    }
+
+    // Modal-based vigilante selector with search filter
+    let currentSelectorRoomIndex = null;
+
+    function openVigilanteSelector(roomIndex) {
+        const allAllocated = Object.values(wizardData.vigilantes).flat();
+        const available = eligibleVigilantes.filter(v => !allAllocated.includes(v.id));
+
+        if (available.length === 0) {
+            alert('❌ Não há vigilantes disponíveis para alocar');
             return;
         }
 
-        // Montar dados para envio (uma única disciplina)
+        currentSelectorRoomIndex = roomIndex;
+
+        // Build and show modal
+        const modal = document.getElementById('vigilante-selector-modal');
+        const searchInput = document.getElementById('vigilante-search');
+        const listContainer = document.getElementById('vigilante-list');
+
+        // Render available vigilantes
+        function renderList(filter = '') {
+            const filtered = available.filter(v =>
+                v.name.toLowerCase().includes(filter.toLowerCase()) ||
+                (v.email && v.email.toLowerCase().includes(filter.toLowerCase()))
+            );
+
+            if (filtered.length === 0) {
+                listContainer.innerHTML = '<div class="text-center py-4 text-gray-500">Nenhum vigilante encontrado</div>';
+                return;
+            }
+
+            listContainer.innerHTML = filtered.map(v => `
+                <button type="button" 
+                    onclick="selectVigilante(${v.id})"
+                    class="w-full flex items-center gap-3 p-3 hover:bg-primary-50 rounded-lg transition-colors text-left border border-transparent hover:border-primary-200">
+                    <div class="w-10 h-10 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-semibold">
+                        ${v.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="font-medium text-gray-900 truncate">${v.name}</div>
+                        <div class="text-sm text-gray-500 truncate">${v.email || ''}</div>
+                    </div>
+                    <svg class="w-5 h-5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                </button>
+            `).join('');
+        }
+
+        renderList();
+        searchInput.value = '';
+        searchInput.oninput = (e) => renderList(e.target.value);
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        searchInput.focus();
+    }
+
+    function selectVigilante(vigilanteId) {
+        if (currentSelectorRoomIndex !== null) {
+            if (!wizardData.vigilantes[currentSelectorRoomIndex]) {
+                wizardData.vigilantes[currentSelectorRoomIndex] = [];
+            }
+            wizardData.vigilantes[currentSelectorRoomIndex].push(vigilanteId);
+            closeVigilanteSelector();
+            buildVigilantesStep();
+        }
+    }
+
+    function closeVigilanteSelector() {
+        const modal = document.getElementById('vigilante-selector-modal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        currentSelectorRoomIndex = null;
+    }
+
+    function updateVigilantesStatus() {
+        let totalAllocated = 0;
+        let totalNeeded = 0;
+        let allComplete = true;
+
+        wizardData.rooms.forEach((room, index) => {
+            const allocated = (wizardData.vigilantes[index] || []).length;
+            const required = room.minVigilantes;
+            totalAllocated += allocated;
+            totalNeeded += required;
+            if (allocated < required) allComplete = false;
+        });
+
+        const statusDiv = document.getElementById('vigilantes-status');
+        const iconDiv = document.getElementById('vigilantes-status-icon');
+        const titleEl = document.getElementById('vigilantes-status-title');
+        const descEl = document.getElementById('vigilantes-status-desc');
+
+        document.getElementById('vigilantes-allocated-count').textContent = totalAllocated;
+        document.getElementById('vigilantes-needed-count').textContent = totalNeeded;
+
+        if (allComplete) {
+            statusDiv.classList.remove('border-red-300');
+            statusDiv.classList.add('border-green-300');
+            iconDiv.classList.remove('bg-red-100');
+            iconDiv.classList.add('bg-green-100');
+            iconDiv.innerHTML = '<svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>';
+            titleEl.textContent = 'Alocação Completa!';
+            descEl.textContent = 'Todos os vigilantes foram alocados';
+        } else {
+            statusDiv.classList.remove('border-green-300');
+            statusDiv.classList.add('border-red-300');
+            iconDiv.classList.remove('bg-green-100');
+            iconDiv.classList.add('bg-red-100');
+            iconDiv.innerHTML = '<svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>';
+            titleEl.textContent = 'Alocação Incompleta';
+            descEl.textContent = 'Aloque vigilantes para todas as salas';
+        }
+    }
+
+    // Auto-alocar todos os vigilantes
+    document.getElementById('btn-auto-vigilantes')?.addEventListener('click', function () {
+        wizardData.rooms.forEach((room, index) => {
+            autoAllocateRoom(index);
+        });
+    });
+
+    // =========================================
+    // STEP 4: SUPERVISORES
+    // =========================================
+
+    async function buildSupervisorsStep() {
+        const container = document.getElementById('supervisors-allocation-container');
+        const numJuries = wizardData.rooms.length;
+        const MAX_JURIS_POR_SUPERVISOR = 10;
+        const supervisorsNeeded = Math.ceil(numJuries / MAX_JURIS_POR_SUPERVISOR);
+
+        document.getElementById('supervisor-juries-count').textContent = numJuries;
+        document.getElementById('supervisors-needed').textContent = supervisorsNeeded;
+        document.getElementById('supervisors-min-count').textContent = supervisorsNeeded;
+
+        container.innerHTML = '<div class="text-center py-4"><span class="animate-spin inline-block w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full"></span> Carregando supervisores elegíveis...</div>';
+
+        // Carregar supervisores elegíveis
+        try {
+            const vacancyId = document.getElementById('create_vacancy_id').value;
+            const basePath = window.location.pathname.split('/public/')[0] || '';
+            const response = await fetch(`${basePath}/public/api/supervisors/eligible?vacancy_id=${vacancyId}`);
+            const result = await response.json();
+
+            if (result.success) {
+                eligibleSupervisors = result.supervisors || [];
+            } else {
+                eligibleSupervisors = [];
+            }
+        } catch (error) {
+            console.error('Erro ao carregar supervisores:', error);
+            eligibleSupervisors = [];
+        }
+
+        // Criar blocos de salas (máximo 10 salas por bloco)
+        const blocks = [];
+        for (let i = 0; i < numJuries; i += MAX_JURIS_POR_SUPERVISOR) {
+            const blockRooms = wizardData.rooms.slice(i, i + MAX_JURIS_POR_SUPERVISOR);
+            blocks.push({
+                id: blocks.length,
+                rooms: blockRooms,
+                totalCandidates: blockRooms.reduce((sum, r) => sum + r.candidates, 0),
+                supervisorId: wizardData.blockSupervisors ? wizardData.blockSupervisors[blocks.length] : null
+            });
+        }
+
+        // Initialize block supervisors array if needed
+        if (!wizardData.blockSupervisors) {
+            wizardData.blockSupervisors = new Array(blocks.length).fill(null);
+        }
+
+        // Construir UI por blocos
+        let html = '<div class="space-y-4">';
+
+        blocks.forEach((block, blockIndex) => {
+            const supervisor = wizardData.blockSupervisors[blockIndex];
+            const supervisorData = supervisor ? eligibleSupervisors.find(s => s.id === supervisor) : null;
+            const isComplete = supervisor !== null;
+
+            html += `
+                <div class="p-4 border-2 rounded-lg ${isComplete ? 'border-green-300 bg-green-50' : 'border-purple-300 bg-purple-50'}">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-lg ${isComplete ? 'bg-green-100' : 'bg-purple-100'} flex items-center justify-center">
+                                <span class="font-bold ${isComplete ? 'text-green-700' : 'text-purple-700'} text-lg">B${blockIndex + 1}</span>
+                            </div>
+                            <div>
+                                <div class="font-semibold text-gray-900">Bloco ${blockIndex + 1}</div>
+                                <div class="text-sm text-gray-600">
+                                    ${block.rooms.length} sala(s): ${block.rooms.map(r => r.room).join(', ')} 
+                                    · ${block.totalCandidates} candidatos
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-3 py-1 rounded-full text-sm font-medium ${isComplete ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'}">
+                                ${isComplete ? '✓ Atribuído' : 'Pendente'}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <select id="block-supervisor-${blockIndex}" 
+                            onchange="assignBlockSupervisor(${blockIndex}, this.value)"
+                            class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                            <option value="">-- Selecionar Supervisor --</option>
+                            ${eligibleSupervisors.map(s => `
+                                <option value="${s.id}" ${supervisor === s.id ? 'selected' : ''}>
+                                    ${s.name} (${s.role_label || s.role || 'Supervisor'})
+                                </option>
+                            `).join('')}
+                        </select>
+                        ${supervisorData ? `
+                            <div class="flex items-center gap-2 text-sm text-green-700">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                                ${supervisorData.name}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+
+        if (eligibleSupervisors.length === 0) {
+            html = '<p class="text-gray-500 text-center py-4">Nenhum supervisor elegível encontrado</p>';
+        }
+
+        container.innerHTML = html;
+        updateSupervisorsStatus();
+    }
+
+    function assignBlockSupervisor(blockIndex, supervisorId) {
+        if (!wizardData.blockSupervisors) {
+            wizardData.blockSupervisors = [];
+        }
+        wizardData.blockSupervisors[blockIndex] = supervisorId ? parseInt(supervisorId) : null;
+
+        // Update legacy supervisors array for compatibility
+        wizardData.supervisors = wizardData.blockSupervisors.filter(id => id !== null);
+
+        buildSupervisorsStep();
+    }
+
+    function toggleSupervisor(id) {
+        const index = wizardData.supervisors.indexOf(id);
+        if (index > -1) {
+            wizardData.supervisors.splice(index, 1);
+        } else {
+            wizardData.supervisors.push(id);
+        }
+        buildSupervisorsStep();
+    }
+
+    function updateSupervisorsStatus() {
+        const needed = Math.ceil(wizardData.rooms.length / 10);
+        const allocated = wizardData.supervisors.length;
+
+        document.getElementById('supervisors-allocated-count').textContent = allocated;
+
+        const statusDiv = document.getElementById('supervisors-status');
+        const iconDiv = document.getElementById('supervisors-status-icon');
+        const titleEl = document.getElementById('supervisors-status-title');
+        const descEl = document.getElementById('supervisors-status-desc');
+
+        if (allocated >= needed) {
+            statusDiv.classList.remove('border-red-300');
+            statusDiv.classList.add('border-green-300');
+            iconDiv.classList.remove('bg-red-100');
+            iconDiv.classList.add('bg-green-100');
+            iconDiv.innerHTML = '<svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>';
+            titleEl.textContent = 'Supervisores Alocados!';
+            descEl.textContent = `${allocated} supervisor(es) selecionado(s)`;
+        } else {
+            statusDiv.classList.remove('border-green-300');
+            statusDiv.classList.add('border-red-300');
+            iconDiv.classList.remove('bg-green-100');
+            iconDiv.classList.add('bg-red-100');
+            iconDiv.innerHTML = '<svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>';
+            titleEl.textContent = 'Faltam Supervisores';
+            descEl.textContent = `Selecione pelo menos ${needed} supervisor(es)`;
+        }
+    }
+
+    // Auto-distribuir supervisores por blocos
+    document.getElementById('btn-auto-supervisors')?.addEventListener('click', function () {
+        const totalRooms = wizardData.rooms.length;
+        const MAX_JURIS_POR_SUPERVISOR = 10;
+        const numBlocks = Math.ceil(totalRooms / MAX_JURIS_POR_SUPERVISOR);
+
+        // Initialize block supervisors array
+        wizardData.blockSupervisors = [];
+
+        // Assign one supervisor to each block using round-robin
+        for (let i = 0; i < numBlocks; i++) {
+            if (eligibleSupervisors[i]) {
+                wizardData.blockSupervisors[i] = eligibleSupervisors[i].id;
+            } else if (eligibleSupervisors.length > 0) {
+                // If not enough supervisors, reuse from beginning
+                wizardData.blockSupervisors[i] = eligibleSupervisors[i % eligibleSupervisors.length].id;
+            }
+        }
+
+        // Update legacy array for compatibility
+        wizardData.supervisors = wizardData.blockSupervisors.filter(id => id !== null);
+
+        buildSupervisorsStep();
+    });
+
+    // =========================================
+    // STEP 5: REVISÃO
+    // =========================================
+
+    function buildReviewStep() {
+        const formData = new FormData(document.getElementById('form-create-juries'));
+
+        // Informações gerais
+        document.getElementById('review-location').textContent = formData.get('location');
+        document.getElementById('review-date').textContent = formatDate(formData.get('exam_date'));
+        document.getElementById('review-subject').textContent = formData.get('subject');
+        document.getElementById('review-time').textContent = `${formData.get('start_time')} - ${formData.get('end_time')}`;
+
+        // Totais
+        const totalVigilantes = Object.values(wizardData.vigilantes).flat().length;
+        document.getElementById('review-rooms').textContent = wizardData.rooms.length;
+        document.getElementById('review-candidates').textContent = wizardData.rooms.reduce((sum, r) => sum + r.candidates, 0);
+        document.getElementById('review-vigilantes').textContent = totalVigilantes;
+        document.getElementById('review-supervisors').textContent = wizardData.supervisors.length;
+
+        // Detalhes por sala
+        let detailsHtml = '';
+        wizardData.rooms.forEach((room, index) => {
+            const vigilantes = (wizardData.vigilantes[index] || []).map(id => getVigilanteName(id)).join(', ') || 'Nenhum';
+            const isComplete = (wizardData.vigilantes[index] || []).length >= room.minVigilantes;
+
+            detailsHtml += `
+                <div class="flex items-center justify-between p-3 bg-white rounded border ${isComplete ? 'border-gray-200' : 'border-red-300'}">
+                    <div class="flex items-center gap-3">
+                        <span class="font-semibold">${room.room}</span>
+                        <span class="text-sm text-gray-500">${room.candidates} candidatos</span>
+                    </div>
+                    <div class="text-sm">
+                        <span class="${isComplete ? 'text-green-600' : 'text-red-600'}">${(wizardData.vigilantes[index] || []).length}/${room.minVigilantes} vig.</span>
+                    </div>
+                </div>
+            `;
+        });
+        document.getElementById('review-rooms-detail').innerHTML = detailsHtml;
+
+        // Alertas
+        buildReviewAlerts();
+    }
+
+    function buildReviewAlerts() {
+        const alerts = [];
+
+        // Verificar vigilantes
+        wizardData.rooms.forEach((room, index) => {
+            const allocated = (wizardData.vigilantes[index] || []).length;
+            if (allocated < room.minVigilantes) {
+                alerts.push({
+                    type: 'warning',
+                    message: `Sala ${room.room}: ${allocated}/${room.minVigilantes} vigilantes (abaixo do mínimo)`
+                });
+            }
+        });
+
+        // Verificar supervisores
+        const supervisorsNeeded = Math.ceil(wizardData.rooms.length / 10);
+        if (wizardData.supervisors.length < supervisorsNeeded) {
+            alerts.push({
+                type: 'warning',
+                message: `Supervisores: ${wizardData.supervisors.length}/${supervisorsNeeded} (abaixo do recomendado)`
+            });
+        }
+
+        const alertsContainer = document.getElementById('review-alerts');
+        if (alerts.length > 0) {
+            alertsContainer.innerHTML = alerts.map(a => `
+                <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+                    <svg class="w-5 h-5 text-amber-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    <span class="text-sm text-amber-800">${a.message}</span>
+                </div>
+            `).join('');
+        } else {
+            alertsContainer.innerHTML = `
+                <div class="p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
+                    <svg class="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span class="text-sm text-green-800">✅ Tudo pronto! A configuração está completa.</span>
+                </div>
+            `;
+        }
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return '-';
+        const parts = dateStr.split('-');
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+
+    // =========================================
+    // NAVEGAÇÃO E CRIAÇÃO
+    // =========================================
+
+    document.getElementById('btn-wizard-next')?.addEventListener('click', function () {
+        goToStep(currentStep + 1);
+    });
+
+    document.getElementById('btn-wizard-back')?.addEventListener('click', function () {
+        goToStep(currentStep - 1);
+    });
+
+    document.getElementById('btn-wizard-create')?.addEventListener('click', async function () {
+        const formData = new FormData(document.getElementById('form-create-juries'));
+
+        // Preparar dados com alocações
+        const rooms = wizardData.rooms.map((room, index) => ({
+            room: room.room,
+            candidates_quota: room.candidates,
+            vigilantes: wizardData.vigilantes[index] || []
+        }));
+
         const data = {
             vacancy_id: parseInt(formData.get('vacancy_id')),
             location: formData.get('location'),
             exam_date: formData.get('exam_date'),
-            csrf: formData.get('csrf'), // Token CSRF
-            disciplines: [
-                {
-                    subject: formData.get('subject'),
-                    start_time: formData.get('start_time'),
-                    end_time: formData.get('end_time'),
-                    rooms: rooms
-                }
-            ]
+            csrf: formData.get('csrf'),
+            supervisors: wizardData.supervisors,
+            blockSupervisors: wizardData.blockSupervisors || [],
+            disciplines: [{
+                subject: formData.get('subject'),
+                start_time: formData.get('start_time'),
+                end_time: formData.get('end_time'),
+                rooms: rooms
+            }]
         };
 
-        // Enviar para API
+        this.disabled = true;
+        this.innerHTML = '<span class="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span> Criando...';
+
         try {
             const response = await fetch('<?= url('/juries/create-for-vacancy') ?>', {
                 method: 'POST',
@@ -496,7 +1620,6 @@ $breadcrumbs = [
                 body: JSON.stringify(data)
             });
 
-            // Verificar se sessão expirou
             if (response.status === 401) {
                 alert('⚠️ Sessão expirada. Redirecionando para login...');
                 window.location.href = '<?= url('/login') ?>';
@@ -506,22 +1629,64 @@ $breadcrumbs = [
             const result = await response.json();
 
             if (result.success) {
-                alert(`✅ ${result.message}\n\n${result.total} júri(s) criado(s) para ${formData.get('subject')}\n\nRedirecionando para gestão...`);
+                alert(`✅ ${result.message}\n\n${result.total || wizardData.rooms.length} júri(s) criado(s) com alocações!\n\nRedirecionando para gestão...`);
                 window.location.href = `<?= url('/juries/vacancy/') ?>${data.vacancy_id}/manage`;
             } else {
-                // Verificar se tem redirect (outra forma de sessão expirada)
-                if (result.redirect) {
-                    alert(`⚠️ ${result.message}`);
-                    window.location.href = result.redirect;
-                } else {
-                    alert(`❌ Erro: ${result.message}`);
-                }
+                alert(`❌ Erro: ${result.message}`);
+                this.disabled = false;
+                this.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Criar Júris';
             }
         } catch (error) {
             console.error('Erro ao criar júris:', error);
-            alert('❌ Erro ao criar júris. Verifique o console para mais detalhes.');
+            alert('❌ Erro ao criar júris. Verifique o console.');
+            this.disabled = false;
+            this.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Criar Júris';
         }
     });
+
+    // =========================================
+    // ABERTURA DO WIZARD
+    // =========================================
+
+    function openCreateWizard(vacancyId, vacancyTitle) {
+        document.getElementById('create_vacancy_id').value = vacancyId;
+        document.getElementById('selected_vacancy_title').textContent = vacancyTitle;
+
+        // Resetar wizard
+        currentStep = 1;
+        roomCount = 1;
+        wizardData = { rooms: [], vigilantes: {}, supervisors: [] };
+
+        // Limpar salas extras
+        const roomsContainer = document.getElementById('rooms-container');
+        const rooms = roomsContainer.querySelectorAll('.room-row');
+        rooms.forEach((room, index) => {
+            if (index > 0) room.remove();
+        });
+
+        // Limpar campos
+        document.querySelector('select[name="location"]').value = '';
+        document.querySelector('input[name="exam_date"]').value = '';
+        document.querySelector('select[name="subject"]').value = '';
+        document.querySelector('input[name="start_time"]').value = '';
+        document.querySelector('input[name="end_time"]').value = '';
+
+        // Limpar primeira sala
+        const firstRoomSelect = document.querySelector('select[name="rooms[0][room]"]');
+        const firstCapacityInput = document.querySelector('input[name="rooms[0][candidates_quota]"]');
+        firstRoomSelect.innerHTML = '<option value="">Selecione o local primeiro</option>';
+        firstCapacityInput.value = '';
+
+        selectedLocationId = null;
+
+        // Resetar UI do wizard
+        goToStep(1);
+        updateVigilantesPreview();
+
+        // Abrir modal
+        document.getElementById('modal-create-juries').classList.remove('hidden');
+        document.getElementById('modal-create-juries').classList.add('flex');
+    }
 
     // Fechar modais
     document.querySelectorAll('.modal-close').forEach(btn => {
@@ -530,4 +1695,28 @@ $breadcrumbs = [
             this.closest('.modal').classList.remove('flex');
         });
     });
+
+    // Auto-abrir wizard se vacancy_id vier na URL
+    (function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const vacancyIdParam = urlParams.get('vacancy_id');
+
+        if (vacancyIdParam) {
+            // Encontrar a vaga na lista e abrir o wizard
+            const vacancyId = parseInt(vacancyIdParam);
+            const vacancies = <?= json_encode($vacancies ?? []) ?>;
+            const vacancy = vacancies.find(v => v.id === vacancyId);
+
+            if (vacancy) {
+                // Pequeno atraso para garantir que a página carregou
+                setTimeout(() => {
+                    openCreateWizard(vacancy.id, vacancy.title || `Vaga #${vacancy.id}`);
+                }, 100);
+            }
+
+            // Limpar URL para não reabrir se o utilizador recarregar
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, newUrl);
+        }
+    })();
 </script>

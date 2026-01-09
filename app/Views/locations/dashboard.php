@@ -13,7 +13,7 @@ $breadcrumbs = [
             <h1 class="text-2xl font-semibold text-gray-800">Dashboard de Júris por Local</h1>
             <p class="text-sm text-gray-500">Estatísticas e análise de júris por local de realização</p>
         </div>
-        <a href="url('/locations')"
+        <a href="<?= url('/locations') ?>"
             class="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded hover:bg-gray-500">Voltar</a>
     </div>
 
@@ -38,13 +38,17 @@ $breadcrumbs = [
                             <tr class="hover:bg-gray-50">
                                 <td class="px-4 py-3 text-sm font-bold text-gray-900"><?= $index + 1 ?></td>
                                 <td class="px-4 py-3 text-sm font-medium text-gray-700">
-                                    <?= htmlspecialchars($loc['location']) ?></td>
+                                    <?= htmlspecialchars($loc['location']) ?>
+                                </td>
                                 <td class="px-4 py-3 text-sm text-right text-gray-600">
-                                    <?= number_format((int) $loc['total_juries']) ?></td>
+                                    <?= number_format((int) $loc['total_juries']) ?>
+                                </td>
                                 <td class="px-4 py-3 text-sm text-right font-semibold text-blue-600">
-                                    <?= number_format((int) $loc['total_candidates']) ?></td>
+                                    <?= number_format((int) $loc['total_candidates']) ?>
+                                </td>
                                 <td class="px-4 py-3 text-sm text-right text-gray-600">
-                                    <?= number_format((int) $loc['total_vigilantes']) ?></td>
+                                    <?= number_format((int) $loc['total_vigilantes']) ?>
+                                </td>
                                 <td class="px-4 py-3 text-sm text-right text-gray-600"><?= (int) $loc['exam_days'] ?></td>
                             </tr>
                         <?php endforeach; ?>

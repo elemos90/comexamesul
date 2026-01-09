@@ -4,11 +4,18 @@ use App\Utils\Auth;
 $user = Auth::user();
 $current = strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
 $role = $user['role'] ?? '';
+$roleName = match ($role) {
+    'coordenador' => 'Coordenador',
+    'membro' => 'Membro da Comissão',
+    'supervisor' => 'Supervisor',
+    'vigilante' => 'Vigilante',
+    default => $role
+};
 
 $items = [
-    ['label' => 'Dashboard', 'href' => url('/dashboard'), 'roles' => ['vigilante', 'membro', 'coordenador'], 'icon' => 'dashboard', 'color' => 'blue'],
+    ['label' => 'Dashboard', 'href' => url('/dashboard'), 'roles' => ['vigilante', 'supervisor', 'membro', 'coordenador'], 'icon' => 'dashboard', 'color' => 'blue'],
     ['label' => 'Vagas', 'href' => url('/vacancies'), 'roles' => ['membro', 'coordenador'], 'icon' => 'work', 'color' => 'green'],
-    ['label' => 'Candidaturas', 'href' => url('/availability'), 'roles' => ['vigilante'], 'icon' => 'assignment_turned_in', 'color' => 'purple'],
+    ['label' => 'Candidaturas', 'href' => url('/availability'), 'roles' => ['vigilante', 'supervisor'], 'icon' => 'assignment_turned_in', 'color' => 'purple'],
     [
         'label' => 'Candidaturas',
         'href' => url('/applications'),
@@ -23,13 +30,13 @@ $items = [
     [
         'label' => 'Júris',
         'href' => url('/juries'),
-        'roles' => ['vigilante', 'membro', 'coordenador'],
+        'roles' => ['vigilante', 'supervisor', 'membro', 'coordenador'],
         'icon' => 'gavel',
         'color' => 'orange',
         'children' => [
             ['label' => 'Planeamento por Vaga', 'href' => url('/juries/planning-by-vacancy'), 'roles' => ['membro', 'coordenador']],
             ['label' => 'Planeamento Avançado', 'href' => url('/juries/planning'), 'roles' => ['membro', 'coordenador']],
-            ['label' => 'Calendário', 'href' => url('/juries/calendar'), 'roles' => ['vigilante', 'membro', 'coordenador']],
+            ['label' => 'Calendário', 'href' => url('/juries/calendar'), 'roles' => ['vigilante', 'supervisor', 'membro', 'coordenador']],
             ['label' => 'Lista de Júris', 'href' => url('/juries')],
         ]
     ],
@@ -58,8 +65,8 @@ $items = [
             ['label' => 'Meu Mapa', 'href' => url('/payments/my-map'), 'roles' => ['membro', 'coordenador']],
         ]
     ],
-    // Meu Mapa de Pagamento (para vigilantes - item separado)
-    ['label' => 'Meu Mapa de Pagamento', 'href' => url('/payments/my-map'), 'roles' => ['vigilante'], 'icon' => 'receipt_long', 'color' => 'emerald'],
+    // Meu Mapa de Pagamento (para vigilantes e supervisores - item separado)
+    ['label' => 'Meu Mapa de Pagamento', 'href' => url('/payments/my-map'), 'roles' => ['vigilante', 'supervisor'], 'icon' => 'receipt_long', 'color' => 'emerald'],
     [
         'label' => 'Dados Mestres',
         'href' => url('/master-data/disciplines'),
@@ -72,7 +79,9 @@ $items = [
             ['label' => 'Salas', 'href' => url('/master-data/rooms')],
         ]
     ],
-    ['label' => 'Perfil', 'href' => url('/profile'), 'roles' => ['vigilante', 'membro', 'coordenador'], 'icon' => 'account_circle', 'color' => 'gray'],
+    // Administração - Feature Flags (apenas coordenador)
+    ['label' => 'Config. Funcionalidades', 'href' => url('/admin/features'), 'roles' => ['coordenador'], 'icon' => 'tune', 'color' => 'purple'],
+    ['label' => 'Perfil', 'href' => url('/profile'), 'roles' => ['vigilante', 'supervisor', 'membro', 'coordenador'], 'icon' => 'account_circle', 'color' => 'gray'],
 ];
 
 // Mapeamento de cores
@@ -83,6 +92,7 @@ $colorClasses = [
     'orange' => 'text-orange-600 bg-orange-50',
     'red' => 'text-red-600 bg-red-50',
     'indigo' => 'text-indigo-600 bg-indigo-50',
+    'emerald' => 'text-emerald-600 bg-emerald-50',
     'gray' => 'text-gray-600 bg-gray-50',
 ];
 ?>

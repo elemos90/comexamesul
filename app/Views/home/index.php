@@ -1175,11 +1175,11 @@ $juriesByLocation = $juriesByLocation ?? [];
         <p class="text-xl text-blue-100 mb-8">Junte-se a centenas de vigilantes e faça parte do processo de exames de
             admissão da UniLicungo</p>
         <div class="flex flex-wrap justify-center gap-4">
-            <a href="url('/register')"
+            <a href="<?= url('/register') ?>"
                 class="px-8 py-4 bg-white text-blue-700 font-bold rounded-lg hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1">
                 Criar Conta Agora
             </a>
-            <a href="url('/login')"
+            <a href="<?= url('/login') ?>"
                 class="px-8 py-4 border-2 border-white text-white font-bold rounded-lg hover:bg-white/10 transition-all">
                 Já Tenho Conta
             </a>

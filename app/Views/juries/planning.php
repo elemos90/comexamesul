@@ -355,6 +355,291 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
             </div>
         </div>
 
+        <!-- BANNER DE ESTADO GLOBAL DO PLANEAMENTO -->
+        <?php
+        $totalJuries = $stats['total_juries'] ?? 0;
+        $totalAllocated = $stats['total_allocated'] ?? 0;
+        $slotsAvailable = $stats['slots_available'] ?? 0;
+        $vagasLivres = $slotsAvailable - $totalAllocated;
+        $semSupervisor = $stats['juries_without_supervisor'] ?? 0;
+
+        // Determinar estado global
+        $isComplete = ($totalJuries > 0 && $vagasLivres <= 0 && $semSupervisor <= 0);
+        $hasPendencies = ($totalJuries > 0 && ($vagasLivres > 0 || $semSupervisor > 0));
+        $isEmpty = ($totalJuries == 0);
+
+        if ($isComplete) {
+            $statusColor = 'green';
+            $statusLabel = '🟢 Planeamento Completo';
+            $statusMessage = 'Todos os vigilantes e supervisores estão alocados.';
+        } elseif ($hasPendencies) {
+            $statusColor = 'orange';
+            $statusLabel = '🟠 Planeamento com Pendências';
+            $pendencias = [];
+            if ($vagasLivres > 0)
+                $pendencias[] = "$vagasLivres vaga(s) de vigilante";
+            if ($semSupervisor > 0)
+                $pendencias[] = "$semSupervisor júri(s) sem supervisor";
+            $statusMessage = 'Pendentes: ' . implode(', ', $pendencias);
+        } else {
+            $statusColor = 'red';
+            $statusLabel = '🔴 Planeamento Incompleto';
+            $statusMessage = 'Nenhum júri criado para esta vaga.';
+        }
+        ?>
+
+        <?php if (!empty($vacancy)): ?>
+            <div class="mb-4 p-4 rounded-lg border-2 flex items-center justify-between 
+            <?php if ($statusColor === 'green'): ?>bg-green-50 border-green-400<?php endif; ?>
+            <?php if ($statusColor === 'orange'): ?>bg-orange-50 border-orange-400<?php endif; ?>
+            <?php if ($statusColor === 'red'): ?>bg-red-50 border-red-400<?php endif; ?>
+        ">
+                <div class="flex items-center gap-3">
+                    <div class="flex-shrink-0">
+                        <?php if ($statusColor === 'green'): ?>
+                            <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        <?php elseif ($statusColor === 'orange'): ?>
+                            <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        <?php else: ?>
+                            <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        <?php endif; ?>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg 
+                        <?php if ($statusColor === 'green'): ?>text-green-800<?php endif; ?>
+                        <?php if ($statusColor === 'orange'): ?>text-orange-800<?php endif; ?>
+                        <?php if ($statusColor === 'red'): ?>text-red-800<?php endif; ?>
+                    "><?= $statusLabel ?></h3>
+                        <p class="text-sm 
+                        <?php if ($statusColor === 'green'): ?>text-green-700<?php endif; ?>
+                        <?php if ($statusColor === 'orange'): ?>text-orange-700<?php endif; ?>
+                        <?php if ($statusColor === 'red'): ?>text-red-700<?php endif; ?>
+                    "><?= $statusMessage ?></p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <?php if ($isComplete): ?>
+                        <button type="button" id="btn-validate-planning"
+                            class="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            ✓ Validar Planeamento
+                        </button>
+                    <?php else: ?>
+                        <button type="button" disabled
+                            class="px-4 py-2 bg-gray-300 text-gray-500 font-semibold rounded-lg cursor-not-allowed flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Validar Planeamento
+                        </button>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <!-- MÓDULO DE FILTROS -->
+        <?php if (!empty($vacancy)): ?>
+            <div class="bg-white rounded-lg shadow-md p-4 mb-4" id="filter-module">
+                <!-- Chips de Estado (Sempre Visíveis) -->
+                <div class="flex flex-wrap items-center gap-2 mb-3">
+                    <span class="text-sm font-medium text-gray-600 mr-2">Filtrar por estado:</span>
+
+                    <button type="button"
+                        class="filter-chip px-3 py-1.5 rounded-full border text-sm flex items-center gap-1.5 transition-all hover:shadow"
+                        data-filter="no-vigilante" data-active="false">
+                        <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                        <span>Sem vigilante</span>
+                        <span class="bg-red-100 text-red-800 px-1.5 py-0.5 rounded-full text-xs font-bold"
+                            id="count-no-vigilante">0</span>
+                    </button>
+
+                    <button type="button"
+                        class="filter-chip px-3 py-1.5 rounded-full border text-sm flex items-center gap-1.5 transition-all hover:shadow"
+                        data-filter="no-supervisor" data-active="false">
+                        <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                        <span>Sem supervisor</span>
+                        <span class="bg-red-100 text-red-800 px-1.5 py-0.5 rounded-full text-xs font-bold"
+                            id="count-no-supervisor">0</span>
+                    </button>
+
+                    <button type="button"
+                        class="filter-chip px-3 py-1.5 rounded-full border text-sm flex items-center gap-1.5 transition-all hover:shadow"
+                        data-filter="incomplete" data-active="false">
+                        <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+                        <span>Incompleto</span>
+                        <span class="bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded-full text-xs font-bold"
+                            id="count-incomplete">0</span>
+                    </button>
+
+                    <button type="button"
+                        class="filter-chip px-3 py-1.5 rounded-full border text-sm flex items-center gap-1.5 transition-all hover:shadow"
+                        data-filter="complete" data-active="false">
+                        <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                        <span>Completo</span>
+                        <span class="bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full text-xs font-bold"
+                            id="count-complete">0</span>
+                    </button>
+
+                    <div class="flex-1"></div>
+
+                    <!-- Botão expandir filtros -->
+                    <button type="button" id="toggle-filters"
+                        class="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                        <svg class="w-4 h-4 transition-transform" id="filter-arrow" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                        Mais filtros
+                    </button>
+                </div>
+
+                <!-- Painel de Filtros Avançados (Expansível) -->
+                <div id="advanced-filters" class="hidden border-t pt-3 mt-2">
+                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                        <!-- Local -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">📍 Local</label>
+                            <select id="filter-local"
+                                class="w-full text-sm border rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Todos</option>
+                                <?php
+                                $locations = [];
+                                foreach ($groupedJuries ?? [] as $group) {
+                                    foreach ($group['juries'] ?? [] as $jury) {
+                                        $loc = $jury['location'] ?? '';
+                                        if ($loc && !in_array($loc, $locations)) {
+                                            $locations[] = $loc;
+                                        }
+                                    }
+                                }
+                                sort($locations);
+                                foreach ($locations as $loc): ?>
+                                    <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <!-- Data -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">📅 Data</label>
+                            <select id="filter-date"
+                                class="w-full text-sm border rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Todas</option>
+                                <?php
+                                $dates = [];
+                                foreach ($groupedJuries ?? [] as $group) {
+                                    $d = $group['exam_date'] ?? '';
+                                    if ($d && !in_array($d, $dates)) {
+                                        $dates[] = $d;
+                                    }
+                                }
+                                sort($dates);
+                                foreach ($dates as $d): ?>
+                                    <option value="<?= $d ?>"><?= date('d/m/Y', strtotime($d)) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <!-- Disciplina -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">📘 Disciplina</label>
+                            <select id="filter-subject"
+                                class="w-full text-sm border rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Todas</option>
+                                <?php
+                                $subjects = [];
+                                foreach ($groupedJuries ?? [] as $group) {
+                                    $s = $group['subject'] ?? '';
+                                    if ($s && !in_array($s, $subjects)) {
+                                        $subjects[] = $s;
+                                    }
+                                }
+                                sort($subjects);
+                                foreach ($subjects as $s): ?>
+                                    <option value="<?= htmlspecialchars($s) ?>"><?= htmlspecialchars($s) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <!-- Horário -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">⏰ Horário</label>
+                            <select id="filter-time"
+                                class="w-full text-sm border rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Todos</option>
+                                <?php
+                                $times = [];
+                                foreach ($groupedJuries ?? [] as $group) {
+                                    $t = $group['start_time'] ?? '';
+                                    if ($t && !in_array($t, $times)) {
+                                        $times[] = $t;
+                                    }
+                                }
+                                sort($times);
+                                foreach ($times as $t): ?>
+                                    <option value="<?= $t ?>"><?= substr($t, 0, 5) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <!-- Vigilante -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">👤 Vigilante</label>
+                            <select id="filter-vigilante"
+                                class="w-full text-sm border rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Todos</option>
+                                <?php foreach ($vigilantes ?? [] as $v): ?>
+                                    <option value="<?= $v['id'] ?>"><?= htmlspecialchars($v['name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <!-- Supervisor -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">👔 Supervisor</label>
+                            <select id="filter-supervisor"
+                                class="w-full text-sm border rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Todos</option>
+                                <?php foreach ($supervisors ?? [] as $s): ?>
+                                    <option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Botão Limpar Filtros -->
+                    <div class="mt-3 flex items-center justify-between">
+                        <button type="button" id="clear-filters"
+                            class="text-sm text-gray-600 hover:text-red-600 flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Limpar todos os filtros
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Indicador de resultados -->
+                <div class="text-right text-sm text-gray-500 mt-2">
+                    Mostrando <strong id="visible-count">0</strong> de <strong id="total-count">0</strong> júris
+                </div>
+            </div>
+        <?php endif; ?>
+
         <!-- Tabela de Alocações -->
         <div class="bg-white rounded-lg shadow-lg overflow-hidden">
             <div class="overflow-x-auto">
@@ -427,7 +712,7 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
                                 foreach ($juriesByLocation as $location => $juries):
                                     // Cabeçalho do local
                                     ?>
-                                    <tr>
+                                    <tr class="location-header" data-location="<?= htmlspecialchars($location) ?>">
                                         <td colspan="8" class="group-header">📍 <?= strtoupper(htmlspecialchars($location)) ?></td>
                                     </tr>
                                     <?php
@@ -445,8 +730,19 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
                                         if (!empty($jury['supervisor_id']) && !empty($jury['supervisor_name'])) {
                                             $lastSupervisor = $jury['supervisor_name'];
                                         }
+
+                                        // Calcular dados para filtros
+                                        $minVigilantes = max(1, ceil(($jury['candidates_quota'] ?? 0) / 30));
+                                        $hasSupervisor = !empty($jury['supervisor_id']);
+                                        $vigilanteIds = array_column($jury['vigilantes'] ?? [], 'id');
                                         ?>
-                                        <tr data-jury-id="<?= $jury['id'] ?>">
+                                        <tr data-jury-id="<?= $jury['id'] ?>" data-location="<?= htmlspecialchars($location) ?>"
+                                            data-exam-date="<?= $jury['exam_date'] ?>" data-start-time="<?= $jury['start_time'] ?>"
+                                            data-subject="<?= htmlspecialchars($group['subject'] ?? '') ?>"
+                                            data-vigilantes-count="<?= $vigilantesCount ?>" data-min-vigilantes="<?= $minVigilantes ?>"
+                                            data-has-supervisor="<?= $hasSupervisor ? 'true' : 'false' ?>"
+                                            data-vigilante-ids="<?= implode(',', $vigilanteIds) ?>"
+                                            data-supervisor-id="<?= $jury['supervisor_id'] ?? '' ?>">
                                             <?php if ($isFirstJury):
                                                 // Dias da semana em Português de Portugal
                                                 $diasSemana = [
@@ -579,99 +875,99 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
                                 $supervisorJuryId = $firstJuryOfExam['id'] ?? 0;
                                 $supervisorId = $firstJuryOfExam['supervisor_id'] ?? null;
                                 ?>
-                                <tr class="subtotal-row">
-                                    <td colspan="4" style="text-align: right; padding-right: 16px; font-weight: 600;">Subtotal
-                                    </td>
-                                    <td style="text-align: center; font-weight: 600;"><?= number_format($examCandidates, 0) ?>
-                                    </td>
-                                    <td style="padding: 8px; font-weight: 600;">
-                                        <div style="display: flex; flex-direction: column; gap: 6px; align-items: center;">
-                                            <?php
-                                            // Contar supervisores únicos neste bloco
-                                            $supervisorCounts = [];
-                                            foreach ($group['juries'] as $j) {
-                                                if (!empty($j['supervisor_id']) && !empty($j['supervisor_name'])) {
-                                                    $sid = $j['supervisor_id'];
-                                                    if (!isset($supervisorCounts[$sid])) {
-                                                        $supervisorCounts[$sid] = ['name' => $j['supervisor_name'], 'count' => 0];
+                                <tr class="subtotal-row"data-location="<?= htmlspecialchars($location) ?>">
+                                            <td colspan="4" style="text-align: right; padding-right: 16px; font-weight: 600;">Subtotal
+                                            </td>
+                                            <td style="text-align: center; font-weight: 600;"><?= number_format($examCandidates, 0) ?>
+                                            </td>
+                                            <td style="padding: 8px; font-weight: 600;">
+                                                <div style="display: flex; flex-direction: column; gap: 6px; align-items: center;">
+                                                    <?php
+                                                    // Contar supervisores únicos neste bloco
+                                                    $supervisorCounts = [];
+                                                    foreach ($group['juries'] as $j) {
+                                                        if (!empty($j['supervisor_id']) && !empty($j['supervisor_name'])) {
+                                                            $sid = $j['supervisor_id'];
+                                                            if (!isset($supervisorCounts[$sid])) {
+                                                                $supervisorCounts[$sid] = ['name' => $j['supervisor_name'], 'count' => 0];
+                                                            }
+                                                            $supervisorCounts[$sid]['count']++;
+                                                        }
                                                     }
-                                                    $supervisorCounts[$sid]['count']++;
-                                                }
-                                            }
-                                            $maxJuriesPerSupervisor = 10; // Default, seria buscado da config
-                                            ?>
+                                                    $maxJuriesPerSupervisor = 10; // Default, seria buscado da config
+                                                    ?>
 
-                                            <?php if (!empty($supervisorCounts)): ?>
-                                                <?php foreach ($supervisorCounts as $supId => $supInfo): ?>
-                                                    <div class="flex items-center gap-2">
-                                                        <span style="color: #374151; font-size: 0.875rem; font-weight: 600;">
-                                                            👔 <?= e($supInfo['name']) ?>
-                                                        </span>
-                                                        <span
-                                                            class="px-2 py-0.5 text-xs rounded-full <?= $supInfo['count'] > $maxJuriesPerSupervisor ? 'bg-red-100 text-red-700' : ($supInfo['count'] == $maxJuriesPerSupervisor ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700') ?>">
-                                                            <?= $supInfo['count'] ?>/<?= $maxJuriesPerSupervisor ?> júris
-                                                        </span>
-                                                        <button
-                                                            onclick="removeSupervisorFromAllJuries(<?= $supervisorJuryId ?>, '<?= e($supInfo['name']) ?>')"
-                                                            class="text-red-600 hover:text-red-800 text-xs"
-                                                            title="Remover supervisor">✕</button>
+                                                    <?php if (!empty($supervisorCounts)): ?>
+                                                            <?php foreach ($supervisorCounts as $supId => $supInfo): ?>
+                                                                    <div class="flex items-center gap-2">
+                                                                        <span style="color: #374151; font-size: 0.875rem; font-weight: 600;">
+                                                                            👔 <?= e($supInfo['name']) ?>
+                                                                        </span>
+                                                                        <span
+                                                                            class="px-2 py-0.5 text-xs rounded-full <?= $supInfo['count'] > $maxJuriesPerSupervisor ? 'bg-red-100 text-red-700' : ($supInfo['count'] == $maxJuriesPerSupervisor ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700') ?>">
+                                                                            <?= $supInfo['count'] ?>/<?= $maxJuriesPerSupervisor ?> júris
+                                                                        </span>
+                                                                        <button
+                                                                            onclick="removeSupervisorFromAllJuries(<?= $supervisorJuryId ?>, '<?= e($supInfo['name']) ?>')"
+                                                                            class="text-red-600 hover:text-red-800 text-xs"
+                                                                            title="Remover supervisor">✕</button>
+                                                                    </div>
+                                                            <?php endforeach; ?>
+                                                    <?php else: ?>
+                                                            <span style="color: #9ca3af; font-style: italic; font-size: 0.875rem;">
+                                                                Sem supervisor
+                                                            </span>
+                                                    <?php endif; ?>
+
+                                                    <div style="display: flex; gap: 4px; margin-top: 4px;">
+                                                        <?php
+                                                        // Dados para auto-distribuição
+                                                        $firstJury = $group['juries'][0] ?? null;
+                                                        $juryCount = count($group['juries']);
+                                                        ?>
+                                                        <?php if ($juryCount > 1 && $firstJury): ?>
+                                                                <button
+                                                                    onclick="autoDistributeVigilantes('<?= e($firstJury['subject']) ?>', '<?= $firstJury['exam_date'] ?>', '<?= $firstJury['start_time'] ?>', '<?= $firstJury['end_time'] ?>', <?= $firstJury['vacancy_id'] ?? 'null' ?>)"
+                                                                    class="px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs rounded hover:from-blue-700 hover:to-indigo-700 transition-all shadow-sm flex items-center gap-1"
+                                                                    title="Distribuir vigilantes automaticamente">
+                                                                    👮 Auto-vigilantes
+                                                                </button>
+                                                                <button
+                                                                    onclick="autoDistributeSupervisors('<?= e($firstJury['subject']) ?>', '<?= $firstJury['exam_date'] ?>', '<?= $firstJury['start_time'] ?>', '<?= $firstJury['end_time'] ?>', <?= $firstJury['vacancy_id'] ?? 'null' ?>)"
+                                                                    class="px-3 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs rounded hover:from-emerald-700 hover:to-teal-700 transition-all shadow-sm flex items-center gap-1"
+                                                                    title="Distribuir supervisores automaticamente (<?= $juryCount ?> júris)">
+                                                                    🤖 Auto-distribuir (<?= $juryCount ?>)
+                                                                </button>
+                                                        <?php endif; ?>
+
+                                                        <?php if (empty($supervisorCounts) && $supervisorJuryId > 0): ?>
+                                                                <button onclick="openSupervisorModal(<?= $supervisorJuryId ?>)"
+                                                                    class="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
+                                                                    title="Alocar supervisor manualmente">
+                                                                    👔 Manual
+                                                                </button>
+                                                        <?php endif; ?>
                                                     </div>
-                                                <?php endforeach; ?>
-                                            <?php else: ?>
-                                                <span style="color: #9ca3af; font-style: italic; font-size: 0.875rem;">
-                                                    Sem supervisor
-                                                </span>
-                                            <?php endif; ?>
-
-                                            <div style="display: flex; gap: 4px; margin-top: 4px;">
-                                                <?php
-                                                // Dados para auto-distribuição
-                                                $firstJury = $group['juries'][0] ?? null;
-                                                $juryCount = count($group['juries']);
-                                                ?>
-                                                <?php if ($juryCount > 1 && $firstJury): ?>
-                                                    <button
-                                                        onclick="autoDistributeVigilantes('<?= e($firstJury['subject']) ?>', '<?= $firstJury['exam_date'] ?>', '<?= $firstJury['start_time'] ?>', '<?= $firstJury['end_time'] ?>', <?= $firstJury['vacancy_id'] ?? 'null' ?>)"
-                                                        class="px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs rounded hover:from-blue-700 hover:to-indigo-700 transition-all shadow-sm flex items-center gap-1"
-                                                        title="Distribuir vigilantes automaticamente">
-                                                        👮 Auto-vigilantes
-                                                    </button>
-                                                    <button
-                                                        onclick="autoDistributeSupervisors('<?= e($firstJury['subject']) ?>', '<?= $firstJury['exam_date'] ?>', '<?= $firstJury['start_time'] ?>', '<?= $firstJury['end_time'] ?>', <?= $firstJury['vacancy_id'] ?? 'null' ?>)"
-                                                        class="px-3 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs rounded hover:from-emerald-700 hover:to-teal-700 transition-all shadow-sm flex items-center gap-1"
-                                                        title="Distribuir supervisores automaticamente (<?= $juryCount ?> júris)">
-                                                        🤖 Auto-distribuir (<?= $juryCount ?>)
-                                                    </button>
-                                                <?php endif; ?>
-
-                                                <?php if (empty($supervisorCounts) && $supervisorJuryId > 0): ?>
-                                                    <button onclick="openSupervisorModal(<?= $supervisorJuryId ?>)"
-                                                        class="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
-                                                        title="Alocar supervisor manualmente">
-                                                        👔 Manual
-                                                    </button>
-                                                <?php endif; ?>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td style="text-align: center; font-weight: 700;"><?= $examVigilantes ?></td>
-                                    <td></td>
-                                </tr>
-                                <?php
+                                                </div>
+                                            </td>
+                                            <td style="text-align: center; font-weight: 700;"><?= $examVigilantes ?></td>
+                                            <td></td>
+                                        </tr>
+                                        <?php
                             endforeach;
 
                             // Total Geral
                             if ($totalCandidatos > 0):
                                 ?>
-                                <tr class="total-row">
-                                    <td colspan="4" style="text-align: right; padding-right: 16px; font-weight: 700;">TOTAL</td>
-                                    <td style="text-align: center; font-weight: 700;"><?= number_format($totalCandidatos, 0) ?>
-                                    </td>
-                                    <td></td>
-                                    <td style="text-align: center; font-weight: 700;"><?= $totalVigilantes ?></td>
-                                    <td></td>
-                                </tr>
-                                <?php
+                                        <tr class="total-row">
+                                            <td colspan="4" style="text-align: right; padding-right: 16px; font-weight: 700;">TOTAL</td>
+                                            <td style="text-align: center; font-weight: 700;"><?= number_format($totalCandidatos, 0) ?>
+                                            </td>
+                                            <td></td>
+                                            <td style="text-align: center; font-weight: 700;"><?= $totalVigilantes ?></td>
+                                            <td></td>
+                                        </tr>
+                                        <?php
                             endif;
                         endif;
                         ?>
@@ -2091,4 +2387,265 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
             manualModal.classList.remove('flex');
         });
     });
+
+    // ========== BOTÃO VALIDAR PLANEAMENTO ==========
+    document.getElementById('btn-validate-planning')?.addEventListener('click', async function () {
+        const confirmed = confirm(
+            '✅ VALIDAR PLANEAMENTO\n\n' +
+            'Ao validar:\n' +
+            '• O planeamento será marcado como validado\n' +
+            '• Alterações posteriores pedirão confirmação\n' +
+            '• Mapas de vigilância estarão prontos para impressão\n\n' +
+            'Deseja continuar?'
+        );
+
+        if (!confirmed) return;
+
+        this.disabled = true;
+        this.innerHTML = '<span class="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span> Validando...';
+
+        try {
+            const vacancyId = <?= $vacancyId ?? 0 ?>;
+            const response = await fetch('<?= url('/juries/vacancy/') ?>' + vacancyId + '/validate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ csrf: csrfToken })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert('✅ Planeamento validado com sucesso!\n\nOs mapas estão prontos para impressão.');
+                location.reload();
+            } else {
+                alert('❌ Erro: ' + (result.message || 'Não foi possível validar'));
+                this.disabled = false;
+                this.innerHTML = '✓ Validar Planeamento';
+            }
+        } catch (error) {
+            console.error('Erro ao validar:', error);
+            alert('❌ Erro de conexão ao validar planeamento');
+            this.disabled = false;
+            this.innerHTML = '✓ Validar Planeamento';
+        }
+    });
+
+    // ========== MÓDULO DE FILTROS ==========
+    (function initFilterModule() {
+        const filterModule = document.getElementById('filter-module');
+        if (!filterModule) return;
+
+        // Elementos
+        const toggleBtn = document.getElementById('toggle-filters');
+        const advancedFilters = document.getElementById('advanced-filters');
+        const filterArrow = document.getElementById('filter-arrow');
+        const clearBtn = document.getElementById('clear-filters');
+        const visibleCountEl = document.getElementById('visible-count');
+        const totalCountEl = document.getElementById('total-count');
+
+        // Dropdowns
+        const filterLocal = document.getElementById('filter-local');
+        const filterDate = document.getElementById('filter-date');
+        const filterSubject = document.getElementById('filter-subject');
+        const filterTime = document.getElementById('filter-time');
+        const filterVigilante = document.getElementById('filter-vigilante');
+        const filterSupervisor = document.getElementById('filter-supervisor');
+
+        // State chips
+        const filterChips = document.querySelectorAll('.filter-chip');
+
+        // Todas as linhas de júri na tabela
+        const allJuryRows = document.querySelectorAll('.allocation-table tbody tr[data-jury-id]');
+        const locationRows = document.querySelectorAll('.allocation-table tbody tr.location-header');
+        const subtotalRows = document.querySelectorAll('.allocation-table tbody tr.subtotal-row');
+
+        // Estado dos filtros
+        let activeFilters = {
+            state: null, // no-vigilante, no-supervisor, incomplete, complete
+            local: '',
+            date: '',
+            subject: '',
+            time: '',
+            vigilante: '',
+            supervisor: ''
+        };
+
+        // Toggle painel avançado
+        toggleBtn?.addEventListener('click', () => {
+            advancedFilters.classList.toggle('hidden');
+            filterArrow.style.transform = advancedFilters.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+        });
+
+        // Chip clicks
+        filterChips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                const filter = chip.dataset.filter;
+                const isActive = chip.dataset.active === 'true';
+
+                // Reset all chips
+                filterChips.forEach(c => {
+                    c.dataset.active = 'false';
+                    c.classList.remove('bg-blue-100', 'border-blue-500');
+                    c.classList.add('border-gray-300');
+                });
+
+                if (!isActive) {
+                    chip.dataset.active = 'true';
+                    chip.classList.add('bg-blue-100', 'border-blue-500');
+                    chip.classList.remove('border-gray-300');
+                    activeFilters.state = filter;
+                } else {
+                    activeFilters.state = null;
+                }
+
+                applyFilters();
+            });
+        });
+
+        // Dropdown listeners
+        [filterLocal, filterDate, filterSubject, filterTime, filterVigilante, filterSupervisor].forEach(select => {
+            select?.addEventListener('change', () => {
+                activeFilters.local = filterLocal?.value || '';
+                activeFilters.date = filterDate?.value || '';
+                activeFilters.subject = filterSubject?.value || '';
+                activeFilters.time = filterTime?.value || '';
+                activeFilters.vigilante = filterVigilante?.value || '';
+                activeFilters.supervisor = filterSupervisor?.value || '';
+                applyFilters();
+            });
+        });
+
+        // Clear filters
+        clearBtn?.addEventListener('click', () => {
+            activeFilters = { state: null, local: '', date: '', subject: '', time: '', vigilante: '', supervisor: '' };
+            filterChips.forEach(c => {
+                c.dataset.active = 'false';
+                c.classList.remove('bg-blue-100', 'border-blue-500');
+                c.classList.add('border-gray-300');
+            });
+            [filterLocal, filterDate, filterSubject, filterTime, filterVigilante, filterSupervisor].forEach(s => {
+                if (s) s.value = '';
+            });
+            applyFilters();
+        });
+
+        // Função para verificar estado do júri
+        function getJuryState(row) {
+            const vigilantesCount = parseInt(row.dataset.vigilantesCount || '0', 10);
+            const minVigilantes = parseInt(row.dataset.minVigilantes || '1', 10);
+            const hasSupervisor = row.dataset.hasSupervisor === 'true';
+
+            if (vigilantesCount === 0) return 'no-vigilante';
+            if (!hasSupervisor) return 'no-supervisor';
+            if (vigilantesCount < minVigilantes) return 'incomplete';
+            return 'complete';
+        }
+
+        // Aplicar filtros
+        function applyFilters() {
+            let visibleCount = 0;
+            let totalCount = 0;
+            const visibleLocations = new Set();
+
+            allJuryRows.forEach(row => {
+                totalCount++;
+                let visible = true;
+
+                // Filter by state
+                if (activeFilters.state) {
+                    const juryState = getJuryState(row);
+                    if (activeFilters.state !== juryState) {
+                        visible = false;
+                    }
+                }
+
+                // Filter by location
+                if (visible && activeFilters.local) {
+                    const rowLocal = row.dataset.location || '';
+                    if (rowLocal !== activeFilters.local) visible = false;
+                }
+
+                // Filter by date
+                if (visible && activeFilters.date) {
+                    const rowDate = row.dataset.examDate || '';
+                    if (rowDate !== activeFilters.date) visible = false;
+                }
+
+                // Filter by subject
+                if (visible && activeFilters.subject) {
+                    const rowSubject = row.dataset.subject || '';
+                    if (rowSubject !== activeFilters.subject) visible = false;
+                }
+
+                // Filter by time
+                if (visible && activeFilters.time) {
+                    const rowTime = row.dataset.startTime || '';
+                    if (rowTime !== activeFilters.time) visible = false;
+                }
+
+                // Filter by vigilante
+                if (visible && activeFilters.vigilante) {
+                    const vigilantes = (row.dataset.vigilanteIds || '').split(',');
+                    if (!vigilantes.includes(activeFilters.vigilante)) visible = false;
+                }
+
+                // Filter by supervisor
+                if (visible && activeFilters.supervisor) {
+                    const supervisor = row.dataset.supervisorId || '';
+                    if (supervisor !== activeFilters.supervisor) visible = false;
+                }
+
+                // Apply visibility
+                row.style.display = visible ? '' : 'none';
+                if (visible) {
+                    visibleCount++;
+                    visibleLocations.add(row.dataset.location);
+                }
+            });
+
+            // Location header visibility
+            locationRows.forEach(row => {
+                const loc = row.dataset.location || '';
+                row.style.display = visibleLocations.has(loc) ? '' : 'none';
+            });
+
+            // Subtotal visibility
+            subtotalRows.forEach(row => {
+                const loc = row.dataset.location || '';
+                row.style.display = visibleLocations.has(loc) ? '' : 'none';
+            });
+
+            // Update counter
+            if (visibleCountEl) visibleCountEl.textContent = visibleCount;
+            if (totalCountEl) totalCountEl.textContent = totalCount;
+        }
+
+        // Contar estados para badges
+        function updateStateCounts() {
+            let noVigilante = 0, noSupervisor = 0, incomplete = 0, complete = 0;
+
+            allJuryRows.forEach(row => {
+                const state = getJuryState(row);
+                switch (state) {
+                    case 'no-vigilante': noVigilante++; break;
+                    case 'no-supervisor': noSupervisor++; break;
+                    case 'incomplete': incomplete++; break;
+                    case 'complete': complete++; break;
+                }
+            });
+
+            document.getElementById('count-no-vigilante').textContent = noVigilante;
+            document.getElementById('count-no-supervisor').textContent = noSupervisor;
+            document.getElementById('count-incomplete').textContent = incomplete;
+            document.getElementById('count-complete').textContent = complete;
+        }
+
+        // Inicializar
+        updateStateCounts();
+        applyFilters();
+        console.log('✅ Módulo de filtros inicializado');
+    })();
 </script>

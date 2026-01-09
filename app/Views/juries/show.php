@@ -15,10 +15,11 @@ $breadcrumbs = [
                     <?= htmlspecialchars(date('d/m/Y', strtotime($jury['exam_date']))) ?> ·
                     <?= htmlspecialchars(substr($jury['start_time'], 0, 5)) ?> -
                     <?= htmlspecialchars(substr($jury['end_time'], 0, 5)) ?> ·
-                    <?= htmlspecialchars($jury['location']) ?> / Sala <?= htmlspecialchars($jury['room']) ?></p>
+                    <?= htmlspecialchars($jury['location']) ?> / Sala <?= htmlspecialchars($jury['room']) ?>
+                </p>
             </div>
             <?php if ((int) $jury['supervisor_id'] === (int) \App\Utils\Auth::id() && !$report): ?>
-                <a href="url('/juries/<?= $jury['id'] ?>/report"
+                <a href="<?= url('/juries/' . $jury['id'] . '/report') ?>"
                     class="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded hover:bg-primary-500">Submeter
                     relatório</a>
             <?php endif; ?>
@@ -35,7 +36,8 @@ $breadcrumbs = [
                     <li class="bg-gray-50 border border-gray-100 rounded p-3">
                         <p class="text-sm font-medium text-gray-700"><?= htmlspecialchars($vigilante['name']) ?></p>
                         <p class="text-xs text-gray-500"><?= htmlspecialchars($vigilante['email']) ?> ·
-                            <?= htmlspecialchars($vigilante['phone']) ?></p>
+                            <?= htmlspecialchars($vigilante['phone']) ?>
+                        </p>
                     </li>
                 <?php endforeach; ?>
                 <?php if (!$vigilantes): ?>

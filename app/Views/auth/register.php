@@ -74,7 +74,7 @@ $openVacanciesCount = count($vacancyModel->openVacancies());
             </div>
             <div class="md:col-span-2 flex items-center justify-between text-sm text-gray-600">
                 <span>Ao registar, confirmo que os dados sao verdadeiros.</span>
-                <a href="url('/login')" class="text-primary-600 font-medium">Ja tenho conta</a>
+                <a href="<?= url('/login') ?>" class="text-primary-600 font-medium">Ja tenho conta</a>
             </div>
             <div class="md:col-span-2">
                 <button type="submit"

@@ -108,7 +108,7 @@ ksort($juriesByDate);
                 </svg>
                 Imprimir PDF
             </button>
-            <a href="url('/juries/export/excel')"
+            <a href="<?= url('/juries/export/excel') ?>"
                 class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 flex items-center gap-2 shadow-md">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -122,26 +122,26 @@ ksort($juriesByDate);
 
 <!-- Documento para Impressão -->
 <div class="print-document">
-    <!-- Cabeçalho Institucional (apenas na impressão) -->
+    <!-- Cabeçalho Institucional Compacto (apenas na impressão) -->
     <div class="print-header">
-        <div class="text-center mb-6">
-            <div class="flex justify-center mb-3">
-                <!-- Logo da instituição -->
-                <?php
-                $logoPath = '/uploads/institution-logo.png';
-                $logoExists = file_exists(public_path($logoPath));
-                ?>
+        <div class="text-center mb-2 border-b pb-2">
+            <!-- Logo da instituição -->
+            <?php
+            $logoPath = '/uploads/institution-logo.png';
+            $logoExists = file_exists(public_path($logoPath));
+            ?>
 
+            <div class="flex justify-center mb-1">
                 <div class="relative group">
                     <div id="logo-container"
-                        class="w-32 h-32 flex items-center justify-center <?= $canManage ? 'cursor-pointer hover:opacity-80 transition-opacity' : '' ?>"
+                        class="w-16 h-16 flex items-center justify-center <?= $canManage ? 'cursor-pointer hover:opacity-80 transition-opacity' : '' ?>"
                         <?= $canManage ? 'onclick="document.getElementById(\'logo-upload\').click()" title="Clique para carregar o logo da instituição"' : '' ?>>
                         <?php if ($logoExists): ?>
                             <img src="<?= url($logoPath) ?>?v=<?= time() ?>" alt="Logo"
                                 class="w-full h-full object-contain">
                         <?php else: ?>
-                            <div class="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center">
-                                <span class="text-3xl font-bold text-primary-600">UL</span>
+                            <div class="w-14 h-14 bg-primary-100 rounded-full flex items-center justify-center">
+                                <span class="text-xl font-bold text-primary-600">UL</span>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -150,22 +150,16 @@ ksort($juriesByDate);
                         <!-- Input file escondido -->
                         <input type="file" id="logo-upload" accept="image/png,image/jpeg,image/jpg" class="hidden"
                             onchange="uploadInstitutionLogo(this)">
-
-                        <!-- Tooltip na tela -->
-                        <div
-                            class="no-print absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                            📸 Clique para carregar logo
-                        </div>
                     <?php endif; ?>
                 </div>
             </div>
-            <h2 class="text-lg font-bold text-gray-900">UNIVERSIDADE LICUNGO</h2>
-            <p class="text-sm text-gray-700 font-medium">VICE REITORIA ACADÉMICA</p>
-            <p class="text-sm text-gray-700">DIRECÇÃO ACADÉMICA</p>
-            <p class="text-xs text-gray-600 mt-1">Comissão de Coordenação dos Exames de Admissão - <?= date('Y') ?></p>
+
+            <h2 class="text-sm font-bold text-gray-900 leading-tight">UNIVERSIDADE LICUNGO</h2>
+            <p class="text-xs text-gray-700">Vice Reitoria Académica • Direcção Académica</p>
+            <p class="text-xs text-gray-600">Comissão de Coordenação dos Exames de Admissão - <?= date('Y') ?></p>
         </div>
 
-        <div class="bg-primary-800 text-white py-3 px-4 mb-6">
+        <div class="bg-primary-800 text-white py-2 px-4 mb-3 text-center">
             <?php
             // Título dinâmico baseado na vaga selecionada
             if (!empty($vacancy)) {
@@ -174,7 +168,7 @@ ksort($juriesByDate);
                 $documentTitle = 'CALENDÁRIO DE VIGILÂNCIA AOS EXAMES DE ADMISSÃO ' . date('Y');
             }
             ?>
-            <h1 class="text-center text-base font-bold uppercase"><?= $documentTitle ?></h1>
+            <h1 class="text-sm font-bold uppercase"><?= $documentTitle ?></h1>
         </div>
     </div>
 
@@ -430,8 +424,8 @@ ksort($juriesByDate);
     /* Estilos para impressão */
     @media print {
         @page {
-            size: A4;
-            margin: 1.5cm 1.5cm 1.5cm 1.5cm;
+            size: A4 portrait;
+            margin: 1cm 1cm 1cm 1cm;
             /* Remove cabeçalho e rodapé do navegador */
             marks: none;
         }

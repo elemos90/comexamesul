@@ -14,7 +14,7 @@ $breadcrumbs = [
             <h1 class="text-2xl font-semibold text-gray-800">Histórico da Candidatura</h1>
             <p class="mt-2 text-sm text-gray-600">Timeline completa de todas as mudanças de status</p>
         </div>
-        <a href="url('/applications?vacancy=<?= $application['vacancy_id'] ?>"
+        <a href="<?= url('/applications?vacancy=' . $application['vacancy_id']) ?>"
             class="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors">
             ← Voltar
         </a>
@@ -138,7 +138,8 @@ $breadcrumbs = [
                                         <div class="text-right">
                                             <p class="text-xs text-gray-500">Por:</p>
                                             <p class="text-sm font-medium text-gray-700">
-                                                <?= htmlspecialchars($entry['changed_by_name']) ?></p>
+                                                <?= htmlspecialchars($entry['changed_by_name']) ?>
+                                            </p>
                                         </div>
                                     <?php endif; ?>
                                 </div>
@@ -181,13 +182,15 @@ $breadcrumbs = [
         <div class="bg-white border border-gray-200 rounded-lg p-4">
             <h3 class="text-sm font-medium text-gray-500 mb-2">Data de Criação</h3>
             <p class="text-lg font-semibold text-gray-800">
-                <?= date('d/m/Y H:i', strtotime($application['applied_at'])) ?></p>
+                <?= date('d/m/Y H:i', strtotime($application['applied_at'])) ?>
+            </p>
         </div>
 
         <div class="bg-white border border-gray-200 rounded-lg p-4">
             <h3 class="text-sm font-medium text-gray-500 mb-2">Última Atualização</h3>
             <p class="text-lg font-semibold text-gray-800">
-                <?= date('d/m/Y H:i', strtotime($application['updated_at'])) ?></p>
+                <?= date('d/m/Y H:i', strtotime($application['updated_at'])) ?>
+            </p>
         </div>
     </div>
 </div>

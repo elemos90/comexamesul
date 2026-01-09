@@ -283,6 +283,13 @@ $breadcrumbs = [
                                                     em <?= htmlspecialchars(date('d/m/Y H:i', strtotime($app['reviewed_at']))) ?>
                                                 </p>
                                             <?php endif; ?>
+
+                                            <?php if ($app['status'] === 'rejeitada' && !empty($app['rejection_reason'])): ?>
+                                                <div class="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs">
+                                                    <span class="font-semibold text-red-700">Motivo:</span>
+                                                    <span class="text-red-600"><?= htmlspecialchars($app['rejection_reason']) ?></span>
+                                                </div>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </div>

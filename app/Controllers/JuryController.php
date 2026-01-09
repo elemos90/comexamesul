@@ -1080,6 +1080,108 @@ class JuryController extends Controller
     }
 
     /**
+     * API: Obter vigilantes elegíveis para o Wizard de criação de júris
+     * Retorna vigilantes aprovados para a vaga especificada
+     */
+    public function getEligibleVigilantesForWizard(Request $request): void
+    {
+        try {
+            $vacancyId = (int) $request->input('vacancy_id');
+
+            if (!$vacancyId) {
+                Response::json([
+                    'success' => false,
+                    'message' => 'ID da vaga é obrigatório'
+                ], 400);
+                return;
+            }
+
+            // Buscar vigilantes aprovados para esta vaga
+            $db = Connection::getInstance();
+            $stmt = $db->prepare("
+                SELECT u.id, u.name, u.email,
+                       COALESCE(vw.workload_score, 0) as workload_score,
+                       0 as current_juries
+                FROM users u
+                INNER JOIN vacancy_applications a ON a.vigilante_id = u.id AND a.vacancy_id = ?
+                LEFT JOIN vw_vigilante_workload vw ON vw.user_id = u.id
+                WHERE a.status = 'aprovada'
+                  AND u.role IN ('vigilante', 'supervisor')
+                ORDER BY workload_score ASC, u.name ASC
+            ");
+            $stmt->execute([$vacancyId]);
+            $vigilantes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            Response::json([
+                'success' => true,
+                'vigilantes' => $vigilantes,
+                'total' => count($vigilantes)
+            ]);
+        } catch (\Exception $e) {
+            error_log("Erro ao buscar vigilantes para wizard: " . $e->getMessage());
+            Response::json([
+                'success' => false,
+                'message' => 'Erro ao carregar vigilantes: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * API: Obter supervisores elegíveis para o Wizard de criação de júris
+     * Retorna membros da comissão e docentes elegíveis para supervisão
+     */
+    public function getEligibleSupervisorsForWizard(Request $request): void
+    {
+        try {
+            $vacancyId = (int) $request->input('vacancy_id');
+
+            // Buscar supervisores elegíveis (membros da comissão + docentes com flag)
+            $db = Connection::getInstance();
+            $stmt = $db->prepare("
+                SELECT u.id, u.name, u.email, u.role,
+                       CASE 
+                           WHEN u.role = 'coordenador' THEN 'Coordenador'
+                           WHEN u.role = 'membro' THEN 'Membro da Comissão'
+                           ELSE 'Docente'
+                       END as role_label,
+                       COALESCE(vw.supervision_count, 0) as supervision_count,
+                       COALESCE(vw.workload_score, 0) as workload_score
+                FROM users u
+                LEFT JOIN vw_vigilante_workload vw ON vw.user_id = u.id
+                WHERE u.supervisor_eligible = 1
+                   OR u.role IN ('coordenador', 'membro')
+                ORDER BY workload_score ASC, u.name ASC
+            ");
+            $stmt->execute();
+            $supervisors = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            // Enriquecer os dados
+            $supervisors = array_map(function ($s) {
+                return [
+                    'id' => (int) $s['id'],
+                    'name' => $s['name'],
+                    'email' => $s['email'],
+                    'role' => $s['role_label'],
+                    'supervision_count' => (int) $s['supervision_count'],
+                    'workload_score' => (float) $s['workload_score']
+                ];
+            }, $supervisors);
+
+            Response::json([
+                'success' => true,
+                'supervisors' => $supervisors,
+                'total' => count($supervisors)
+            ]);
+        } catch (\Exception $e) {
+            error_log("Erro ao buscar supervisores para wizard: " . $e->getMessage());
+            Response::json([
+                'success' => false,
+                'message' => 'Erro ao carregar supervisores: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * API: Trocar vigilantes (swap)
      */
     public function swapVigilantes(Request $request)
@@ -1319,10 +1421,12 @@ class JuryController extends Controller
                 ['vacancy_id' => $vacancyId]
             )[0]['total'] ?? 0;
 
-            // Calcular slots totais (assumindo 2 vigilantes por júri como base, ou ajustável)
-            // Se houver regra específica de slots por sala, deve ser ajustado aqui.
-            // Por enquanto, mantendo a lógica de 2 por sala que parecia estar implícita
-            $totalSlots = count($juries ?? []) * 2;
+            // Calcular slots totais baseado no mínimo real por sala
+            $totalSlots = 0;
+            foreach ($juries ?? [] as $jury) {
+                $minVigilantes = max(1, ceil(($jury['candidates_quota'] ?? 0) / 30));
+                $totalSlots += $minVigilantes;
+            }
 
             $stats = [
                 'total_juries' => count($juries ?? []),
@@ -1733,10 +1837,43 @@ class JuryController extends Controller
                         'room' => $room['room']
                     ];
 
+                    // ========== GUARDAR VIGILANTES ALOCADOS ==========
+                    $vigilantes = $room['vigilantes'] ?? [];
+                    if (!empty($vigilantes) && is_array($vigilantes)) {
+                        $db = Connection::getInstance();
+                        foreach ($vigilantes as $vigilanteId) {
+                            $vigilanteId = (int) $vigilanteId;
+                            if ($vigilanteId > 0) {
+                                // Verificar se já não existe
+                                $existsStmt = $db->prepare(
+                                    "SELECT id FROM jury_vigilantes WHERE jury_id = :jury AND vigilante_id = :vigilante"
+                                );
+                                $existsStmt->execute(['jury' => $juryId, 'vigilante' => $vigilanteId]);
+
+                                if (!$existsStmt->fetch()) {
+                                    $insertStmt = $db->prepare(
+                                        "INSERT INTO jury_vigilantes (jury_id, vigilante_id, created_at, assigned_by) 
+                                         VALUES (:jury, :vigilante, NOW(), :assigned_by)"
+                                    );
+                                    $insertStmt->execute([
+                                        'jury' => $juryId,
+                                        'vigilante' => $vigilanteId,
+                                        'assigned_by' => Auth::id()
+                                    ]);
+
+                                    ActivityLogger::log('jury_vigilantes', $juryId, 'assign_from_wizard', [
+                                        'vigilante_id' => $vigilanteId
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+
                     ActivityLogger::log('juries', $juryId, 'create_for_vacancy', [
                         'vacancy_id' => $vacancyId,
                         'subject' => $discipline['subject'],
-                        'room' => $room['room']
+                        'room' => $room['room'],
+                        'vigilantes_count' => count($vigilantes)
                     ]);
 
                     $totalCreated++;
@@ -1768,13 +1905,53 @@ class JuryController extends Controller
                 }
             }
 
+            // ========== GUARDAR SUPERVISORES POR BLOCO ==========
+            $blockSupervisors = $request->input('blockSupervisors') ?? $request->input('supervisors') ?? [];
+            if (!empty($created) && !empty($blockSupervisors)) {
+                $db = Connection::getInstance();
+                $maxJuriesPerSupervisor = 10;
+
+                foreach ($blockSupervisors as $blockIndex => $supervisorId) {
+                    $supervisorId = (int) $supervisorId;
+                    if ($supervisorId > 0) {
+                        // Calcular quais júris pertencem a este bloco
+                        $startIndex = $blockIndex * $maxJuriesPerSupervisor;
+                        $endIndex = min($startIndex + $maxJuriesPerSupervisor, count($created));
+
+                        for ($i = $startIndex; $i < $endIndex; $i++) {
+                            if (isset($created[$i])) {
+                                $juryId = $created[$i]['id'];
+                                $updateStmt = $db->prepare(
+                                    "UPDATE juries SET supervisor_id = :supervisor_id, updated_at = NOW() WHERE id = :jury_id"
+                                );
+                                $updateStmt->execute([
+                                    'supervisor_id' => $supervisorId,
+                                    'jury_id' => $juryId
+                                ]);
+
+                                ActivityLogger::log('juries', $juryId, 'assign_supervisor_from_wizard', [
+                                    'supervisor_id' => $supervisorId,
+                                    'block_index' => $blockIndex
+                                ]);
+                            }
+                        }
+                    }
+                }
+
+                $supervisorCount = count(array_filter($blockSupervisors, fn($id) => (int) $id > 0));
+                if ($supervisorCount > 0) {
+                    $message .= "\n✅ {$supervisorCount} supervisor(es) atribuído(s)";
+                }
+            }
+
             Response::json([
                 'success' => true,
                 'message' => $message,
                 'juries' => $created,
                 'total' => $totalCreated,
                 'conflicts' => $conflicts,
-                'has_conflicts' => !empty($conflicts)
+                'has_conflicts' => !empty($conflicts),
+                'vacancy_id' => $vacancyId
             ]);
 
         } catch (\Exception $e) {
@@ -1783,6 +1960,97 @@ class JuryController extends Controller
             Response::json([
                 'success' => false,
                 'message' => 'Erro ao criar júris: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * API: Validar o planeamento de uma vaga
+     */
+    public function validateVacancyPlanning(Request $request)
+    {
+        $id = (int) $request->param('id');
+        error_log("DEBUG validateVacancyPlanning called with id=$id");
+        try {
+            if (ob_get_length())
+                ob_clean();
+
+            if (!$id) {
+                Response::json(['success' => false, 'message' => 'ID da vaga não fornecido'], 400);
+                return;
+            }
+
+            error_log("DEBUG validateVacancyPlanning: Getting connection");
+            $db = Connection::getInstance();
+
+            // Verificar se a vaga existe
+            $vacancyStmt = $db->prepare("SELECT id, title FROM exam_vacancies WHERE id = :id");
+            $vacancyStmt->execute(['id' => $id]);
+            $vacancy = $vacancyStmt->fetch(\PDO::FETCH_ASSOC);
+
+            if (!$vacancy) {
+                Response::json(['success' => false, 'message' => 'Vaga não encontrada'], 404);
+                return;
+            }
+
+            // Verificar se há pendências
+            $statsStmt = $db->prepare("
+                SELECT 
+                    COUNT(*) as total_juries,
+                    COALESCE(SUM(candidates_quota), 0) as total_candidates,
+                    SUM(CASE WHEN supervisor_id IS NULL OR supervisor_id = 0 THEN 1 ELSE 0 END) as sem_supervisor
+                FROM juries 
+                WHERE vacancy_id = :id
+            ");
+            $statsStmt->execute(['id' => $id]);
+            $stats = $statsStmt->fetch(\PDO::FETCH_ASSOC);
+
+            // Contar vagas livres de vigilantes
+            $vigilanteStmt = $db->prepare("
+                SELECT j.id, j.room, j.candidates_quota,
+                       (SELECT COUNT(*) FROM jury_vigilantes WHERE jury_id = j.id) as vigilantes_count
+                FROM juries j
+                WHERE j.vacancy_id = :id
+            ");
+            $vigilanteStmt->execute(['id' => $id]);
+            $juries = $vigilanteStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            $vagasLivres = 0;
+            foreach ($juries as $jury) {
+                $minVigilantes = max(1, ceil(($jury['candidates_quota'] ?? 0) / 30));
+                if (($jury['vigilantes_count'] ?? 0) < $minVigilantes) {
+                    $vagasLivres += ($minVigilantes - ($jury['vigilantes_count'] ?? 0));
+                }
+            }
+
+            // Verificar se pode validar
+            $semSupervisor = (int) ($stats['sem_supervisor'] ?? 0);
+            if ($vagasLivres > 0 || $semSupervisor > 0) {
+                Response::json([
+                    'success' => false,
+                    'message' => "Não é possível validar com pendências: $vagasLivres vaga(s) de vigilante, $semSupervisor júri(s) sem supervisor"
+                ], 400);
+                return;
+            }
+
+            // Registar actividade de validação
+            ActivityLogger::log('vacancies', $id, 'validate_planning', [
+                'total_juries' => $stats['total_juries'] ?? 0,
+                'total_candidates' => $stats['total_candidates'] ?? 0
+            ]);
+
+            Response::json([
+                'success' => true,
+                'message' => 'Planeamento validado com sucesso',
+                'stats' => $stats
+            ]);
+
+        } catch (\Exception $e) {
+            if (ob_get_length())
+                ob_clean();
+            Response::json([
+                'success' => false,
+                'message' => 'Erro ao validar planeamento: ' . $e->getMessage()
             ], 500);
         }
     }

@@ -252,7 +252,7 @@ $isPublic = $isPublic ?? false;
 
     <!-- Sistema de Ajuda -->
     <?php if (!$isPublic): ?>
-        <script src="<?= url('/js/help.js') ?>"></script>
+        <script src="<?= url('/js/help.js?v=' . time()) ?>"></script>
         <script>
             // Injeta dados de ajuda no JavaScript
             <?php

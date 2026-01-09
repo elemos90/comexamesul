@@ -40,9 +40,13 @@ function openHelp(pageId) {
     
     // Configura link para guia completo
     if (content.guide_link) {
-        // Garante que o link é absoluto (começa com /)
+        // Usa window.appUrl() para construir URL com base path correto
         let guideUrl = content.guide_link;
-        if (!guideUrl.startsWith('/')) {
+        
+        // Use appUrl function if available (defined in main.php)
+        if (typeof window.appUrl === 'function') {
+            guideUrl = window.appUrl(guideUrl);
+        } else if (!guideUrl.startsWith('/')) {
             guideUrl = '/' + guideUrl;
         }
         

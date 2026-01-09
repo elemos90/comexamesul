@@ -3,6 +3,10 @@ $title = $title ?? 'Taxas de Pagamento';
 $breadcrumbs = $breadcrumbs ?? [];
 $rates = $rates ?? [];
 $vacancies = $vacancies ?? [];
+
+use App\Utils\Auth;
+$currentUser = Auth::user();
+$isCoordinator = ($currentUser['role'] ?? '') === 'coordenador';
 ?>
 
 <style>
@@ -66,56 +70,58 @@ $vacancies = $vacancies ?? [];
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Formulário de Nova Taxa -->
-        <div class="rates-card">
-            <h2 class="text-lg font-semibold mb-4">Nova Taxa</h2>
-            <form method="POST" action="<?= url('/payments/rates') ?>">
-                <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Vaga</label>
-                    <select name="vacancy_id" required
-                        class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500">
-                        <option value="">-- Selecione --</option>
-                        <?php foreach ($vacancies as $v): ?>
-                            <option value="<?= $v['id'] ?>">
-                                <?= htmlspecialchars($v['title']) ?> (
-                                <?= $v['year'] ?? date('Y') ?>)
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
+        <?php if ($isCoordinator): ?>
+            <!-- Formulário de Nova Taxa (apenas para coordenadores) -->
+            <div class="rates-card">
+                <h2 class="text-lg font-semibold mb-4">Nova Taxa</h2>
+                <form method="POST" action="<?= url('/payments/rates') ?>">
+                    <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Vaga</label>
+                        <select name="vacancy_id" required
+                            class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500">
+                            <option value="">-- Selecione --</option>
+                                <?php foreach ($vacancies as $v): ?>
+                                <option value="<?= $v['id'] ?>">
+                                   <?= htmlspecialchars($v['title']) ?> (
+                                            <?= $v['year'] ?? date('Y') ?>)
+                                </option>
+                                <?php endforeach; ?>
+                        </select>
+                    </div>
 
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Valor por Vigia (MZN)</label>
-                    <input type="number" name="valor_por_vigia" step="0.01" min="0" required
-                        class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Ex: 750.00">
-                </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Valor por Vigia (MZN)</label>
+                        <input type="number" name="valor_por_vigia" step="0.01" min="0" required
+                            class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
+                            placeholder="Ex: 750.00">
+                    </div>
 
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Valor por Supervisão (MZN)</label>
-                    <input type="number" name="valor_por_supervisao" step="0.01" min="0" required
-                        class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Ex: 1500.00">
-                </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Valor por Supervisão (MZN)</label>
+                        <input type="number" name="valor_por_supervisao" step="0.01" min="0" required
+                            class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
+                            placeholder="Ex: 1500.00">
+                    </div>
 
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Moeda</label>
-                    <select name="moeda" class="w-full border rounded-lg px-3 py-2">
-                        <option value="MZN" selected>MZN - Metical</option>
-                        <option value="USD">USD - Dólar</option>
-                        <option value="EUR">EUR - Euro</option>
-                    </select>
-                </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Moeda</label>
+                        <select name="moeda" class="w-full border rounded-lg px-3 py-2">
+                            <option value="MZN" selected>MZN - Metical</option>
+                            <option value="USD">USD - Dólar</option>
+                            <option value="EUR">EUR - Euro</option>
+                        </select>
+                    </div>
 
-                <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700">
-                    Criar Taxa
-                </button>
-            </form>
-        </div>
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700">
+                        Criar Taxa
+                    </button>
+                </form>
+            </div>
+        <?php endif; ?>
 
         <!-- Lista de Taxas -->
-        <div class="rates-card lg:col-span-2">
+        <div class="rates-card <?= $isCoordinator ? 'lg:col-span-2' : 'lg:col-span-3' ?>">
             <h2 class="text-lg font-semibold mb-4">Taxas Existentes</h2>
 
             <?php if (!empty($rates)): ?>

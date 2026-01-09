@@ -19,14 +19,14 @@ $juryModel = new \App\Models\Jury();
             <p class="text-gray-600 mt-1">Criar e gerir estrutura de júris (locais, salas, horários)</p>
         </div>
         <div class="flex gap-2">
-            <button type="button" onclick="showCreateJuryModal()"
+            <a href="<?= url('/juries/planning-by-vacancy?vacancy_id=' . $vacancy['id']) ?>"
                 class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
                 Criar Novo Júri
-            </button>
-            <a href="url('/juries/planning-by-vacancy')"
+            </a>
+            <a href="<?= url('/juries/planning-by-vacancy') ?>"
                 class="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50">
                 ← Voltar
             </a>
@@ -96,7 +96,7 @@ $juryModel = new \App\Models\Jury();
                         <?php endif; ?>
                     </p>
                     <div class="flex gap-2 mt-3">
-                        <a href="url('/juries/planning?vacancy_id=<?= $vacancy['id'] ?>"
+                        <a href="<?= url('/juries/planning?vacancy_id=' . $vacancy['id']) ?>"
                             class="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 shadow-sm">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -124,7 +124,7 @@ $juryModel = new \App\Models\Jury();
                     <p class="text-sm text-green-800 mt-1">
                         Todos os <?= $vigilantesNecessarios ?> vigilantes necessários foram alocados com sucesso!
                     </p>
-                    <a href="url('/juries/planning?vacancy_id=<?= $vacancy['id'] ?>"
+                    <a href="<?= url('/juries/planning?vacancy_id=' . $vacancy['id']) ?>"
                         class="inline-flex items-center gap-2 mt-2 px-3 py-1.5 text-green-700 text-sm font-medium hover:underline">
                         Ver detalhes no Planeamento Avançado →
                     </a>
@@ -708,6 +708,63 @@ $juryModel = new \App\Models\Jury();
 
                 <div id="disc-rooms-container" class="space-y-3">
                     <!-- Salas serão injetadas aqui via JavaScript -->
+                </div>
+            </div>
+
+            <!-- PASSO 3: Vigilantes -->
+            <div class="border-t pt-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-semibold text-gray-700 uppercase flex items-center gap-2">
+                        <span
+                            class="flex items-center justify-center w-6 h-6 bg-green-600 text-white rounded-full text-xs">3</span>
+                        👁️ Alocação de Vigilantes
+                    </h3>
+                    <button type="button" id="btn-edit-auto-vigilantes"
+                        class="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        Auto-Alocar Todos
+                    </button>
+                </div>
+
+                <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4 text-sm text-green-800">
+                    <strong>💡 Regra:</strong> 1 vigilante por cada 30 candidatos. Clique em "Auto" ou "Manual" para
+                    alocar.
+                </div>
+
+                <div id="disc-vigilantes-container" class="space-y-3">
+                    <!-- Vigilantes por sala serão injetados aqui via JavaScript -->
+                </div>
+            </div>
+
+            <!-- PASSO 4: Supervisores -->
+            <div class="border-t pt-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-semibold text-gray-700 uppercase flex items-center gap-2">
+                        <span
+                            class="flex items-center justify-center w-6 h-6 bg-purple-600 text-white rounded-full text-xs">4</span>
+                        👔 Supervisores por Bloco
+                    </h3>
+                    <button type="button" id="btn-edit-auto-supervisors"
+                        class="px-3 py-1.5 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        Auto-Distribuir
+                    </button>
+                </div>
+
+                <div class="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-4 text-sm text-purple-800">
+                    <strong>ℹ️ Regra:</strong> Cada supervisor pode supervisionar até 10 salas.
+                    Total de salas: <span id="disc-total-rooms">0</span> →
+                    Supervisores necessários: <span id="disc-supervisors-needed" class="font-bold">0</span>
+                </div>
+
+                <div id="disc-supervisors-container" class="space-y-3">
+                    <!-- Blocos de supervisores serão injetados aqui via JavaScript -->
                 </div>
             </div>
 
@@ -1632,13 +1689,13 @@ $juryModel = new \App\Models\Jury();
     });
 
     // Event Listener Global para botões de eliminar
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         const btn = e.target.closest('.btn-delete-jury');
         if (btn) {
             e.preventDefault();
             console.log('Botão eliminar clicado:', btn.dataset);
             const { id, subject, room } = btn.dataset;
-            
+
             if (id) {
                 // Passar valores padrão se subject ou room estiverem vazios
                 deleteJury(id, subject || 'Sem disciplina', room || 'Sem sala');
@@ -1650,10 +1707,10 @@ $juryModel = new \App\Models\Jury();
     });
 
     // Inicialização
-    document.addEventListener('DOMContentLoaded', async function() {
+    document.addEventListener('DOMContentLoaded', async function () {
         try {
             await loadMasterData();
-            
+
             // Verificar se deve abrir modal de edição automaticamente
             const urlParams = new URLSearchParams(window.location.search);
             const editJuryId = urlParams.get('edit_jury');
@@ -1672,4 +1729,250 @@ $juryModel = new \App\Models\Jury();
             console.error('Erro ao carregar dados mestre:', error);
         }
     });
+
+    // ========== VIGILANTES E SUPERVISORES NO EDIT MODAL ==========
+
+    let editVigilantes = {}; // { roomIndex: [vigilanteIds] }
+    let editBlockSupervisors = []; // [supervisorId per block]
+    let editEligibleVigilantes = [];
+    let editEligibleSupervisors = [];
+
+    async function buildEditVigilantesSection() {
+        const container = document.getElementById('disc-vigilantes-container');
+        if (!container) return;
+
+        container.innerHTML = '<div class="text-center py-4 text-gray-500">Carregando vigilantes...</div>';
+
+        // Load eligible vigilantes
+        try {
+            const basePath = window.location.pathname.split('/public/')[0] || '';
+            const response = await fetch(`${basePath}/public/api/vigilantes/eligible?vacancy_id=${vacancyId}`);
+            const result = await response.json();
+            editEligibleVigilantes = result.success ? result.vigilantes || [] : [];
+        } catch (error) {
+            console.error('Erro ao carregar vigilantes:', error);
+            editEligibleVigilantes = [];
+        }
+
+        // Build UI for each room
+        const roomRows = document.querySelectorAll('.disc-room-row');
+        if (roomRows.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-center py-4">Adicione salas primeiro</p>';
+            return;
+        }
+
+        let html = '';
+        roomRows.forEach((row, index) => {
+            const roomName = row.querySelector('input[name*="[room]"]')?.value || `Sala ${index + 1}`;
+            const candidates = parseInt(row.querySelector('input[name*="[candidates_quota]"]')?.value) || 0;
+            const required = Math.ceil(candidates / 30);
+            const allocated = editVigilantes[index] || [];
+            const isComplete = allocated.length >= required;
+
+            html += `
+                <div class="p-4 border rounded-lg ${isComplete ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold">${roomName}</span>
+                            <span class="text-sm text-gray-500">${candidates} candidatos</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-1 rounded text-sm font-medium ${isComplete ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                                ${allocated.length}/${required} vig.
+                            </span>
+                            <button type="button" onclick="editAutoAllocateRoom(${index})" 
+                                class="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-500">Auto</button>
+                            <button type="button" onclick="editOpenVigilanteSelector(${index})" 
+                                class="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-500">Manual</button>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-1">
+                        ${allocated.map(vid => {
+                const v = editEligibleVigilantes.find(x => x.id === vid);
+                return `<span class="inline-flex items-center gap-1 px-2 py-1 bg-white border rounded text-xs">
+                                ${v ? v.name : 'Vigilante ' + vid}
+                                <button type="button" onclick="editRemoveVigilante(${index}, ${vid})" class="text-red-500 hover:text-red-700">×</button>
+                            </span>`;
+            }).join('')}
+                        ${allocated.length === 0 ? '<span class="text-sm text-gray-500 italic">Nenhum vigilante</span>' : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    }
+
+    function editAutoAllocateRoom(roomIndex) {
+        const roomRows = document.querySelectorAll('.disc-room-row');
+        const row = roomRows[roomIndex];
+        if (!row) return;
+
+        const candidates = parseInt(row.querySelector('input[name*="[candidates_quota]"]')?.value) || 0;
+        const required = Math.ceil(candidates / 30);
+        const currentlyAllocated = editVigilantes[roomIndex] || [];
+        const allAllocated = Object.values(editVigilantes).flat();
+        const available = editEligibleVigilantes.filter(v => !allAllocated.includes(v.id));
+
+        const needed = required - currentlyAllocated.length;
+        const toAllocate = available.slice(0, needed).map(v => v.id);
+
+        editVigilantes[roomIndex] = [...currentlyAllocated, ...toAllocate];
+        buildEditVigilantesSection();
+    }
+
+    function editRemoveVigilante(roomIndex, vigilanteId) {
+        if (!editVigilantes[roomIndex]) return;
+        editVigilantes[roomIndex] = editVigilantes[roomIndex].filter(id => id !== vigilanteId);
+        buildEditVigilantesSection();
+    }
+
+    function editOpenVigilanteSelector(roomIndex) {
+        const allAllocated = Object.values(editVigilantes).flat();
+        const available = editEligibleVigilantes.filter(v => !allAllocated.includes(v.id));
+
+        if (available.length === 0) {
+            alert('❌ Não há vigilantes disponíveis');
+            return;
+        }
+
+        const options = available.map((v, i) => `${i + 1}. ${v.name}`).join('\n');
+        const choice = prompt(`Selecione o vigilante:\n\n${options}`);
+
+        if (choice) {
+            const index = parseInt(choice) - 1;
+            if (index >= 0 && index < available.length) {
+                if (!editVigilantes[roomIndex]) editVigilantes[roomIndex] = [];
+                editVigilantes[roomIndex].push(available[index].id);
+                buildEditVigilantesSection();
+            }
+        }
+    }
+
+    async function buildEditSupervisorsSection() {
+        const container = document.getElementById('disc-supervisors-container');
+        if (!container) return;
+
+        container.innerHTML = '<div class="text-center py-4 text-gray-500">Carregando supervisores...</div>';
+
+        // Load eligible supervisors
+        try {
+            const basePath = window.location.pathname.split('/public/')[0] || '';
+            const response = await fetch(`${basePath}/public/api/supervisors/eligible?vacancy_id=${vacancyId}`);
+            const result = await response.json();
+            editEligibleSupervisors = result.success ? result.supervisors || [] : [];
+        } catch (error) {
+            console.error('Erro ao carregar supervisores:', error);
+            editEligibleSupervisors = [];
+        }
+
+        const roomRows = document.querySelectorAll('.disc-room-row');
+        const numRooms = roomRows.length;
+        const MAX_JURIS_POR_SUPERVISOR = 10;
+        const numBlocks = Math.ceil(numRooms / MAX_JURIS_POR_SUPERVISOR);
+
+        document.getElementById('disc-total-rooms').textContent = numRooms;
+        document.getElementById('disc-supervisors-needed').textContent = numBlocks;
+
+        if (numRooms === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-center py-4">Adicione salas primeiro</p>';
+            return;
+        }
+
+        // Initialize block supervisors if needed
+        if (editBlockSupervisors.length !== numBlocks) {
+            editBlockSupervisors = new Array(numBlocks).fill(null);
+        }
+
+        let html = '';
+        for (let blockIndex = 0; blockIndex < numBlocks; blockIndex++) {
+            const startRoom = blockIndex * MAX_JURIS_POR_SUPERVISOR;
+            const endRoom = Math.min(startRoom + MAX_JURIS_POR_SUPERVISOR, numRooms);
+            const blockRooms = [];
+            for (let i = startRoom; i < endRoom; i++) {
+                const r = roomRows[i]?.querySelector('input[name*="[room]"]')?.value || `Sala ${i + 1}`;
+                blockRooms.push(r);
+            }
+
+            const supervisor = editBlockSupervisors[blockIndex];
+            const isComplete = supervisor !== null;
+
+            html += `
+                <div class="p-4 border-2 rounded-lg ${isComplete ? 'border-green-300 bg-green-50' : 'border-purple-300 bg-purple-50'}">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <span class="font-semibold">Bloco ${blockIndex + 1}</span>
+                            <span class="text-sm text-gray-600 ml-2">${blockRooms.join(', ')}</span>
+                        </div>
+                        <span class="px-2 py-1 rounded text-sm font-medium ${isComplete ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'}">
+                            ${isComplete ? '✓ Atribuído' : 'Pendente'}
+                        </span>
+                    </div>
+                    <select onchange="editAssignBlockSupervisor(${blockIndex}, this.value)"
+                        class="w-full rounded border border-gray-300 px-3 py-2 text-sm">
+                        <option value="">-- Selecionar Supervisor --</option>
+                        ${editEligibleSupervisors.map(s => `
+                            <option value="${s.id}" ${supervisor === s.id ? 'selected' : ''}>
+                                ${s.name} (${s.role_label || s.role || 'Supervisor'})
+                            </option>
+                        `).join('')}
+                    </select>
+                </div>
+            `;
+        }
+
+        container.innerHTML = html;
+    }
+
+    function editAssignBlockSupervisor(blockIndex, supervisorId) {
+        editBlockSupervisors[blockIndex] = supervisorId ? parseInt(supervisorId) : null;
+        buildEditSupervisorsSection();
+    }
+
+    // Auto-alocar todos vigilantes
+    document.getElementById('btn-edit-auto-vigilantes')?.addEventListener('click', function () {
+        const roomRows = document.querySelectorAll('.disc-room-row');
+        roomRows.forEach((row, index) => {
+            editAutoAllocateRoom(index);
+        });
+    });
+
+    // Auto-distribuir supervisores
+    document.getElementById('btn-edit-auto-supervisors')?.addEventListener('click', function () {
+        const roomRows = document.querySelectorAll('.disc-room-row');
+        const numBlocks = Math.ceil(roomRows.length / 10);
+        editBlockSupervisors = [];
+        for (let i = 0; i < numBlocks; i++) {
+            if (editEligibleSupervisors[i]) {
+                editBlockSupervisors[i] = editEligibleSupervisors[i].id;
+            } else if (editEligibleSupervisors.length > 0) {
+                editBlockSupervisors[i] = editEligibleSupervisors[i % editEligibleSupervisors.length].id;
+            }
+        }
+        buildEditSupervisorsSection();
+    });
+
+    // Refresh vigilantes/supervisors when modal opens or rooms change
+    const origShowEditDisciplineModal = showEditDisciplineModal;
+    showEditDisciplineModal = async function (disciplineData) {
+        editVigilantes = {};
+        editBlockSupervisors = [];
+
+        origShowEditDisciplineModal(disciplineData);
+
+        // Load existing vigilantes from juries data
+        if (disciplineData.juries) {
+            disciplineData.juries.forEach((jury, index) => {
+                if (jury.vigilantes && Array.isArray(jury.vigilantes)) {
+                    editVigilantes[index] = jury.vigilantes.map(v => v.user_id || v.id);
+                }
+            });
+        }
+
+        // Build sections after short delay to ensure DOM is ready
+        setTimeout(async () => {
+            await buildEditVigilantesSection();
+            await buildEditSupervisorsSection();
+        }, 100);
+    };
 </script>

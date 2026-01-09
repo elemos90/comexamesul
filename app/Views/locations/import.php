@@ -13,7 +13,7 @@ $breadcrumbs = [
             <h1 class="text-2xl font-semibold text-gray-800">Importar Júris via Planilha</h1>
             <p class="text-sm text-gray-500">Carregue um arquivo Excel ou CSV para criar múltiplos júris</p>
         </div>
-        <a href="url('/locations/export/template')"
+        <a href="<?= url('/locations/export/template') ?>"
             class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-500 flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

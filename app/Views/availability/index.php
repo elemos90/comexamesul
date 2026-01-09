@@ -121,7 +121,7 @@ $breadcrumbs = [
 
                                     <?php if ($app['status'] === 'aprovada'): ?>
                                         <!-- Cancelar candidatura aprovada (pode exigir justificativa se alocado) -->
-                                        <a href="url('/availability/<?= $app['id'] ?>/cancel"
+                                        <a href="<?= url('/availability/' . $app['id'] . '/cancel') ?>"
                                             class="px-3 py-1.5 text-xs font-medium bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
                                             title="Solicitar cancelamento">
                                             Cancelar
@@ -264,6 +264,23 @@ $breadcrumbs = [
                                         </div>
                                         <span class="px-2 py-1 bg-red-200 text-red-800 text-xs font-bold rounded">REJEITADO</span>
                                     </div>
+
+                                    <?php if (!empty($myApplication['rejection_reason'])): ?>
+                                        <div class="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                            <div class="flex items-start gap-2">
+                                                <svg class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <div class="flex-1">
+                                                    <p class="text-xs font-semibold text-red-800 mb-1">Motivo da Rejeição:</p>
+                                                    <p class="text-sm text-red-700">
+                                                        <?= nl2br(htmlspecialchars($myApplication['rejection_reason'])) ?></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
                                     <?php if (!$expired && $vacancy['status'] === 'aberta'): ?>
                                         <form method="POST" action="<?= url('/applications/' . $myApplication['id'] . '/reapply') ?>"
                                             onsubmit="return confirm('Deseja recandidatar-se a esta vaga?');">

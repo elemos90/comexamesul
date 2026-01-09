@@ -14,7 +14,7 @@ $breadcrumbs = [
             <h1 class="text-2xl font-semibold text-gray-800">Dashboard de Candidaturas</h1>
             <p class="mt-2 text-sm text-gray-600">Estatísticas e análises do sistema de candidaturas</p>
         </div>
-        <a href="url('/applications/export')"
+        <a href="<?= url('/applications/export') ?>"
             class="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -31,7 +31,8 @@ $breadcrumbs = [
                 <div>
                     <p class="text-sm font-medium text-gray-500 mb-1">Total</p>
                     <p class="text-3xl font-bold text-gray-800">
-                        <?= number_format($generalStats['total_applications']) ?></p>
+                        <?= number_format($generalStats['total_applications']) ?>
+                    </p>
                 </div>
                 <div class="p-3 bg-blue-100 rounded-full">
                     <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -83,7 +84,8 @@ $breadcrumbs = [
                 <div>
                     <p class="text-sm font-medium text-gray-500 mb-1">Tempo Médio</p>
                     <p class="text-3xl font-bold text-purple-600">
-                        <?= number_format($generalStats['avg_review_hours'] ?? 0, 1) ?>h</p>
+                        <?= number_format($generalStats['avg_review_hours'] ?? 0, 1) ?>h
+                    </p>
                 </div>
                 <div class="p-3 bg-purple-100 rounded-full">
                     <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -110,7 +112,7 @@ $breadcrumbs = [
                     <h3 class="text-sm font-semibold text-red-800">⚠️ Candidaturas Urgentes</h3>
                     <p class="text-sm text-red-700 mt-1">
                         <?= count($urgentApplications) ?> candidatura(s) pendente(s) há mais de 48 horas.
-                        <a href="url('/applications')" class="underline font-medium">Revisar agora →</a>
+                        <a href="<?= url('/applications') ?>" class="underline font-medium">Revisar agora →</a>
                     </p>
                 </div>
             </div>
@@ -196,10 +198,12 @@ $breadcrumbs = [
                             <tr class="hover:bg-gray-50">
                                 <td class="px-4 py-3 text-sm font-semibold text-gray-600"><?= $index + 1 ?></td>
                                 <td class="px-4 py-3 text-sm font-medium text-gray-800">
-                                    <?= htmlspecialchars($vigilante['name']) ?></td>
+                                    <?= htmlspecialchars($vigilante['name']) ?>
+                                </td>
                                 <td class="px-4 py-3 text-sm text-gray-600"><?= htmlspecialchars($vigilante['email']) ?></td>
                                 <td class="px-4 py-3 text-sm text-center font-semibold text-gray-800">
-                                    <?= $vigilante['total_applications'] ?></td>
+                                    <?= $vigilante['total_applications'] ?>
+                                </td>
                                 <td class="px-4 py-3 text-sm text-center text-green-600"><?= $vigilante['approved_count'] ?>
                                 </td>
                                 <td class="px-4 py-3 text-sm text-center text-red-600"><?= $vigilante['rejected_count'] ?></td>
@@ -249,7 +253,8 @@ $breadcrumbs = [
                         <div class="flex items-center justify-between p-3 bg-red-50 border border-red-100 rounded">
                             <div class="flex-1">
                                 <p class="text-sm text-gray-800">
-                                    <?= htmlspecialchars(substr($reason['rejection_reason'], 0, 60)) ?>        <?= strlen($reason['rejection_reason']) > 60 ? '...' : '' ?>
+                                    <?= htmlspecialchars(substr($reason['rejection_reason'], 0, 60)) ?>
+                                    <?= strlen($reason['rejection_reason']) > 60 ? '...' : '' ?>
                                 </p>
                             </div>
                             <div class="ml-3">

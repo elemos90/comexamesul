@@ -8,115 +8,214 @@ $rates = $rates ?? null;
 ?>
 
 <style>
+    .payment-container {
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+
     .payment-card {
         background: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        padding: 1rem;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.75rem;
+        margin-bottom: 1rem;
     }
 
     .stat-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 1.5rem;
-        border-radius: 12px;
-        text-align: center;
+        background: white;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        border-left: 3px solid;
+    }
+
+    .stat-card.purple {
+        border-color: #8b5cf6;
     }
 
     .stat-card.green {
-        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        border-color: #10b981;
     }
 
     .stat-card.orange {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        border-color: #f59e0b;
     }
 
     .stat-card.blue {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        border-color: #3b82f6;
     }
 
     .stat-value {
-        font-size: 2rem;
+        font-size: 1.5rem;
         font-weight: 700;
+        line-height: 1;
     }
 
     .stat-label {
-        font-size: 0.875rem;
-        opacity: 0.9;
+        font-size: 0.7rem;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
     }
 
     .payment-table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 1rem;
-    }
-
-    .payment-table th {
-        background: #f8fafc;
-        padding: 12px;
-        text-align: left;
-        font-weight: 600;
-        border-bottom: 2px solid #e2e8f0;
-    }
-
-    .payment-table td {
-        padding: 12px;
-        border-bottom: 1px solid #e2e8f0;
-    }
-
-    .payment-table tr:hover {
-        background: #f8fafc;
-    }
-
-    .badge-warning {
-        background: #fef3c7;
-        color: #d97706;
-        padding: 2px 8px;
-        border-radius: 4px;
         font-size: 0.75rem;
     }
 
+    .payment-table th {
+        background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+        color: white;
+        padding: 8px 6px;
+        text-align: left;
+        font-weight: 500;
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .payment-table th:first-child {
+        border-radius: 6px 0 0 0;
+    }
+
+    .payment-table th:last-child {
+        border-radius: 0 6px 0 0;
+    }
+
+    .payment-table td {
+        padding: 6px;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.73rem;
+    }
+
+    .payment-table tbody tr:nth-child(even) {
+        background: #fafbfc;
+    }
+
+    .payment-table tbody tr:hover {
+        background: #eff6ff;
+    }
+
+    .total-row {
+        background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%) !important;
+        color: white;
+        font-weight: 600;
+    }
+
+    .total-row td {
+        padding: 8px 6px;
+        border: none;
+    }
+
+    .total-row td:first-child {
+        border-radius: 0 0 0 6px;
+    }
+
+    .total-row td:last-child {
+        border-radius: 0 0 6px 0;
+    }
+
+    .badge {
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.6rem;
+        font-weight: 500;
+        white-space: nowrap;
+        display: inline-block;
+    }
+
     .badge-success {
-        background: #d1fae5;
-        color: #059669;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.8rem;
+        background: #dcfce7;
+        color: #166534;
     }
 
     .badge-pending {
         background: #e0e7ff;
-        color: #4f46e5;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.8rem;
+        color: #4338ca;
+    }
+
+    .badge-warning {
+        background: #fef3c7;
+        color: #b45309;
+        font-size: 0.55rem;
+    }
+
+    .rates-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #ecfdf5;
+        color: #065f46;
+        padding: 3px 10px;
+        border-radius: 15px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    .btn-sm {
+        padding: 5px 12px;
+        font-size: 0.7rem;
+        border-radius: 5px;
+        font-weight: 500;
+        transition: all 0.15s;
+    }
+
+    .compact-text {
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .value-cell {
+        font-family: 'Consolas', monospace;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
     }
 </style>
 
-<div class="container mx-auto px-4 py-6">
+<div class="payment-container px-3 py-4">
     <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex justify-between items-center mb-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Mapa de Pagamentos</h1>
-            <p class="text-gray-600">Vigilantes e Supervisores de Exames de Admissão</p>
+            <h1 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Mapa de Pagamentos
+            </h1>
+            <p class="text-gray-500 text-xs">Vigilantes e Supervisores de Exames</p>
         </div>
         <a href="<?= url('/payments/rates') ?>"
-            class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            Gerir Taxas
+            class="btn-sm bg-indigo-600 text-white hover:bg-indigo-700 flex items-center gap-1">
+            ⚙️ Taxas
         </a>
     </div>
 
     <!-- Seletor de Vaga -->
-    <div class="payment-card mb-6">
-        <form method="GET" action="<?= url('/payments') ?>" class="flex items-center gap-4">
-            <label class="font-medium text-gray-700">Selecione a Vaga:</label>
-            <select name="vacancy_id" class="flex-1 border rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500"
+    <div class="payment-card mb-3">
+        <form method="GET" action="<?= url('/payments') ?>" class="flex items-center gap-3">
+            <label class="font-medium text-gray-600 text-sm">Vaga:</label>
+            <select name="vacancy_id"
+                class="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500"
                 onchange="this.form.submit()">
                 <option value="">-- Selecione --</option>
                 <?php foreach ($vacancies as $v): ?>
@@ -129,194 +228,165 @@ $rates = $rates ?? null;
     </div>
 
     <?php if ($selectedVacancy): ?>
-        <!-- Estatísticas -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div class="stat-card">
-                <div class="stat-value">
-                    <?= $stats['total_beneficiarios'] ?? count($payments) ?>
-                </div>
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card purple">
+                <div class="stat-value text-purple-600"><?= $stats['total_beneficiarios'] ?? count($payments) ?></div>
                 <div class="stat-label">Beneficiários</div>
             </div>
             <div class="stat-card green">
-                <div class="stat-value">
-                    <?= $stats['total_vigias'] ?? 0 ?>
-                </div>
-                <div class="stat-label">Total de Vigias</div>
+                <div class="stat-value text-green-600"><?= $stats['total_vigias'] ?? 0 ?></div>
+                <div class="stat-label">Vigias</div>
             </div>
             <div class="stat-card orange">
-                <div class="stat-value">
-                    <?= $stats['total_supervisoes'] ?? 0 ?>
-                </div>
+                <div class="stat-value text-orange-500"><?= $stats['total_supervisoes'] ?? 0 ?></div>
                 <div class="stat-label">Supervisões</div>
             </div>
             <div class="stat-card blue">
-                <div class="stat-value">
-                    <?= number_format($stats['valor_total'] ?? 0, 2, ',', '.') ?>
-                </div>
-                <div class="stat-label">Valor Total (MZN)</div>
+                <div class="stat-value text-blue-600" style="font-size: 1.1rem;">
+                    <?= number_format($stats['valor_total'] ?? 0, 2, ',', '.') ?></div>
+                <div class="stat-label">Total (MZN)</div>
             </div>
         </div>
 
-        <!-- Taxas Ativas -->
-        <?php if ($rates): ?>
-            <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-                <div class="flex items-center gap-2 text-green-800">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <strong>Taxas Ativas:</strong>
-                    Vigia:
-                    <?= number_format($rates['valor_por_vigia'], 2, ',', '.') ?> MZN |
-                    Supervisão:
-                    <?= number_format($rates['valor_por_supervisao'], 2, ',', '.') ?> MZN
-                </div>
-            </div>
-        <?php else: ?>
-            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                <div class="flex items-center gap-2 text-yellow-800">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    <strong>Atenção:</strong> Não há taxa de pagamento definida para esta vaga.
-                    <a href="<?= url('/payments/rates') ?>" class="underline ml-2">Definir Taxas</a>
-                </div>
-            </div>
-        <?php endif; ?>
+        <!-- Info Bar -->
+        <div class="flex flex-wrap items-center gap-3 mb-3">
+            <?php if ($rates): ?>
+                <span class="rates-badge">💰 Vigia: <strong><?= number_format($rates['valor_por_vigia'], 2, ',', '.') ?>
+                        MZN</strong></span>
+                <span class="rates-badge">👔 Supervisão:
+                    <strong><?= number_format($rates['valor_por_supervisao'], 2, ',', '.') ?> MZN</strong></span>
+            <?php else: ?>
+                <span class="rates-badge" style="background: #fef3c7; color: #92400e;">
+                    ⚠️ Sem taxa definida - <a href="<?= url('/payments/rates') ?>" class="underline">Definir</a>
+                </span>
+            <?php endif; ?>
+        </div>
 
         <!-- Ações -->
-        <div class="flex gap-3 mb-6">
+        <div class="flex flex-wrap gap-2 mb-3">
             <a href="<?= url('/payments/preview/' . $selectedVacancy) ?>"
-                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                👁️ Pré-visualizar
+                class="btn-sm bg-blue-600 text-white hover:bg-blue-700">
+                👁️ Preview
             </a>
             <form method="POST" action="<?= url('/payments/generate/' . $selectedVacancy) ?>" class="inline"
-                onsubmit="return confirm('Deseja gerar/atualizar o mapa de pagamentos?')">
+                onsubmit="return confirm('Gerar/atualizar mapa de pagamentos?')">
                 <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
-                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-                    📊 Gerar Mapa
+                <button type="submit" class="btn-sm bg-green-600 text-white hover:bg-green-700">
+                    📊 Gerar
                 </button>
             </form>
             <?php if (!empty($payments) && ($payments[0]['estado'] ?? '') === 'previsto'): ?>
                 <form method="POST" action="<?= url('/payments/validate/' . $selectedVacancy) ?>" class="inline"
-                    onsubmit="return confirm('ATENÇÃO: Após validação, os valores ficarão congelados. Deseja continuar?')">
+                    onsubmit="return confirm('Validar mapa? Os valores ficarão congelados.')">
                     <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
-                    <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
-                        ✓ Validar Mapa
+                    <button type="submit" class="btn-sm bg-purple-600 text-white hover:bg-purple-700">
+                        ✓ Validar
                     </button>
                 </form>
             <?php endif; ?>
             <?php if (!empty($payments)): ?>
-                <div class="relative" id="exportDropdown">
-                    <button onclick="document.getElementById('exportMenu').classList.toggle('hidden')"
-                        class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+                <div class="relative inline-block" x-data="{ open: false }">
+                    <button @click="open = !open" class="btn-sm bg-gray-600 text-white hover:bg-gray-700">
                         📥 Exportar ▼
                     </button>
-                    <div id="exportMenu"
-                        class="absolute hidden bg-white shadow-lg rounded-lg mt-1 py-2 min-w-[120px] z-10 border">
+                    <div x-show="open" @click.away="open = false"
+                        class="absolute right-0 mt-1 bg-white shadow-lg rounded-lg py-1 min-w-[100px] z-10 border text-sm">
                         <a href="<?= url('/payments/export/' . $selectedVacancy . '?format=pdf') ?>"
-                            class="block px-4 py-2 hover:bg-gray-100 text-gray-700">📄 PDF</a>
+                            class="block px-3 py-1.5 hover:bg-gray-100">📄 PDF</a>
                         <a href="<?= url('/payments/export/' . $selectedVacancy . '?format=excel') ?>"
-                            class="block px-4 py-2 hover:bg-gray-100 text-gray-700">📊 Excel</a>
+                            class="block px-3 py-1.5 hover:bg-gray-100">📊 Excel</a>
                         <a href="<?= url('/payments/export/' . $selectedVacancy . '?format=csv') ?>"
-                            class="block px-4 py-2 hover:bg-gray-100 text-gray-700">📋 CSV</a>
+                            class="block px-3 py-1.5 hover:bg-gray-100">📋 CSV</a>
                     </div>
                 </div>
             <?php endif; ?>
         </div>
 
-        <!-- Tabela de Pagamentos -->
+        <!-- Tabela -->
         <?php if (!empty($payments)): ?>
-            <div class="payment-card overflow-x-auto">
+            <div class="payment-card overflow-x-auto p-0">
                 <table class="payment-table">
                     <thead>
                         <tr>
-                            <th>Ord.</th>
+                            <th style="width: 35px;" class="text-center">#</th>
                             <th>Nome Completo</th>
-                            <th class="text-center">Nº de Vigias</th>
-                            <th class="text-center">Nº de Supervisões</th>
-                            <th class="text-right">Valor a Receber (MZN)</th>
-                            <th>NUIT</th>
-                            <th>Nome do Banco</th>
-                            <th>Número da Conta/NIB</th>
-                            <th>Estado</th>
+                            <th style="width: 50px;" class="text-center">Vigias</th>
+                            <th style="width: 50px;" class="text-center">Superv.</th>
+                            <th style="width: 85px;" class="text-right">Valor (MZN)</th>
+                            <th style="width: 75px;">NUIT</th>
+                            <th style="width: 90px;">Banco</th>
+                            <th style="width: 120px;">Conta/NIB</th>
+                            <th style="width: 70px;" class="text-center">Estado</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($payments as $i => $p): ?>
                             <tr>
-                                <td>
-                                    <?= $i + 1 ?>
-                                </td>
+                                <td class="text-center text-gray-500"><?= $i + 1 ?></td>
                                 <td>
                                     <?= htmlspecialchars($p['nome_completo']) ?>
                                     <?php if (empty($p['nuit']) || empty($p['banco']) || empty($p['numero_conta'])): ?>
-                                        <span class="badge-warning ml-2">⚠️ Dados incompletos</span>
+                                        <span class="badge badge-warning ml-1">⚠</span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="text-center">
+                                <td
+                                    class="text-center font-semibold <?= $p['nr_vigias'] > 0 ? 'text-blue-600' : 'text-gray-400' ?>">
                                     <?= $p['nr_vigias'] ?>
                                 </td>
-                                <td class="text-center">
+                                <td
+                                    class="text-center font-semibold <?= $p['nr_supervisoes'] > 0 ? 'text-purple-600' : 'text-gray-400' ?>">
                                     <?= $p['nr_supervisoes'] ?>
                                 </td>
-                                <td class="text-right font-bold">
+                                <td class="text-right value-cell">
                                     <?= number_format($p['total'], 2, ',', '.') ?>
                                 </td>
-                                <td>
-                                    <?= htmlspecialchars($p['nuit'] ?? '-') ?>
-                                </td>
-                                <td>
+                                <td class="compact-text text-gray-600"><?= htmlspecialchars($p['nuit'] ?? '-') ?></td>
+                                <td class="compact-text text-gray-600" title="<?= htmlspecialchars($p['banco'] ?? '') ?>">
                                     <?= htmlspecialchars($p['banco'] ?? '-') ?>
                                 </td>
-                                <td>
+                                <td class="compact-text text-gray-600" style="font-family: monospace; font-size: 0.65rem;">
                                     <?= htmlspecialchars($p['numero_conta'] ?? '-') ?>
                                 </td>
-                                <td>
+                                <td class="text-center">
                                     <?php if ($p['estado'] === 'validado'): ?>
-                                        <span class="badge-success">✓ Validado</span>
+                                        <span class="badge badge-success">✓ Validado</span>
                                     <?php else: ?>
-                                        <span class="badge-pending">Previsto</span>
+                                        <span class="badge badge-pending">Previsto</span>
                                     <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                     <tfoot>
-                        <tr class="bg-gray-100 font-bold">
-                            <td colspan="2">TOTAL</td>
-                            <td class="text-center">
-                                <?= array_sum(array_column($payments, 'nr_vigias')) ?>
-                            </td>
-                            <td class="text-center">
-                                <?= array_sum(array_column($payments, 'nr_supervisoes')) ?>
-                            </td>
-                            <td class="text-right">
-                                <?= number_format(array_sum(array_column($payments, 'total')), 2, ',', '.') ?>
-                            </td>
+                        <tr class="total-row">
+                            <td colspan="2" class="text-right font-semibold">TOTAL</td>
+                            <td class="text-center"><?= array_sum(array_column($payments, 'nr_vigias')) ?></td>
+                            <td class="text-center"><?= array_sum(array_column($payments, 'nr_supervisoes')) ?></td>
+                            <td class="text-right value-cell">
+                                <?= number_format(array_sum(array_column($payments, 'total')), 2, ',', '.') ?></td>
                             <td colspan="4"></td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
         <?php else: ?>
-            <div class="payment-card text-center py-12">
-                <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="payment-card text-center py-8">
+                <svg class="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <p class="text-gray-500">Nenhum mapa de pagamentos gerado para esta vaga.</p>
-                <p class="text-gray-400 text-sm mt-2">Clique em "Gerar Mapa" para criar o mapa de pagamentos.</p>
+                <p class="text-gray-500 text-sm">Nenhum mapa gerado para esta vaga.</p>
+                <p class="text-gray-400 text-xs mt-1">Clique em "Gerar" para criar o mapa.</p>
             </div>
         <?php endif; ?>
     <?php else: ?>
-        <div class="payment-card text-center py-12">
-            <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="payment-card text-center py-8">
+            <svg class="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <p class="text-gray-500">Selecione uma vaga para ver o mapa de pagamentos.</p>
+            <p class="text-gray-500 text-sm">Selecione uma vaga acima para ver o mapa.</p>
         </div>
     <?php endif; ?>
 </div>

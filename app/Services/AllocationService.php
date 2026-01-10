@@ -140,12 +140,12 @@ class AllocationService
      */
     public function canAssignSupervisor(int $supervisorId, int $juryId): array
     {
-        // 1. Verificar se supervisor existe e é elegível
+        // 1. Verificar se supervisor existe e é vigilante com disponibilidade
         $supervisor = (new User())->find($supervisorId);
-        if (!$supervisor || (int) $supervisor['supervisor_eligible'] !== 1) {
+        if (!$supervisor || $supervisor['role'] !== 'vigilante') {
             return [
                 'can_assign' => false,
-                'reason' => 'Supervisor inválido ou não elegível',
+                'reason' => 'Apenas vigilantes podem ser supervisores',
                 'severity' => 'error'
             ];
         }

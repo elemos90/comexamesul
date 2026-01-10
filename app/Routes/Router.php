@@ -83,6 +83,11 @@ class Router
         $method = $this->request->method();
         $path = $this->normalizePath($this->request->path());
 
+        // DEBUG: Log para rotas do relatório consolidado
+        if (strpos($path, '/reports/') !== false) {
+            error_log("DEBUG Router: Requisição $method $path");
+        }
+
         // DEBUG: Log da requisição
         if (strpos($path, '/api/') === 0) {
             error_log("DEBUG Router: Requisição $method $path");

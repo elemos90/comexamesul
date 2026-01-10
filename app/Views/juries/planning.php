@@ -11,73 +11,79 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
     .allocation-table {
         border-collapse: collapse;
         width: 100%;
-        font-size: 0.875rem;
+        font-size: 0.75rem;
     }
 
     .allocation-table th {
         background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
         color: white;
-        font-weight: 600;
-        padding: 12px 8px;
+        font-weight: 500;
+        padding: 8px 6px;
         text-align: center;
         border: 1px solid #1e40af;
-        font-size: 0.813rem;
+        font-size: 0.7rem;
         text-transform: uppercase;
+        letter-spacing: 0.3px;
     }
 
     .allocation-table td {
-        border: 1px solid #d1d5db;
-        padding: 8px;
+        border: 1px solid #e5e7eb;
+        padding: 5px 6px;
         vertical-align: middle;
+        font-size: 0.73rem;
     }
 
     .allocation-table tbody tr:hover:not(.subtotal-row):not(.total-row) {
-        background-color: #f9fafb;
+        background-color: #f0f9ff;
     }
 
     .group-header {
-        background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%) !important;
-        font-weight: 700;
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%) !important;
+        font-weight: 600;
         text-align: left;
-        padding: 8px 12px !important;
-        color: #374151;
-        font-size: 0.875rem;
-        letter-spacing: 0.025em;
+        padding: 6px 10px !important;
+        color: #1e40af;
+        font-size: 0.75rem;
+        letter-spacing: 0.02em;
     }
 
     .subtotal-row {
-        background-color: #fef3c7 !important;
+        background-color: #fef9c3 !important;
         font-weight: 600;
+        font-size: 0.72rem;
     }
 
     .subtotal-row td {
-        border-top: 2px solid #f59e0b !important;
-        border-bottom: 2px solid #f59e0b !important;
+        border-top: 2px solid #facc15 !important;
+        border-bottom: 2px solid #facc15 !important;
+        padding: 6px !important;
     }
 
     .total-row {
         background-color: #fed7aa !important;
         font-weight: 700;
-        font-size: 0.938rem;
+        font-size: 0.8rem;
     }
 
     .total-row td {
-        border-top: 3px solid #ea580c !important;
-        border-bottom: 3px solid #ea580c !important;
+        border-top: 2px solid #f97316 !important;
+        border-bottom: 2px solid #f97316 !important;
+        padding: 8px !important;
     }
 
     .contact-cell {
-        background-color: #fef3c7;
-        font-weight: 600;
+        background-color: #fef9c3;
+        font-weight: 500;
+        font-size: 0.7rem;
     }
 
     .btn-allocate {
-        padding: 4px 10px;
-        font-size: 0.75rem;
-        border-radius: 4px;
+        padding: 3px 8px;
+        font-size: 0.65rem;
+        border-radius: 3px;
         cursor: pointer;
         border: none;
-        transition: all 0.2s;
+        transition: all 0.15s;
         font-weight: 500;
     }
 
@@ -87,8 +93,8 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
     }
 
     .btn-auto:hover {
-        transform: scale(1.05);
-        box-shadow: 0 4px 6px rgba(16, 185, 129, 0.4);
+        transform: scale(1.03);
+        box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
     }
 
     .btn-manual {
@@ -97,31 +103,32 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
     }
 
     .btn-manual:hover {
-        transform: scale(1.05);
-        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.4);
+        transform: scale(1.03);
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
     }
 
     .btn-remove {
         background: #ef4444;
         color: white;
-        padding: 2px 6px;
-        font-size: 0.688rem;
-        border-radius: 3px;
+        padding: 1px 5px;
+        font-size: 0.6rem;
+        border-radius: 2px;
         cursor: pointer;
         border: none;
-        transition: all 0.2s;
+        transition: all 0.15s;
     }
 
     .btn-remove:hover {
         background: #dc2626;
-        transform: scale(1.1);
+        transform: scale(1.05);
     }
 
     .empty-slot {
         color: #9ca3af;
         font-style: italic;
         text-align: center;
-        padding: 4px 0;
+        padding: 2px 0;
+        font-size: 0.65rem;
     }
 
     /* Botões de ações (editar/eliminar) */
@@ -187,37 +194,36 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
         <?php include view_path('partials/help_button.php'); ?>
     </div>
 
-    <div class="max-w-full mx-auto px-4">
-        <!-- Cabeçalho -->
-        <div class="bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-lg shadow-lg p-6 mb-6">
-            <div class="flex justify-between items-start">
+    <div class="max-w-full mx-auto px-3">
+        <!-- Cabeçalho Compacto -->
+        <div class="bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-lg shadow-md p-4 mb-4">
+            <div class="flex justify-between items-center">
                 <div>
                     <?php
                     // Título dinâmico baseado na vaga selecionada
                     if (!empty($vacancy)) {
                         $pageTitle = '📅 ' . htmlspecialchars($vacancy['title']);
                     } else {
-                        $pageTitle = '📅 Calendário de Vigilância aos Exames de Admissão ' . date('Y');
+                        $pageTitle = '📅 Calendário de Vigilância - ' . date('Y');
                     }
                     ?>
-                    <h1 class="text-3xl font-bold mb-2"><?= $pageTitle ?></h1>
-                    <p class="text-blue-100 text-sm">Extensão da Beira - Comissão de Coordenação dos Exames de Admissão
-                    </p>
+                    <h1 class="text-xl font-bold"><?= $pageTitle ?></h1>
+                    <p class="text-blue-200 text-xs mt-0.5">Extensão da Beira - Comissão de Exames de Admissão</p>
                 </div>
                 <div class="flex gap-2">
                     <?php if (!empty($vacancyId)): ?>
                         <a href="<?= url('/juries/vacancy/' . $vacancyId . '/manage') ?>"
-                            class="px-4 py-2 bg-white text-blue-900 text-sm font-medium rounded hover:bg-blue-50 inline-flex items-center gap-2">
-                            ➕ Criar Júris para Esta Vaga
+                            class="px-3 py-1.5 bg-white text-blue-900 text-xs font-medium rounded hover:bg-blue-50 inline-flex items-center gap-1">
+                            ➕ Criar Júris
                         </a>
                     <?php else: ?>
                         <a href="<?= url('/juries/planning-by-vacancy') ?>"
-                            class="px-4 py-2 bg-white text-blue-900 text-sm font-medium rounded hover:bg-blue-50 inline-flex items-center gap-2">
+                            class="px-3 py-1.5 bg-white text-blue-900 text-xs font-medium rounded hover:bg-blue-50 inline-flex items-center gap-1">
                             ➕ Criar Júris
                         </a>
                     <?php endif; ?>
                     <button type="button" onclick="window.print()"
-                        class="px-4 py-2 bg-white text-blue-900 text-sm font-medium rounded hover:bg-blue-50">
+                        class="px-3 py-1.5 bg-white text-blue-900 text-xs font-medium rounded hover:bg-blue-50">
                         🖨️ Imprimir
                     </button>
                 </div>
@@ -329,29 +335,29 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
             </div>
         <?php endif; ?>
 
-        <!-- Estatísticas Rápidas -->
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-600">
-                <div class="text-xs text-gray-500 uppercase font-semibold">Total Júris</div>
+        <!-- Estatísticas Compactas -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
+            <div class="bg-white px-3 py-2 rounded-lg shadow-sm border-l-3 border-blue-600 flex items-center gap-3">
                 <div class="text-2xl font-bold text-gray-900"><?= $stats['total_juries'] ?? 0 ?></div>
+                <div class="text-xs text-gray-500 font-medium leading-tight">Total<br>Júris</div>
             </div>
-            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-green-600">
-                <div class="text-xs text-gray-500 uppercase font-semibold">Vigilantes Alocados</div>
+            <div class="bg-white px-3 py-2 rounded-lg shadow-sm border-l-3 border-green-600 flex items-center gap-3">
                 <div class="text-2xl font-bold text-green-600"><?= $stats['total_allocated'] ?? 0 ?></div>
+                <div class="text-xs text-gray-500 font-medium leading-tight">Vigilantes<br>Alocados</div>
             </div>
-            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-orange-600">
-                <div class="text-xs text-gray-500 uppercase font-semibold">Vagas Livres</div>
-                <div class="text-2xl font-bold text-orange-600">
+            <div class="bg-white px-3 py-2 rounded-lg shadow-sm border-l-3 border-orange-500 flex items-center gap-3">
+                <div class="text-2xl font-bold text-orange-500">
                     <?= ($stats['slots_available'] ?? 0) - ($stats['total_allocated'] ?? 0) ?>
                 </div>
+                <div class="text-xs text-gray-500 font-medium leading-tight">Vagas<br>Livres</div>
             </div>
-            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-red-600">
-                <div class="text-xs text-gray-500 uppercase font-semibold">Sem Supervisor</div>
+            <div class="bg-white px-3 py-2 rounded-lg shadow-sm border-l-3 border-red-500 flex items-center gap-3">
                 <div class="text-2xl font-bold text-red-600"><?= $stats['juries_without_supervisor'] ?? 0 ?></div>
+                <div class="text-xs text-gray-500 font-medium leading-tight">Sem<br>Supervisor</div>
             </div>
-            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-indigo-600">
-                <div class="text-xs text-gray-500 uppercase font-semibold">Total Candidatos</div>
+            <div class="bg-white px-3 py-2 rounded-lg shadow-sm border-l-3 border-indigo-600 flex items-center gap-3">
                 <div class="text-2xl font-bold text-indigo-600"><?= $stats['total_candidates'] ?? 0 ?></div>
+                <div class="text-xs text-gray-500 font-medium leading-tight">Total<br>Candidatos</div>
             </div>
         </div>
 
@@ -875,99 +881,99 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
                                 $supervisorJuryId = $firstJuryOfExam['id'] ?? 0;
                                 $supervisorId = $firstJuryOfExam['supervisor_id'] ?? null;
                                 ?>
-                                <tr class="subtotal-row"data-location="<?= htmlspecialchars($location) ?>">
-                                            <td colspan="4" style="text-align: right; padding-right: 16px; font-weight: 600;">Subtotal
-                                            </td>
-                                            <td style="text-align: center; font-weight: 600;"><?= number_format($examCandidates, 0) ?>
-                                            </td>
-                                            <td style="padding: 8px; font-weight: 600;">
-                                                <div style="display: flex; flex-direction: column; gap: 6px; align-items: center;">
-                                                    <?php
-                                                    // Contar supervisores únicos neste bloco
-                                                    $supervisorCounts = [];
-                                                    foreach ($group['juries'] as $j) {
-                                                        if (!empty($j['supervisor_id']) && !empty($j['supervisor_name'])) {
-                                                            $sid = $j['supervisor_id'];
-                                                            if (!isset($supervisorCounts[$sid])) {
-                                                                $supervisorCounts[$sid] = ['name' => $j['supervisor_name'], 'count' => 0];
-                                                            }
-                                                            $supervisorCounts[$sid]['count']++;
-                                                        }
+                                <tr class="subtotal-row" data-location="<?= htmlspecialchars($location) ?>">
+                                    <td colspan="4" style="text-align: right; padding-right: 16px; font-weight: 600;">Subtotal
+                                    </td>
+                                    <td style="text-align: center; font-weight: 600;"><?= number_format($examCandidates, 0) ?>
+                                    </td>
+                                    <td style="padding: 8px; font-weight: 600;">
+                                        <div style="display: flex; flex-direction: column; gap: 6px; align-items: center;">
+                                            <?php
+                                            // Contar supervisores únicos neste bloco
+                                            $supervisorCounts = [];
+                                            foreach ($group['juries'] as $j) {
+                                                if (!empty($j['supervisor_id']) && !empty($j['supervisor_name'])) {
+                                                    $sid = $j['supervisor_id'];
+                                                    if (!isset($supervisorCounts[$sid])) {
+                                                        $supervisorCounts[$sid] = ['name' => $j['supervisor_name'], 'count' => 0];
                                                     }
-                                                    $maxJuriesPerSupervisor = 10; // Default, seria buscado da config
-                                                    ?>
+                                                    $supervisorCounts[$sid]['count']++;
+                                                }
+                                            }
+                                            $maxJuriesPerSupervisor = 10; // Default, seria buscado da config
+                                            ?>
 
-                                                    <?php if (!empty($supervisorCounts)): ?>
-                                                            <?php foreach ($supervisorCounts as $supId => $supInfo): ?>
-                                                                    <div class="flex items-center gap-2">
-                                                                        <span style="color: #374151; font-size: 0.875rem; font-weight: 600;">
-                                                                            👔 <?= e($supInfo['name']) ?>
-                                                                        </span>
-                                                                        <span
-                                                                            class="px-2 py-0.5 text-xs rounded-full <?= $supInfo['count'] > $maxJuriesPerSupervisor ? 'bg-red-100 text-red-700' : ($supInfo['count'] == $maxJuriesPerSupervisor ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700') ?>">
-                                                                            <?= $supInfo['count'] ?>/<?= $maxJuriesPerSupervisor ?> júris
-                                                                        </span>
-                                                                        <button
-                                                                            onclick="removeSupervisorFromAllJuries(<?= $supervisorJuryId ?>, '<?= e($supInfo['name']) ?>')"
-                                                                            class="text-red-600 hover:text-red-800 text-xs"
-                                                                            title="Remover supervisor">✕</button>
-                                                                    </div>
-                                                            <?php endforeach; ?>
-                                                    <?php else: ?>
-                                                            <span style="color: #9ca3af; font-style: italic; font-size: 0.875rem;">
-                                                                Sem supervisor
-                                                            </span>
-                                                    <?php endif; ?>
-
-                                                    <div style="display: flex; gap: 4px; margin-top: 4px;">
-                                                        <?php
-                                                        // Dados para auto-distribuição
-                                                        $firstJury = $group['juries'][0] ?? null;
-                                                        $juryCount = count($group['juries']);
-                                                        ?>
-                                                        <?php if ($juryCount > 1 && $firstJury): ?>
-                                                                <button
-                                                                    onclick="autoDistributeVigilantes('<?= e($firstJury['subject']) ?>', '<?= $firstJury['exam_date'] ?>', '<?= $firstJury['start_time'] ?>', '<?= $firstJury['end_time'] ?>', <?= $firstJury['vacancy_id'] ?? 'null' ?>)"
-                                                                    class="px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs rounded hover:from-blue-700 hover:to-indigo-700 transition-all shadow-sm flex items-center gap-1"
-                                                                    title="Distribuir vigilantes automaticamente">
-                                                                    👮 Auto-vigilantes
-                                                                </button>
-                                                                <button
-                                                                    onclick="autoDistributeSupervisors('<?= e($firstJury['subject']) ?>', '<?= $firstJury['exam_date'] ?>', '<?= $firstJury['start_time'] ?>', '<?= $firstJury['end_time'] ?>', <?= $firstJury['vacancy_id'] ?? 'null' ?>)"
-                                                                    class="px-3 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs rounded hover:from-emerald-700 hover:to-teal-700 transition-all shadow-sm flex items-center gap-1"
-                                                                    title="Distribuir supervisores automaticamente (<?= $juryCount ?> júris)">
-                                                                    🤖 Auto-distribuir (<?= $juryCount ?>)
-                                                                </button>
-                                                        <?php endif; ?>
-
-                                                        <?php if (empty($supervisorCounts) && $supervisorJuryId > 0): ?>
-                                                                <button onclick="openSupervisorModal(<?= $supervisorJuryId ?>)"
-                                                                    class="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
-                                                                    title="Alocar supervisor manualmente">
-                                                                    👔 Manual
-                                                                </button>
-                                                        <?php endif; ?>
+                                            <?php if (!empty($supervisorCounts)): ?>
+                                                <?php foreach ($supervisorCounts as $supId => $supInfo): ?>
+                                                    <div class="flex items-center gap-2">
+                                                        <span style="color: #374151; font-size: 0.875rem; font-weight: 600;">
+                                                            👔 <?= e($supInfo['name']) ?>
+                                                        </span>
+                                                        <span
+                                                            class="px-2 py-0.5 text-xs rounded-full <?= $supInfo['count'] > $maxJuriesPerSupervisor ? 'bg-red-100 text-red-700' : ($supInfo['count'] == $maxJuriesPerSupervisor ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700') ?>">
+                                                            <?= $supInfo['count'] ?>/<?= $maxJuriesPerSupervisor ?> júris
+                                                        </span>
+                                                        <button
+                                                            onclick="removeSupervisorFromAllJuries(<?= $supervisorJuryId ?>, '<?= e($supInfo['name']) ?>')"
+                                                            class="text-red-600 hover:text-red-800 text-xs"
+                                                            title="Remover supervisor">✕</button>
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td style="text-align: center; font-weight: 700;"><?= $examVigilantes ?></td>
-                                            <td></td>
-                                        </tr>
-                                        <?php
+                                                <?php endforeach; ?>
+                                            <?php else: ?>
+                                                <span style="color: #9ca3af; font-style: italic; font-size: 0.875rem;">
+                                                    Sem supervisor
+                                                </span>
+                                            <?php endif; ?>
+
+                                            <div style="display: flex; gap: 4px; margin-top: 4px;">
+                                                <?php
+                                                // Dados para auto-distribuição
+                                                $firstJury = $group['juries'][0] ?? null;
+                                                $juryCount = count($group['juries']);
+                                                ?>
+                                                <?php if ($juryCount > 1 && $firstJury): ?>
+                                                    <button
+                                                        onclick="autoDistributeVigilantes('<?= e($firstJury['subject']) ?>', '<?= $firstJury['exam_date'] ?>', '<?= $firstJury['start_time'] ?>', '<?= $firstJury['end_time'] ?>', <?= $firstJury['vacancy_id'] ?? 'null' ?>)"
+                                                        class="px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs rounded hover:from-blue-700 hover:to-indigo-700 transition-all shadow-sm flex items-center gap-1"
+                                                        title="Distribuir vigilantes automaticamente">
+                                                        👮 Auto-vigilantes
+                                                    </button>
+                                                    <button
+                                                        onclick="autoDistributeSupervisors('<?= e($firstJury['subject']) ?>', '<?= $firstJury['exam_date'] ?>', '<?= $firstJury['start_time'] ?>', '<?= $firstJury['end_time'] ?>', <?= $firstJury['vacancy_id'] ?? 'null' ?>)"
+                                                        class="px-3 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs rounded hover:from-emerald-700 hover:to-teal-700 transition-all shadow-sm flex items-center gap-1"
+                                                        title="Distribuir supervisores automaticamente (<?= $juryCount ?> júris)">
+                                                        🤖 Auto-distribuir (<?= $juryCount ?>)
+                                                    </button>
+                                                <?php endif; ?>
+
+                                                <?php if (empty($supervisorCounts) && $supervisorJuryId > 0): ?>
+                                                    <button onclick="openSupervisorModal(<?= $supervisorJuryId ?>)"
+                                                        class="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
+                                                        title="Alocar supervisor manualmente">
+                                                        👔 Manual
+                                                    </button>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td style="text-align: center; font-weight: 700;"><?= $examVigilantes ?></td>
+                                    <td></td>
+                                </tr>
+                                <?php
                             endforeach;
 
                             // Total Geral
                             if ($totalCandidatos > 0):
                                 ?>
-                                        <tr class="total-row">
-                                            <td colspan="4" style="text-align: right; padding-right: 16px; font-weight: 700;">TOTAL</td>
-                                            <td style="text-align: center; font-weight: 700;"><?= number_format($totalCandidatos, 0) ?>
-                                            </td>
-                                            <td></td>
-                                            <td style="text-align: center; font-weight: 700;"><?= $totalVigilantes ?></td>
-                                            <td></td>
-                                        </tr>
-                                        <?php
+                                <tr class="total-row">
+                                    <td colspan="4" style="text-align: right; padding-right: 16px; font-weight: 700;">TOTAL</td>
+                                    <td style="text-align: center; font-weight: 700;"><?= number_format($totalCandidatos, 0) ?>
+                                    </td>
+                                    <td></td>
+                                    <td style="text-align: center; font-weight: 700;"><?= $totalVigilantes ?></td>
+                                    <td></td>
+                                </tr>
+                                <?php
                             endif;
                         endif;
                         ?>

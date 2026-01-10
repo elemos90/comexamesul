@@ -104,7 +104,7 @@ class JuryPlanningController extends Controller
             "SELECT u.*, vw.supervision_count, vw.workload_score 
              FROM users u 
              LEFT JOIN vw_vigilante_workload vw ON vw.user_id = u.id
-             WHERE u.supervisor_eligible = 1 
+             WHERE u.role = 'vigilante' AND u.available_for_vigilance = 1 
              ORDER BY vw.workload_score ASC, u.name"
         );
 

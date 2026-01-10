@@ -68,6 +68,16 @@ $items = [
     // Meu Mapa de Pagamento (para vigilantes e supervisores - item separado)
     ['label' => 'Meu Mapa de Pagamento', 'href' => url('/payments/my-map'), 'roles' => ['vigilante', 'supervisor'], 'icon' => 'receipt_long', 'color' => 'emerald'],
     [
+        'label' => 'Relatórios',
+        'href' => url('/reports/consolidated'),
+        'roles' => ['membro', 'coordenador'],
+        'icon' => 'assessment',
+        'color' => 'purple',
+        'children' => [
+            ['label' => 'Relatório Consolidado', 'href' => url('/reports/consolidated'), 'roles' => ['membro', 'coordenador']],
+        ]
+    ],
+    [
         'label' => 'Dados Mestres',
         'href' => url('/master-data/disciplines'),
         'roles' => ['coordenador'],

@@ -57,6 +57,31 @@ class JuryAllocationController extends Controller
                 return;
             }
 
+            // VALIDAÇÃO CRÍTICA: Verificar se a pessoa já é supervisor do mesmo exame
+            $isSupervisorOfExam = $juryVigilantes->statement(
+                "SELECT j.id, j.room FROM juries j
+                 WHERE j.supervisor_id = :vigilante_id
+                   AND j.subject = :subject
+                   AND j.exam_date = :exam_date
+                   AND j.start_time = :start_time
+                   AND j.end_time = :end_time",
+                [
+                    'vigilante_id' => $vigilanteId,
+                    'subject' => $jury['subject'],
+                    'exam_date' => $jury['exam_date'],
+                    'start_time' => $jury['start_time'],
+                    'end_time' => $jury['end_time']
+                ]
+            );
+
+            if (!empty($isSupervisorOfExam)) {
+                Response::json([
+                    'success' => false,
+                    'message' => "❌ {$vigilante['name']} já é SUPERVISOR deste exame.\n\n⚠️ Uma pessoa NÃO pode ser vigilante e supervisor ao mesmo tempo no mesmo exame.\n\nRemova-o(a) primeiro como supervisor ou escolha outro vigilante."
+                ], 422);
+                return;
+            }
+
             $exists = $juryVigilantes->statement(
                 'SELECT * FROM jury_vigilantes WHERE jury_id = :jury AND vigilante_id = :vigilante',
                 ['jury' => $juryId, 'vigilante' => $vigilanteId]
@@ -198,6 +223,34 @@ class JuryAllocationController extends Controller
                 Response::json([
                     'success' => false,
                     'message' => "❌ {$supervisor['name']} já é supervisor de '{$conflict['subject']}' no horário {$conflict['start_time']}-{$conflict['end_time']}."
+                ], 422);
+                return;
+            }
+
+            // VALIDAÇÃO CRÍTICA: Verificar se o supervisor já está alocado como vigilante no mesmo exame
+            $juryVigilantes = new JuryVigilante();
+            $isVigilanteInExam = $juryVigilantes->statement(
+                "SELECT j.id, j.room FROM juries j
+                 INNER JOIN jury_vigilantes jv ON jv.jury_id = j.id
+                 WHERE jv.vigilante_id = :supervisor_id
+                   AND j.subject = :subject
+                   AND j.exam_date = :exam_date
+                   AND j.start_time = :start_time
+                   AND j.end_time = :end_time",
+                [
+                    'supervisor_id' => $supervisorId,
+                    'subject' => $jury['subject'],
+                    'exam_date' => $jury['exam_date'],
+                    'start_time' => $jury['start_time'],
+                    'end_time' => $jury['end_time']
+                ]
+            );
+
+            if (!empty($isVigilanteInExam)) {
+                $room = $isVigilanteInExam[0]['room'];
+                Response::json([
+                    'success' => false,
+                    'message' => "❌ {$supervisor['name']} já está alocado(a) como VIGILANTE na sala '{$room}' deste exame.\n\n⚠️ Uma pessoa NÃO pode ser vigilante e supervisor ao mesmo tempo no mesmo exame.\n\nRemova-o(a) primeiro da lista de vigilantes ou escolha outro supervisor."
                 ], 422);
                 return;
             }

@@ -109,5 +109,20 @@ class Request
     {
         return strtolower($this->server['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
     }
+
+    /**
+     * Parse JSON body from request
+     * 
+     * @return array Parsed JSON data
+     */
+    public function json(): array
+    {
+        $rawBody = file_get_contents('php://input');
+        if (empty($rawBody)) {
+            return [];
+        }
+        $data = json_decode($rawBody, true);
+        return is_array($data) ? $data : [];
+    }
 }
 

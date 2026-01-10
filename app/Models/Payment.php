@@ -50,6 +50,8 @@ class Payment extends BaseModel
     /**
      * Calcular pagamentos baseado nas participações em júris
      * Retorna array para pré-visualização (não persiste)
+     * 
+     * Nota: Supervisões são contadas por BLOCO (data+hora+local), não por sala individual
      */
     public function calculateForVacancy(int $vacancyId, array $rates): array
     {
@@ -63,7 +65,7 @@ class Payment extends BaseModel
                     SUM(p.is_vigilante) as nr_vigias,
                     SUM(p.is_supervisor) as nr_supervisoes
                 FROM (
-                    -- Vigilantes
+                    -- Vigilantes: cada atribuição a um júri conta como 1 vigia
                     SELECT 
                         jv.vigilante_id as user_id,
                         1 as is_vigilante,
@@ -74,13 +76,22 @@ class Payment extends BaseModel
                     
                     UNION ALL
                     
-                    -- Supervisores
+                    -- Supervisores: contagem POR BLOCO (data+hora+local), não por sala individual
+                    -- Um supervisor numa data/hora/local supervisiona todas as salas desse bloco como 1 supervisão
                     SELECT 
-                        j.supervisor_id as user_id,
+                        supervisor_id as user_id,
                         0 as is_vigilante,
                         1 as is_supervisor
-                    FROM juries j
-                    WHERE j.vacancy_id = :vacancy_id_2 AND j.supervisor_id IS NOT NULL
+                    FROM (
+                        SELECT DISTINCT 
+                            j.supervisor_id,
+                            j.exam_date,
+                            j.start_time,
+                            j.location
+                        FROM juries j
+                        WHERE j.vacancy_id = :vacancy_id_2 
+                          AND j.supervisor_id IS NOT NULL
+                    ) AS unique_blocks
                 ) as p
                 INNER JOIN users u ON u.id = p.user_id
                 GROUP BY u.id, u.name, u.nuit, u.bank_name, u.nib, u.email

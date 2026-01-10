@@ -217,3 +217,12 @@ $router->get('/admin/features', 'FeatureFlagController@index', ['AuthMiddleware'
 $router->post('/admin/features/toggle', 'FeatureFlagController@toggle', ['AuthMiddleware', 'RoleMiddleware:coordenador', 'CsrfMiddleware']);
 $router->get('/api/features', 'FeatureFlagController@getAll', ['AuthMiddleware', 'RoleMiddleware:coordenador']);
 $router->post('/admin/features/reset', 'FeatureFlagController@reset', ['AuthMiddleware', 'RoleMiddleware:coordenador', 'CsrfMiddleware']);
+
+// ============================================
+// Relatório Consolidado de Exames
+// ============================================
+$router->get('/reports/consolidated', 'ConsolidatedReportController@index', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->post('/reports/consolidated/generate', 'ConsolidatedReportController@generate', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->get('/reports/consolidated/export/pdf', 'ConsolidatedReportController@exportPdf', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->get('/reports/consolidated/export/excel', 'ConsolidatedReportController@exportExcel', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->get('/reports/consolidated/export/csv', 'ConsolidatedReportController@exportCsv', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);

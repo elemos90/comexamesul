@@ -78,7 +78,7 @@ class SupervisorAllocationService
             ") as global_load
                 FROM users u
                 WHERE u.role = 'vigilante'
-                  AND u.supervisor_eligible = 1
+                  AND u.available_for_vigilance = 1
                   AND u.id NOT IN (
                       -- Excluir supervisores com conflito de horário
                       SELECT DISTINCT j.supervisor_id 
@@ -366,13 +366,13 @@ class SupervisorAllocationService
 
         $oldSupervisorId = $jury['supervisor_id'];
 
-        // Verificar se novo supervisor é válido
+        // Verificar se novo supervisor é válido (qualquer vigilante pode ser supervisor)
         if ($newSupervisorId > 0) {
             $supervisor = $this->userModel->find($newSupervisorId);
-            if (!$supervisor || $supervisor['supervisor_eligible'] != 1) {
+            if (!$supervisor || $supervisor['role'] !== 'vigilante') {
                 return [
                     'success' => false,
-                    'message' => 'Supervisor não elegível.'
+                    'message' => 'Apenas vigilantes podem ser supervisores.'
                 ];
             }
 

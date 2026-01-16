@@ -193,34 +193,25 @@ ksort($juriesByDate);
                 $totalGeralVigilantes = 0;
 
                 foreach ($groupedJuries as $group):
-                    // Pegar o local do grupo ou do primeiro júri
-                    $location = $group['location'] ?? $group['juries'][0]['location'] ?? null;
-
-                    // Pular se não houver local definido
-                    if (empty($location)) {
-                        $location = 'Local não especificado';
+                    // Calcular rowspan total do grupo principal (Exam/Subject/Time)
+                    // Rowspan = Para cada local -> (1 header + N juries + 1 subtotal)
+                    $totalRowspan = 0;
+                    foreach ($group['locations'] as $loc) {
+                        $totalRowspan += 1; // Header do local
+                        $totalRowspan += count($loc['juries']); // Salas
+                        $totalRowspan += 1; // Subtotal do local
                     }
 
-                    $examCandidatos = 0;
-                    $examVigilantes = 0;
-                    $rowspan = count($group['juries']);
-                    ?>
-                    <!-- Cabeçalho do Local -->
-                    <tr class="location-header">
-                        <td colspan="8"><?= strtoupper(htmlspecialchars($location)) ?></td>
-                    </tr>
+                    // Variável para controlar a impressão das colunas principais (Date/Time/Exam)
+                    $printMainColumns = true;
 
-                    <?php
-                    $firstRow = true;
-
-                    foreach ($group['juries'] as $index => $jury):
-                        $vigilantesCount = count($jury['vigilantes'] ?? []);
-                        $examCandidatos += $jury['candidates_quota'];
-                        $examVigilantes += $vigilantesCount;
+                    // Iterar por locais
+                    foreach ($group['locations'] as $locationName => $locData):
+                        // Header do Local (Amarelo)
                         ?>
-                        <tr>
-                            <?php if ($firstRow):
-                                // Dias da semana em Português de Portugal
+                        <tr class="location-header">
+                            <?php if ($printMainColumns):
+                                // Dias da semana em Português
                                 $diasSemana = [
                                     'Monday' => 'Segunda',
                                     'Tuesday' => 'Terça',
@@ -230,101 +221,122 @@ ksort($juriesByDate);
                                     'Saturday' => 'Sábado',
                                     'Sunday' => 'Domingo'
                                 ];
-                                $diaIngles = date('l', strtotime($jury['exam_date']));
+                                $diaIngles = date('l', strtotime($group['exam_date']));
                                 $diaPortugues = $diasSemana[$diaIngles] ?? $diaIngles;
                                 ?>
-                                <td rowspan="<?= $rowspan + 1 ?>" class="text-center font-semibold">
-                                    <?= date('d/m/Y', strtotime($jury['exam_date'])) ?><br>
+                                <td rowspan="<?= $totalRowspan ?>" class="text-center font-semibold"
+                                    style="vertical-align: middle; background-color: white;">
+                                    <?= date('d/m/Y', strtotime($group['exam_date'])) ?><br>
                                     <span class="text-xs">(<?= $diaPortugues ?>)</span>
                                 </td>
-                                <td rowspan="<?= $rowspan + 1 ?>" class="text-center font-semibold">
-                                    <?= date('H:i', strtotime($jury['start_time'])) ?>
+                                <td rowspan="<?= $totalRowspan ?>" class="text-center font-semibold"
+                                    style="vertical-align: middle; background-color: white;">
+                                    <?= date('H:i', strtotime($group['start_time'])) ?> -
+                                    <?= date('H:i', strtotime($group['end_time'])) ?>
                                 </td>
-                                <td rowspan="<?= $rowspan + 1 ?>" class="text-center font-bold bg-gray-50">
+                                <td rowspan="<?= $totalRowspan ?>" class="text-center font-bold bg-gray-50"
+                                    style="vertical-align: middle; background-color: white;">
                                     <?= htmlspecialchars(strtoupper($group['subject'])) ?>
                                 </td>
-                                <?php $firstRow = false; endif; ?>
+                                <?php $printMainColumns = false; endif; ?>
 
-                            <td class="text-center"><?= htmlspecialchars($jury['room']) ?></td>
-                            <td class="text-center font-semibold"><?= number_format($jury['candidates_quota'], 0) ?></td>
-                            <td style="font-size: 0.75rem; line-height: 1.3;">
-
-                                <?php if (!empty($jury['vigilantes'])): ?>
-                                    <?php foreach ($jury['vigilantes'] as $v): ?>
-                                        <?= htmlspecialchars($v['name']) ?><br>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </td>
-                            <td class="text-center"><?= $vigilantesCount ?></td>
-                            <td class="text-center no-print">
-                                <a href="<?= url('/juries/' . $jury['id'] . '/report') ?>"
-                                    class="text-blue-600 hover:text-blue-800 text-xs font-bold uppercase">
-                                    Relatório
-                                </a>
+                            <!-- Coluna de Salas (agora ocupada pelo Header do Local) -->
+                            <td colspan="5" style="background-color: #fbbf24; font-weight: bold; text-align: center;">
+                                <?= strtoupper(htmlspecialchars($locationName)) ?>
                             </td>
                         </tr>
-                    <?php endforeach; ?>
 
-                    <!-- Subtotal do Exame -->
-                    <tr class="subtotal-row">
-                        <td class="text-center font-bold">Subtotal</td>
-                        <td class="text-center font-bold"><?= number_format($examCandidatos, 0) ?></td>
-                        <td class="text-center" style="font-size: 0.75rem;">
-                            <?php
-                            // Coletar supervisores únicos deste bloco
-                            $supervisors = [];
-                            foreach ($group['juries'] as $j) {
-                                if (!empty($j['supervisor_name'])) {
-                                    $id = $j['supervisor_id'];
-                                    if (!isset($supervisors[$id])) {
-                                        $supervisors[$id] = [
-                                            'name' => $j['supervisor_name'],
-                                            'phone' => $j['supervisor_phone'] ?? null,
-                                            'count' => 0
-                                        ];
-                                    }
-                                    $supervisors[$id]['count']++;
+                        <?php
+                        // Dados do subtotal DESTE local
+                        $locCandidatos = 0;
+                        $locVigilantes = 0;
+                        $locSupervisors = [];
+
+                        // Iterar salas deste local
+                        foreach ($locData['juries'] as $jury):
+                            $vigilantesCount = count($jury['vigilantes'] ?? []);
+                            $locCandidatos += $jury['candidates_quota'];
+                            $locVigilantes += $vigilantesCount;
+
+                            // Coletar supervisor para subtotal do local
+                            if (!empty($jury['supervisor_name'])) {
+                                $sid = $jury['supervisor_id'];
+                                if (!isset($locSupervisors[$sid])) {
+                                    $locSupervisors[$sid] = [
+                                        'name' => $jury['supervisor_name'],
+                                        'phone' => $jury['supervisor_phone'] ?? null
+                                    ];
                                 }
                             }
                             ?>
+                            <tr>
+                                <td class="text-center"><?= htmlspecialchars($jury['room']) ?></td>
+                                <td class="text-center font-semibold"><?= number_format($jury['candidates_quota'], 0) ?></td>
+                                <td style="font-size: 0.75rem; line-height: 1.3;">
+                                    <?php if (!empty($jury['vigilantes'])): ?>
+                                        <?php foreach ($jury['vigilantes'] as $v): ?>
+                                            <?= htmlspecialchars($v['name']) ?><br>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="text-center"><?= $vigilantesCount ?></td>
+                                <td class="text-center no-print">
+                                    <a href="<?= url('/juries/' . $jury['id'] . '/report') ?>"
+                                        class="text-blue-600 hover:text-blue-800 text-xs font-bold uppercase">
+                                        Relatório
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
 
-                            <?php if (!empty($supervisors)): ?>
-                                <div class="space-y-1">
-                                    <?php foreach ($supervisors as $sup): ?>
-                                        <div class="text-blue-900">
-                                            <strong>Supervisor:</strong> <?= htmlspecialchars($sup['name']) ?>
-                                            <?php if ($sup['phone']): ?>
-                                                <span class="text-xs text-gray-600"> • <?= htmlspecialchars($sup['phone']) ?></span>
-                                            <?php endif; ?>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php else: ?>
-                                <span class="text-gray-400 italic text-xs">Sem supervisor</span>
-                            <?php endif; ?>
+                        <!-- Subtotal do Local -->
+                        <tr class="subtotal-row">
+                            <td class="text-center font-bold" style="background-color: #fef3c7;">Subtotal</td>
+                            <td class="text-center font-bold" style="background-color: #fef3c7;">
+                                <?= number_format($locCandidatos, 0) ?>
+                            </td>
+                            <td class="text-center" style="font-size: 0.75rem; background-color: #fef3c7;">
+                                <?php if (!empty($locSupervisors)): ?>
+                                    <div class="space-y-1">
+                                        <?php foreach ($locSupervisors as $sup): ?>
+                                            <div class="text-blue-900">
+                                                <strong>Supervisor:</strong> <?= htmlspecialchars($sup['name']) ?>
+                                                <?php if ($sup['phone']): ?>
+                                                    <span class="text-xs text-gray-600"> • <?= htmlspecialchars($sup['phone']) ?></span>
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php else: ?>
+                                    <span class="text-gray-400 italic text-xs">Sem supervisor</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="text-center font-bold" style="background-color: #fef3c7;"><?= $locVigilantes ?></td>
+                            <td class="no-print" style="background-color: #fef3c7;"></td>
+                        </tr>
 
+                        <?php
+                        $totalGeralCandidatos += $locCandidatos;
+                        $totalGeralVigilantes += $locVigilantes;
+                        ?>
 
-                        </td>
-                        <td class="text-center font-bold"><?= $examVigilantes ?></td>
-                        <td class="no-print"></td>
-                    </tr>
+                    <?php endforeach; // Fim loop locais ?>
+                <?php endforeach; // Fim loop grupos principais ?>
 
-                    <?php
-                    $totalGeralCandidatos += $examCandidatos;
-                    $totalGeralVigilantes += $examVigilantes;
-                    ?>
-                <?php endforeach; ?>
-
-                <!-- Total Geral -->
+                <!-- Total Geral (Mantido) -->
                 <tr class="total-row">
-                    <td colspan="3" style="text-align: right; font-weight: bold; padding-right: 0.5rem;">TOTAL GERAL
+                    <td colspan="3"
+                        style="text-align: right; font-weight: bold; padding-right: 0.5rem; background-color: #fed7aa;">
+                        TOTAL GERAL</td>
+                    <td style="text-align: center; background-color: #fed7aa;"></td>
+                    <td style="text-align: center; font-weight: bold; background-color: #fed7aa;">
+                        <?= number_format($totalGeralCandidatos, 0) ?>
                     </td>
-                    <td style="text-align: center;"></td>
-                    <td style="text-align: center; font-weight: bold;"><?= number_format($totalGeralCandidatos, 0) ?>
+                    <td style="background-color: #fed7aa;"></td>
+                    <td style="text-align: center; font-weight: bold; background-color: #fed7aa;">
+                        <?= $totalGeralVigilantes ?>
                     </td>
-                    <td></td>
-                    <td style="text-align: center; font-weight: bold;"><?= $totalGeralVigilantes ?></td>
-                    <td class="no-print"></td>
+                    <td class="no-print" style="background-color: #fed7aa;"></td>
                 </tr>
             </tbody>
         </table>
@@ -348,319 +360,194 @@ ksort($juriesByDate);
 </div>
 
 <style>
-    /* Estilos para tela */
+    /* Reset & Base */
+    /* Reset & Base */
+    @media print {
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 11pt;
+            color: #000;
+            line-height: 1.3;
+        }
+    }
+
+    /* Screen-only */
     .no-print {
         margin-bottom: 2rem;
     }
 
+    /* Print Document Container */
     .print-document {
         background: white;
-        padding: 2rem;
-        border-radius: 0.5rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .print-header {
-        margin-bottom: 2rem;
-    }
-
-    .jury-table {
-        width: 100%;
+        padding: 0;
         max-width: 100%;
-        border-collapse: collapse;
+    }
+
+    /* Institutional Header */
+    .inst-header {
+        text-align: center;
         margin-bottom: 1.5rem;
-        font-size: 0.813rem;
-        table-layout: fixed;
+        font-family: Arial, Helvetica, sans-serif;
     }
 
-    .jury-table th {
-        background-color: #1e3a8a;
-        color: white;
-        padding: 0.6rem 0.3rem;
-        text-align: center;
-        font-weight: 600;
-        font-size: 0.75rem;
-        border: 1px solid #1e40af;
-        word-wrap: break-word;
+    .inst-logo {
+        height: 80px;
+        margin-bottom: 10px;
+        object-fit: contain;
     }
 
-    .jury-table td {
-        padding: 0.4rem 0.3rem;
-        border: 1px solid #d1d5db;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
+    .inst-title {
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 12pt;
+        margin-bottom: 2px;
+    }
+
+    .inst-subtitle {
+        font-size: 10pt;
+        margin-bottom: 2px;
+    }
+
+    .inst-dept {
+        font-size: 10pt;
+        font-style: italic;
+    }
+
+    /* Official Table Styles */
+    .official-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 2rem;
+        font-size: 10pt;
+    }
+
+    .official-table th,
+    .official-table td {
+        border: 1px solid #000;
+        /* Strict Black Border */
+        padding: 4px 6px;
         vertical-align: middle;
     }
 
-    .location-header td {
-        background-color: #fbbf24;
-        font-weight: 700;
+    /* Headers */
+    .official-table thead th {
+        background-color: #d9d9d9 !important;
+        /* Gray Header */
+        color: #000;
+        font-weight: bold;
+        text-transform: uppercase;
         text-align: center;
-        padding: 0.5rem 1rem;
-        font-size: 0.813rem;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 
-    .subtotal-row td {
-        background-color: #fef3c7;
-        font-weight: 600;
-        padding: 0.5rem 0.3rem;
-        vertical-align: middle;
+    /* Column Widths (Approximate based on image) */
+    .col-dia {
+        width: 10%;
     }
 
-    .subtotal-row td:first-child {
+    .col-hora {
+        width: 8%;
+    }
+
+    .col-exame {
+        width: 15%;
+    }
+
+    .col-salas {
+        width: 20%;
+    }
+
+    .col-ncand {
+        width: 7%;
+    }
+
+    .col-vigilante {
+        width: 33%;
+    }
+
+    .col-nvigias {
+        width: 7%;
+    }
+
+    /* Hierarchy Styles */
+    .row-location-header td {
+        background-color: #ffff00 !important;
+        /* Yellow */
+        font-weight: bold;
+        text-align: center;
+        text-transform: uppercase;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .row-subtotal td {
+        background-color: #ffff00 !important;
+        /* Yellow */
+        font-weight: bold;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .row-total td {
+        background-color: #ffc000 !important;
+        /* Orange/Dark Yellow */
+        font-weight: bold;
+        text-transform: uppercase;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .text-center {
         text-align: center;
     }
 
-    .subtotal-row td:nth-child(2) {
-        text-align: center;
+    .text-right {
+        text-align: right;
     }
 
-    .total-row td {
-        background-color: #fed7aa;
-        font-weight: 700;
-        padding: 0.6rem 0.3rem;
+    .font-bold {
+        font-weight: bold;
     }
 
-    /* Estilos para impressão */
+    /* Print Specifics */
     @media print {
         @page {
             size: A4 portrait;
-            margin: 1cm 1cm 1cm 1cm;
-            /* Remove cabeçalho e rodapé do navegador */
-            marks: none;
+            margin: 1.5cm 1cm;
         }
 
-        @page :first {
-            margin-top: 1.5cm;
-        }
-
-        html {
+        body {
             margin: 0;
             padding: 0;
         }
 
-        body {
-            margin: 0 !important;
-            padding: 0 !important;
-            overflow: hidden;
-            position: relative;
-        }
-
-        /* Ocultar elementos indesejados na impressão */
-        .no-print,
-        nav,
-        header,
-        .sidebar,
-        .scrollbar,
-        ::-webkit-scrollbar,
-        aside,
-        [class*="sidebar"],
-        [class*="nav"],
-        [id*="sidebar"],
-        [id*="nav"] {
+        .no-print {
             display: none !important;
         }
 
-        /* Ocultar cabeçalho do navegador/portal */
-        body>header,
-        body>nav,
-        body>aside,
-        #header,
-        #nav,
-        #sidebar,
-        .header,
-        .navbar,
-        .top-bar,
-        .breadcrumb,
-        .breadcrumbs {
-            display: none !important;
-        }
-
-        /* Ocultar scrollbars completamente */
-        ::-webkit-scrollbar {
-            display: none !important;
-            width: 0 !important;
-            height: 0 !important;
-        }
-
-        * {
-            -ms-overflow-style: none !important;
-            scrollbar-width: none !important;
-        }
-
-        /* Garantir que apenas o conteúdo principal seja visível */
-        html,
-        body {
-            width: 100%;
-            height: auto;
-            overflow: visible;
-        }
-
-        * {
-            overflow: visible !important;
-        }
-
-        /* Container principal */
-        main,
-        .container,
-        .content {
-            padding: 0 !important;
-            margin: 0 !important;
-            width: 100% !important;
-            max-width: none !important;
-        }
-
-        .print-document {
-            padding: 0;
-            box-shadow: none;
-            width: 100%;
-            max-width: none;
-            margin: 0;
-        }
-
-        .jury-table {
+        /* Table Page Breaking */
+        .official-table {
             page-break-inside: auto;
-            font-size: 8.5pt;
-            table-layout: fixed;
         }
 
-        .jury-table thead {
+        .official-table tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+        }
+
+        .official-table thead {
             display: table-header-group;
         }
 
-        .jury-table tbody {
-            display: table-row-group;
+        .official-table tfoot {
+            display: table-footer-group;
         }
 
-        .jury-table tr {
-            page-break-inside: avoid;
-            page-break-after: auto;
-        }
-
-        .jury-table th {
-            background-color: #1e3a8a !important;
-            color: white !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-            padding: 0.4rem 0.2rem;
-            font-size: 7.5pt;
-        }
-
-        .jury-table td {
-            padding: 0.3rem 0.2rem;
-            font-size: 8pt;
-        }
-
-        .location-header {
-            page-break-after: avoid;
-        }
-
-        .location-header td {
-            background-color: #fbbf24 !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
-
-        .subtotal-row {
-            page-break-before: avoid;
-            page-break-after: auto;
-        }
-
-        .subtotal-row td {
-            background-color: #fef3c7 !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-            padding: 0.3rem 0.2rem;
-            font-size: 8pt;
-        }
-
-        .total-row {
-            page-break-before: avoid;
-        }
-
-        .total-row td {
-            background-color: #fed7aa !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-            padding: 0.4rem 0.2rem;
-            font-size: 8.5pt;
-        }
-
-        .print-footer {
-            page-break-inside: avoid;
-            page-break-before: auto;
-            margin-top: 2rem;
-        }
-
-        .print-header {
-            page-break-after: avoid;
+        /* Ensure backgrounds print */
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
     }
 </style>
-
-<script>
-    async function uploadInstitutionLogo(input) {
-        const file = input.files[0];
-
-        if (!file) return;
-
-        // Validar tipo de arquivo
-        if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
-            alert('❌ Por favor, selecione apenas imagens PNG ou JPG');
-            input.value = '';
-            return;
-        }
-
-        // Validar tamanho (máx 2MB)
-        if (file.size > 2 * 1024 * 1024) {
-            alert('❌ A imagem deve ter no máximo 2MB');
-            input.value = '';
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('logo', file);
-        formData.append('csrf', '<?= \App\Utils\Csrf::token() ?>');
-
-        // Mostrar loading no logo
-        const container = document.getElementById('logo-container');
-        const originalContent = container.innerHTML;
-        container.innerHTML = `
-        <svg class="animate-spin h-8 w-8 text-primary-600" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-    `;
-
-        try {
-            const response = await fetch('/settings/upload-logo', {
-                method: 'POST',
-                body: formData
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                // Atualizar logo
-                container.innerHTML = `<img src="${result.logoUrl}?v=${Date.now()}" alt="Logo" class="w-full h-full object-cover">`;
-
-                // Toast de sucesso
-                if (typeof toastr !== 'undefined') {
-                    toastr.success('Logo carregado com sucesso!', 'Sucesso');
-                } else {
-                    alert('✅ Logo carregado com sucesso!');
-                }
-            } else {
-                container.innerHTML = originalContent;
-                alert('❌ Erro: ' + result.message);
-            }
-        } catch (error) {
-            console.error('Erro ao carregar logo:', error);
-            container.innerHTML = originalContent;
-            alert('❌ Erro ao carregar logo. Tente novamente.');
-        }
-
-        // Limpar input
-        input.value = '';
-    }
-</script>

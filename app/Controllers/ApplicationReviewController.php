@@ -35,12 +35,12 @@ class ApplicationReviewController extends Controller
 
         if ($selectedVacancyId) {
             $selectedVacancy = $vacancyModel->find($selectedVacancyId);
-            
+
             if ($selectedVacancy) {
                 // Buscar candidaturas da vaga
                 $applicationModel = new VacancyApplication();
                 $applications = $applicationModel->getByVacancy($selectedVacancyId);
-                
+
                 // Estatísticas
                 $statistics = $applicationModel->countByStatus($selectedVacancyId);
             }
@@ -60,8 +60,9 @@ class ApplicationReviewController extends Controller
         try {
             // Suporte AJAX
             $isAjax = $request->isAjax();
-            if ($isAjax && ob_get_length()) ob_clean();
-            
+            if ($isAjax && ob_get_length())
+                ob_clean();
+
             $user = Auth::user();
             if (!$user || !in_array($user['role'], ['coordenador', 'membro'])) {
                 if ($isAjax) {
@@ -83,7 +84,7 @@ class ApplicationReviewController extends Controller
             }
 
             $applicationId = (int) $request->param('id');
-            
+
             $applicationModel = new VacancyApplication();
             $application = $applicationModel->find($applicationId);
 
@@ -118,7 +119,8 @@ class ApplicationReviewController extends Controller
             $emailService->notifyApplicationApproved($applicationId);
 
             if ($isAjax) {
-                if (ob_get_length()) ob_clean();
+                if (ob_get_length())
+                    ob_clean();
                 Response::json([
                     'success' => true,
                     'message' => 'Candidatura aprovada com sucesso!',
@@ -129,10 +131,11 @@ class ApplicationReviewController extends Controller
 
             Flash::add('success', 'Candidatura aprovada com sucesso.');
             redirect('/applications?vacancy=' . $application['vacancy_id']);
-            
+
         } catch (\Exception $e) {
             if ($request->isAjax()) {
-                if (ob_get_length()) ob_clean();
+                if (ob_get_length())
+                    ob_clean();
                 Response::json(['success' => false, 'message' => 'Erro: ' . $e->getMessage()], 500);
                 exit();
             }
@@ -146,8 +149,9 @@ class ApplicationReviewController extends Controller
         try {
             // Suporte AJAX
             $isAjax = $request->isAjax();
-            if ($isAjax && ob_get_length()) ob_clean();
-            
+            if ($isAjax && ob_get_length())
+                ob_clean();
+
             $user = Auth::user();
             if (!$user || !in_array($user['role'], ['coordenador', 'membro'])) {
                 if ($isAjax) {
@@ -169,7 +173,7 @@ class ApplicationReviewController extends Controller
             }
 
             $applicationId = (int) $request->param('id');
-            
+
             $applicationModel = new VacancyApplication();
             $application = $applicationModel->find($applicationId);
 
@@ -194,7 +198,7 @@ class ApplicationReviewController extends Controller
 
             // ⚠️ VALIDAÇÃO OBRIGATÓRIA: Motivo de rejeição
             $rejectionReason = trim($request->input('rejection_reason'));
-            
+
             if (empty($rejectionReason)) {
                 if ($isAjax) {
                     Response::json(['success' => false, 'message' => 'Motivo de rejeição é obrigatório'], 400);
@@ -228,7 +232,8 @@ class ApplicationReviewController extends Controller
             }
 
             if ($isAjax) {
-                if (ob_get_length()) ob_clean();
+                if (ob_get_length())
+                    ob_clean();
                 Response::json([
                     'success' => true,
                     'message' => 'Candidatura rejeitada com sucesso.',
@@ -239,10 +244,11 @@ class ApplicationReviewController extends Controller
 
             Flash::add('success', 'Candidatura rejeitada.');
             redirect('/applications?vacancy=' . $application['vacancy_id']);
-            
+
         } catch (\Exception $e) {
             if ($request->isAjax()) {
-                if (ob_get_length()) ob_clean();
+                if (ob_get_length())
+                    ob_clean();
                 Response::json(['success' => false, 'message' => 'Erro: ' . $e->getMessage()], 500);
                 exit();
             }
@@ -256,8 +262,9 @@ class ApplicationReviewController extends Controller
         try {
             // Suporte AJAX
             $isAjax = $request->isAjax();
-            if ($isAjax && ob_get_length()) ob_clean();
-            
+            if ($isAjax && ob_get_length())
+                ob_clean();
+
             $user = Auth::user();
             if (!$user || !in_array($user['role'], ['coordenador', 'membro'])) {
                 if ($isAjax) {
@@ -279,7 +286,7 @@ class ApplicationReviewController extends Controller
             }
 
             $applicationId = (int) $request->param('id');
-            
+
             $applicationModel = new VacancyApplication();
             $application = $applicationModel->find($applicationId);
 
@@ -321,7 +328,8 @@ class ApplicationReviewController extends Controller
             ]);
 
             if ($isAjax) {
-                if (ob_get_length()) ob_clean();
+                if (ob_get_length())
+                    ob_clean();
                 Response::json([
                     'success' => true,
                     'message' => 'Candidatura revertida para pendente com sucesso'
@@ -331,10 +339,11 @@ class ApplicationReviewController extends Controller
 
             Flash::add('success', 'Candidatura revertida para pendente.');
             redirect('/applications?vacancy=' . $application['vacancy_id']);
-            
+
         } catch (\Exception $e) {
             if ($request->isAjax()) {
-                if (ob_get_length()) ob_clean();
+                if (ob_get_length())
+                    ob_clean();
                 Response::json(['success' => false, 'message' => 'Erro: ' . $e->getMessage()], 500);
                 exit();
             }
@@ -348,10 +357,11 @@ class ApplicationReviewController extends Controller
         try {
             // Suporte AJAX
             $isAjax = $request->isAjax();
-            if ($isAjax && ob_get_length()) ob_clean();
-            
+            if ($isAjax && ob_get_length())
+                ob_clean();
+
             $user = Auth::user();
-            if (!$user || $user['role'] !== 'coordenador') {
+            if (!$user || strcasecmp($user['role'], 'coordenador') !== 0) {
                 if ($isAjax) {
                     Response::json(['success' => false, 'message' => 'Apenas coordenadores podem definir elegibilidade'], 403);
                     return;
@@ -372,7 +382,7 @@ class ApplicationReviewController extends Controller
 
             $applicationId = (int) $request->param('id');
             $supervisorEligible = filter_var($request->input('supervisor_eligible'), FILTER_VALIDATE_BOOLEAN);
-            
+
             $applicationModel = new VacancyApplication();
             $application = $applicationModel->find($applicationId);
 
@@ -415,25 +425,27 @@ class ApplicationReviewController extends Controller
             ]);
 
             if ($isAjax) {
-                if (ob_get_length()) ob_clean();
+                if (ob_get_length())
+                    ob_clean();
                 Response::json([
                     'success' => true,
-                    'message' => $supervisorEligible 
-                        ? 'Vigilante marcado como elegível a supervisor' 
+                    'message' => $supervisorEligible
+                        ? 'Vigilante marcado como elegível a supervisor'
                         : 'Elegibilidade a supervisor removida'
                 ]);
                 exit();
             }
 
-            $message = $supervisorEligible 
-                ? 'Vigilante marcado como elegível a supervisor com sucesso.' 
+            $message = $supervisorEligible
+                ? 'Vigilante marcado como elegível a supervisor com sucesso.'
                 : 'Elegibilidade a supervisor removida.';
             Flash::add('success', $message);
             redirect('/applications?vacancy=' . $application['vacancy_id']);
-            
+
         } catch (\Exception $e) {
             if ($request->isAjax()) {
-                if (ob_get_length()) ob_clean();
+                if (ob_get_length())
+                    ob_clean();
                 Response::json(['success' => false, 'message' => 'Erro: ' . $e->getMessage()], 500);
                 exit();
             }
@@ -457,7 +469,7 @@ class ApplicationReviewController extends Controller
         }
 
         $vacancyId = (int) $request->input('vacancy_id');
-        
+
         if (!$vacancyId) {
             Flash::add('error', 'Vaga não especificada.');
             redirect('/applications');
@@ -474,12 +486,12 @@ class ApplicationReviewController extends Controller
         $count = 0;
         foreach ($pendingApplications as $app) {
             $applicationModel->approve((int) $app['id'], (int) $user['id']);
-            
+
             ActivityLogger::log('vacancy_applications', (int) $app['id'], 'approve_bulk', [
                 'vacancy_id' => $vacancyId,
                 'vigilante_id' => $app['vigilante_id'],
             ]);
-            
+
             $count++;
         }
 
@@ -502,7 +514,7 @@ class ApplicationReviewController extends Controller
         }
 
         $vacancyId = (int) $request->input('vacancy_id');
-        
+
         if (!$vacancyId) {
             Flash::add('error', 'Vaga não especificada.');
             redirect('/applications');
@@ -519,12 +531,12 @@ class ApplicationReviewController extends Controller
         $count = 0;
         foreach ($pendingApplications as $app) {
             $applicationModel->reject((int) $app['id'], (int) $user['id']);
-            
+
             ActivityLogger::log('vacancy_applications', (int) $app['id'], 'reject_bulk', [
                 'vacancy_id' => $vacancyId,
                 'vigilante_id' => $app['vigilante_id'],
             ]);
-            
+
             $count++;
         }
 
@@ -544,7 +556,7 @@ class ApplicationReviewController extends Controller
         }
 
         $applicationId = (int) $request->param('id');
-        
+
         $applicationModel = new VacancyApplication();
         $application = $applicationModel->find($applicationId);
 
@@ -579,8 +591,9 @@ class ApplicationReviewController extends Controller
     public function getStats(Request $request)
     {
         try {
-            if (ob_get_length()) ob_clean();
-            
+            if (ob_get_length())
+                ob_clean();
+
             $user = Auth::user();
             if (!$user || !in_array($user['role'], ['coordenador', 'membro'])) {
                 Response::json(['success' => false, 'message' => 'Acesso restrito'], 403);
@@ -592,10 +605,10 @@ class ApplicationReviewController extends Controller
                 Response::json(['success' => false, 'message' => 'Vaga não especificada'], 400);
                 return;
             }
-            
+
             $applicationModel = new VacancyApplication();
             $statistics = $applicationModel->countByStatus($vacancyId);
-            
+
             Response::json([
                 'success' => true,
                 'stats' => [
@@ -606,9 +619,10 @@ class ApplicationReviewController extends Controller
                     'total' => array_sum($statistics)
                 ]
             ]);
-            
+
         } catch (\Exception $e) {
-            if (ob_get_length()) ob_clean();
+            if (ob_get_length())
+                ob_clean();
             Response::json(['success' => false, 'message' => 'Erro: ' . $e->getMessage()], 500);
         }
     }

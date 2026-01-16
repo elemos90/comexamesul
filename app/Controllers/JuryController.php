@@ -44,19 +44,26 @@ class JuryController extends Controller
         $vacancy = null;
         $allVacancies = [];
 
-        // Se vacancy_id = 'all', mostrar todas
+        // ENFORCE SINGLE VACANCY: "All" is forbidden. Treat as "current".
         if ($vacancyId === 'all') {
-            $vacancyId = null;
+            $vacancyId = 'current';
         }
-        // Se vacancy_id = 'current' ou vazio, pegar vaga aberta
-        elseif ($vacancyId === 'current' || empty($vacancyId)) {
+
+        // Se vacancy_id = 'current', buscar a vaga ativa (ou a mais recente se não houver ativa)
+        if ($vacancyId === 'current' || empty($vacancyId)) {
             $openVacancies = $vacancyModel->openVacancies();
-            $vacancyId = !empty($openVacancies) ? (int) $openVacancies[0]['id'] : null;
+            if (!empty($openVacancies)) {
+                $vacancyId = (int) $openVacancies[0]['id'];
+            } else {
+                // Fallback: Se não houver vaga aberta, pegar a última vaga criada
+                $lastVacancy = $vacancyModel->statement('SELECT id FROM exam_vacancies ORDER BY created_at DESC LIMIT 1');
+                $vacancyId = !empty($lastVacancy) ? (int) $lastVacancy[0]['id'] : null;
+            }
         } else {
             $vacancyId = (int) $vacancyId;
         }
 
-        // Buscar dados da vaga atual (se houver)
+        // Se mesmo assim não tiver vacancyId (BD vazio), tratar graciosamente
         if ($vacancyId) {
             $vacancy = $vacancyModel->find($vacancyId);
         }
@@ -155,29 +162,104 @@ class JuryController extends Controller
                 // Agrupar manualmente os júris já filtrados
                 $groupedJuries = [];
                 foreach ($juries as $jury) {
-                    $key = $jury['subject'] . '|' . $jury['exam_date'] . '|' . $jury['start_time'] . '|' . $jury['end_time'] . '|' . $jury['location'];
-                    if (!isset($groupedJuries[$key])) {
-                        $groupedJuries[$key] = [
+                    // Chave primária: Disciplina + Data + Hora
+                    $mainKey = $jury['subject'] . '|' . $jury['exam_date'] . '|' . $jury['start_time'] . '|' . $jury['end_time'];
+
+                    if (!isset($groupedJuries[$mainKey])) {
+                        $groupedJuries[$mainKey] = [
                             'subject' => $jury['subject'],
                             'exam_date' => $jury['exam_date'],
                             'start_time' => $jury['start_time'],
                             'end_time' => $jury['end_time'],
-                            'location' => $jury['location'],
+                            'locations' => [] // Subgrupos por local
+                        ];
+                    }
+
+                    // Subgrupo por local
+                    $locKey = $jury['location'] ?? 'Local não definido';
+                    if (!isset($groupedJuries[$mainKey]['locations'][$locKey])) {
+                        $groupedJuries[$mainKey]['locations'][$locKey] = [
+                            'name' => $locKey,
                             'juries' => []
                         ];
                     }
-                    $groupedJuries[$key]['juries'][] = $jury;
+
+                    $groupedJuries[$mainKey]['locations'][$locKey]['juries'][] = $jury;
+                }
+
+                // Converter para array indexado e ordenar locais por nome
+                $groupedJuries = array_values($groupedJuries);
+                foreach ($groupedJuries as &$group) {
+                    ksort($group['locations']);
+                }
+            } else {
+                // Lógica padrão do Model também precisa ser ajustada ou o Model deve retornar estrutura compatível
+                // Por compatibilidade, vamos reprocessar o retorno do model para seguir a mesma estrutura hierárquica
+                $rawGroups = $juryModel->getGroupedBySubjectAndTime();
+
+                // O método getGroupedBySubjectAndTime já agrupa por subject/time, mas precisamos verificar a estrutura
+                // Se o método original misturar locations, precisamos reestruturar aqui.
+                // Assumindo que o método original retorna uma lista plana de grupos (que podem ser quebrados por local).
+
+                // Vamos reconstruir o agrupamento para garantir consistência
+                $juries = $juryModel->withAllocations();
+                $juryIds = array_column($juries, 'id');
+                $allVigilantes = $juryVigilantes->getVigilantesForMultipleJuries($juryIds);
+
+                // ... (lógica de vigilantes repetida, idealmente refatorar para método auxiliar) ...
+                $vigilantesByJury = [];
+                foreach ($allVigilantes as $v) {
+                    $vigilantesByJury[$v['jury_id']][] = $v;
+                }
+                foreach ($juries as &$jury) {
+                    $jury['vigilantes'] = $vigilantesByJury[$jury['id']] ?? [];
+                    $jury['has_report'] = $juryModel->hasSupervisorReport((int) $jury['id']);
+                }
+                unset($jury);
+
+                $groupedJuries = [];
+                foreach ($juries as $jury) {
+                    $mainKey = $jury['subject'] . '|' . $jury['exam_date'] . '|' . $jury['start_time'] . '|' . $jury['end_time'];
+                    if (!isset($groupedJuries[$mainKey])) {
+                        $groupedJuries[$mainKey] = [
+                            'subject' => $jury['subject'],
+                            'exam_date' => $jury['exam_date'],
+                            'start_time' => $jury['start_time'],
+                            'end_time' => $jury['end_time'],
+                            'locations' => []
+                        ];
+                    }
+                    $locKey = $jury['location'] ?? 'Local não definido';
+                    if (!isset($groupedJuries[$mainKey]['locations'][$locKey])) {
+                        $groupedJuries[$mainKey]['locations'][$locKey] = [
+                            'name' => $locKey,
+                            'juries' => []
+                        ];
+                    }
+                    $groupedJuries[$mainKey]['locations'][$locKey]['juries'][] = $jury;
                 }
                 $groupedJuries = array_values($groupedJuries);
-            } else {
-                $groupedJuries = $juryModel->getGroupedBySubjectAndTime();
+                foreach ($groupedJuries as &$group) {
+                    ksort($group['locations']);
+                }
             }
 
             // EAGER LOADING para júris agrupados
             $allGroupedJuryIds = [];
             foreach ($groupedJuries as $group) {
-                foreach ($group['juries'] as $jury) {
-                    $allGroupedJuryIds[] = $jury['id'];
+                // Suporte para estrutura hierárquica (Subject > Location > Juries)
+                if (isset($group['locations'])) {
+                    foreach ($group['locations'] as $loc) {
+                        foreach ($loc['juries'] as $jury) {
+                            $allGroupedJuryIds[] = $jury['id'];
+                        }
+                    }
+                }
+                // Suporte para estrutura plana antiga (Subject > Juries)
+                elseif (isset($group['juries'])) {
+                    foreach ($group['juries'] as $jury) {
+                        $allGroupedJuryIds[] = $jury['id'];
+                    }
                 }
             }
 
@@ -192,9 +274,21 @@ class JuryController extends Controller
 
                 // Associar aos júris agrupados
                 foreach ($groupedJuries as &$group) {
-                    foreach ($group['juries'] as &$jury) {
-                        $jury['vigilantes'] = $groupedVigilantesByJury[$jury['id']] ?? [];
-                        $jury['has_report'] = $juryModel->hasSupervisorReport((int) $jury['id']);
+                    // Estrutura hierárquica
+                    if (isset($group['locations'])) {
+                        foreach ($group['locations'] as &$loc) {
+                            foreach ($loc['juries'] as &$jury) {
+                                $jury['vigilantes'] = $groupedVigilantesByJury[$jury['id']] ?? [];
+                                $jury['has_report'] = $juryModel->hasSupervisorReport((int) $jury['id']);
+                            }
+                        }
+                    }
+                    // Estrutura plana
+                    elseif (isset($group['juries'])) {
+                        foreach ($group['juries'] as &$jury) {
+                            $jury['vigilantes'] = $groupedVigilantesByJury[$jury['id']] ?? [];
+                            $jury['has_report'] = $juryModel->hasSupervisorReport((int) $jury['id']);
+                        }
                     }
                     unset($jury);
                 }
@@ -246,12 +340,35 @@ class JuryController extends Controller
     /**
      * API: Eventos do calendário para FullCalendar
      */
+    /**
+     * API: Eventos do calendário para FullCalendar
+     */
     public function calendarEvents(Request $request)
     {
         try {
             $start = $_GET['start'] ?? date('Y-m-01');
             $end = $_GET['end'] ?? date('Y-m-t');
             $vacancyId = isset($_GET['vacancy_id']) && $_GET['vacancy_id'] ? (int) $_GET['vacancy_id'] : null;
+
+            $vacancyModel = new \App\Models\ExamVacancy();
+
+            // ENFORCE SINGLE VACANCY LOGIC (Same as index)
+            if ($vacancyId === 'all') {
+                $vacancyId = null; // Will trigger default logic below if we treat 'all' as invalid, 
+                // OR we can explicitly treat 'all' as 'current'. 
+                // Let's reuse the logic: if explicitly 'all', force 'current'.
+                $vacancyId = null;
+            }
+
+            if (!$vacancyId || $vacancyId === 'all') {
+                $openVacancies = $vacancyModel->openVacancies();
+                if (!empty($openVacancies)) {
+                    $vacancyId = (int) $openVacancies[0]['id'];
+                } else {
+                    $lastVacancy = $vacancyModel->statement('SELECT id FROM exam_vacancies ORDER BY created_at DESC LIMIT 1');
+                    $vacancyId = !empty($lastVacancy) ? (int) $lastVacancy[0]['id'] : null;
+                }
+            }
 
             $db = database();
 
@@ -270,9 +387,15 @@ class JuryController extends Controller
 
             $params = ['start' => $start, 'end' => $end];
 
+            // STRICTLY REQUIRE VACANCY ID
             if ($vacancyId) {
                 $sql .= " AND j.vacancy_id = :vacancy_id";
                 $params['vacancy_id'] = $vacancyId;
+            } else {
+                // If absolutely no vacancy exists in DB, return empty
+                // Do NOT allow running without filter
+                Response::json(['success' => true, 'events' => []]);
+                return;
             }
 
             $sql .= " ORDER BY j.exam_date, j.start_time";
@@ -282,39 +405,107 @@ class JuryController extends Controller
             $juries = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
             $juryVigilantes = new JuryVigilante();
+            $groupedEvents = [];
 
-            $events = [];
+            // Group juries by Subject + Date + Time
             foreach ($juries as $jury) {
                 $vigilantes = $juryVigilantes->vigilantesForJury((int) $jury['id']);
                 $vigilantesCount = (int) $jury['vigilantes_count'];
                 $vigilantesRequired = (int) $jury['vigilantes_required'];
                 $hasSupervisor = !empty($jury['supervisor_id']);
 
-                $className = 'event-empty';
-                if ($vigilantesCount >= $vigilantesRequired && $hasSupervisor) {
-                    $className = 'event-complete';
-                } elseif ($vigilantesCount > 0) {
-                    $className = $hasSupervisor ? 'event-partial' : 'event-no-supervisor';
-                } elseif (!$hasSupervisor) {
-                    $className = 'event-no-supervisor';
+                $key = $jury['exam_date'] . '_' . $jury['start_time'] . '_' . $jury['subject'];
+
+                if (!isset($groupedEvents[$key])) {
+                    $groupedEvents[$key] = [
+                        'id' => 'group_' . $jury['id'],
+                        'subject' => $jury['subject'],
+                        'start' => $jury['exam_date'] . 'T' . $jury['start_time'],
+                        'end' => $jury['exam_date'] . 'T' . $jury['end_time'],
+                        'vacancy_id' => $jury['vacancy_id'],
+                        'exam_date' => $jury['exam_date'],
+                        'start_time' => $jury['start_time'],
+                        'end_time' => $jury['end_time'],
+                        'locations' => [],
+                        'rooms' => [],
+                        'supervisors' => [],
+                        'total_vigilantes' => 0,
+                        'total_required' => 0,
+                        'juries_total' => 0,
+                        'juries_complete' => 0,
+                        'juries_no_supervisor' => 0,
+                        'juries_empty' => 0,
+                        'vigilantes_list' => []
+                    ];
                 }
 
+                $g = &$groupedEvents[$key];
+                $g['juries_total']++;
+                if (!empty($jury['location_name']))
+                    $g['locations'][$jury['location_name']] = true;
+                if (!empty($jury['room_name']))
+                    $g['rooms'][] = $jury['room_name'];
+                if (!empty($jury['supervisor_name']))
+                    $g['supervisors'][] = $jury['supervisor_name'];
+
+                $g['total_vigilantes'] += $vigilantesCount;
+                $g['total_required'] += $vigilantesRequired;
+
+                foreach ($vigilantes as $v) {
+                    $g['vigilantes_list'][] = $v['name'];
+                }
+
+                if (!$hasSupervisor) {
+                    $g['juries_no_supervisor']++;
+                }
+
+                if ($vigilantesCount == 0) {
+                    $g['juries_empty']++;
+                }
+
+                if ($vigilantesCount >= $vigilantesRequired && $hasSupervisor) {
+                    $g['juries_complete']++;
+                }
+            }
+
+            $events = [];
+            foreach ($groupedEvents as $g) {
+                // Determine unified status
+                $className = 'event-partial'; // Default
+
+                if ($g['juries_no_supervisor'] > 0) {
+                    $className = 'event-no-supervisor'; // Priority 1: Missing supervisors
+                } elseif ($g['juries_empty'] > 0) {
+                    $className = 'event-empty'; // Priority 2: Empty rooms
+                } elseif ($g['juries_complete'] == $g['juries_total']) {
+                    $className = 'event-complete'; // Success: All complete
+                }
+
+                // Format text for multiple items
+                $locations = implode(', ', array_keys($g['locations']));
+                $rooms = implode(', ', $g['rooms']);
+                $supervisors = empty($g['supervisors']) ? 'Não definido' : implode(', ', array_unique($g['supervisors']));
+
+                // Truncate lists if too long for modal
+                $uniqueVigilantes = array_unique($g['vigilantes_list']);
+                $vigilantesList = array_slice($uniqueVigilantes, 0, 20); // Show up to 20 names
+
                 $events[] = [
-                    'id' => $jury['id'],
-                    'title' => $jury['subject'],
-                    'start' => $jury['exam_date'] . 'T' . $jury['start_time'],
-                    'end' => $jury['exam_date'] . 'T' . $jury['end_time'],
+                    'id' => $g['id'],
+                    'title' => $g['subject'] . ($g['juries_total'] > 1 ? " ({$g['juries_total']} salas)" : ""),
+                    'start' => $g['start'],
+                    'end' => $g['end'],
                     'className' => $className,
                     'extendedProps' => [
-                        'date' => date('d/m/Y', strtotime($jury['exam_date'])),
-                        'time' => substr($jury['start_time'], 0, 5) . ' - ' . substr($jury['end_time'], 0, 5),
-                        'location' => $jury['location_name'],
-                        'room' => $jury['room_name'],
-                        'supervisor' => $jury['supervisor_name'] ?: 'Não definido',
-                        'vigilantes_count' => $vigilantesCount,
-                        'vigilantes_required' => $vigilantesRequired,
-                        'vigilantes_list' => array_map(fn($v) => $v['name'], $vigilantes),
-                        'vacancy_id' => $jury['vacancy_id'],
+                        'date' => date('d/m/Y', strtotime($g['exam_date'])),
+                        'time' => substr($g['start_time'], 0, 5) . ' - ' . substr($g['end_time'], 0, 5),
+                        'location' => $locations,
+                        'room' => count($g['rooms']) > 4 ? count($g['rooms']) . ' salas' : $rooms,
+                        'supervisor' => count($g['supervisors']) > 2 ? count($g['supervisors']) . ' supervisores' : $supervisors,
+                        'vigilantes_count' => $g['total_vigilantes'],
+                        'vigilantes_required' => $g['total_required'],
+                        'vigilantes_list' => $vigilantesList,
+                        'vacancy_id' => $g['vacancy_id'],
                     ]
                 ];
             }
@@ -451,14 +642,85 @@ class JuryController extends Controller
             Response::json(['message' => 'Vigilante ja alocado.'], 422);
         }
 
-        $juryVigilantes->create([
-            'jury_id' => $juryId,
-            'vigilante_id' => $vigilanteId,
-            'assigned_by' => Auth::id(),
-            'created_at' => now(),
-        ]);
-        ActivityLogger::log('jury_vigilantes', $juryId, 'assign', ['vigilante_id' => $vigilanteId]);
-        Response::json(['message' => 'Vigilante alocado com sucesso.']);
+        try {
+            $juryVigilantes->create([
+                'jury_id' => $juryId,
+                'vigilante_id' => $vigilanteId,
+                'assigned_by' => Auth::id(),
+                'created_at' => now(),
+            ]);
+            ActivityLogger::log('jury_vigilantes', $juryId, 'assign', ['vigilante_id' => $vigilanteId]);
+            Response::json(['message' => 'Vigilante alocado com sucesso.']);
+        } catch (\Exception $e) {
+            // Se o erro for de capacidade (Trigger), tentar aumentar a capacidade e re-tentar
+            // Check for 'Capacidade' to cover 'Capacidade máxima' or 'Capacidade de vigilantes'
+            if (strpos($e->getMessage(), 'Capacidade') !== false) {
+                try {
+                    // Contar quantos vigilantes já existem de fato
+                    $currentCount = $juryVigilantes->statement(
+                        "SELECT COUNT(*) as total FROM jury_vigilantes WHERE jury_id = :id",
+                        ['id' => $juryId]
+                    );
+                    $actualCount = (int) ($currentCount[0]['total'] ?? 0);
+
+                    // Definir nova capacidade com margem de segurança (+1)
+                    $newCapacity = $actualCount + 1;
+
+                    // TENTATIVA 1: Atualizar 'vigilantes_capacity' (Inglês - usado na migration nova)
+                    $updatedEnglish = false;
+                    try {
+                        $updatedEnglish = $juryModel->execute(
+                            "UPDATE juries SET vigilantes_capacity = :cap WHERE id = :id",
+                            ['cap' => $newCapacity, 'id' => $juryId]
+                        );
+                    } catch (\Exception $ignore) {
+                    }
+
+                    // TENTATIVA 2: Atualizar 'vigilantes_capacidade' (Português - usado na trigger antiga trg_jv_check_cap)
+                    $updatedPortuguese = false;
+                    try {
+                        $updatedPortuguese = $juryModel->execute(
+                            "UPDATE juries SET vigilantes_capacidade = :cap WHERE id = :id",
+                            ['cap' => $newCapacity, 'id' => $juryId]
+                        );
+                    } catch (\Exception $ignore) {
+                    }
+
+                    if (!$updatedEnglish && !$updatedPortuguese) {
+                        throw new \Exception("Nenhuma das colunas de capacidade pôde ser atualizada.");
+                    }
+
+                    // Re-tentar alocação
+                    $juryVigilantes->create([
+                        'jury_id' => $juryId,
+                        'vigilante_id' => $vigilanteId,
+                        'assigned_by' => Auth::id(),
+                        'created_at' => now(),
+                    ]);
+
+                    ActivityLogger::log('jury_vigilantes', $juryId, 'assign_force', ['vigilante_id' => $vigilanteId, 'new_capacity' => $newCapacity, 'updated_cols' => ($updatedEnglish ? 'EN' : '') . ($updatedPortuguese ? 'PT' : '')]);
+                    Response::json(['message' => 'Vigilante alocado (capacidade ajustada para ' . $newCapacity . ').']);
+                } catch (\Exception $ex) {
+                    $errorMsg = $ex->getMessage();
+                    // Se ainda assim falhar, verificar se é o mesmo erro para dar mensagem amigável
+                    if (strpos($errorMsg, 'Capacidade') !== false) {
+                        Response::json([
+                            'message' => 'Erro persistente. O sistema tem triggers conflitantes. Avise o suporte.',
+                            'debug_info' => [
+                                'actual_count' => $actualCount ?? -1,
+                                'new_capacity' => $newCapacity ?? -1,
+                                'updated_english' => $updatedEnglish ?? false,
+                                'updated_portuguese' => $updatedPortuguese ?? false,
+                                'error' => $errorMsg
+                            ]
+                        ], 500);
+                    }
+                    Response::json(['message' => 'Erro ao forçar alocação: ' . $errorMsg], 500);
+                }
+            } else {
+                Response::json(['message' => 'Erro ao alocar: ' . $e->getMessage()], 500);
+            }
+        }
     }
 
     public function unassign(Request $request)
@@ -600,18 +862,20 @@ class JuryController extends Controller
                 return;
             }
 
-            // Atualizar supervisor em todos os júris do mesmo exame
+            // Atualizar supervisor em todos os júris do mesmo exame e MESMO LOCAL
             $affectedJuries = $juryModel->statement(
                 "SELECT id FROM juries 
                  WHERE subject = :subject 
                    AND exam_date = :exam_date 
                    AND start_time = :start_time 
-                   AND end_time = :end_time",
+                   AND end_time = :end_time
+                   AND location = :location",
                 [
                     'subject' => $jury['subject'],
                     'exam_date' => $jury['exam_date'],
                     'start_time' => $jury['start_time'],
-                    'end_time' => $jury['end_time']
+                    'end_time' => $jury['end_time'],
+                    'location' => $jury['location']
                 ]
             );
 
@@ -1369,7 +1633,8 @@ class JuryController extends Controller
                         er.building as room_building,
                         COALESCE(el.name, j.location) as location,
                         supervisor.name as supervisor_name,
-                        supervisor.phone as supervisor_phone
+                        supervisor.phone as supervisor_phone,
+                        (SELECT COUNT(*) FROM jury_vigilantes WHERE jury_id = j.id) as current_allocation
                  FROM juries j
                  LEFT JOIN exam_rooms er ON er.id = j.room_id
                  LEFT JOIN exam_locations el ON el.id = er.location_id
@@ -1448,17 +1713,24 @@ class JuryController extends Controller
                 ['vacancy_id' => $vacancyId]
             )[0]['total'] ?? 0;
 
-            // Calcular slots totais baseado no mínimo real por sala
             $totalSlots = 0;
+            $missingAllocations = 0;
+
             foreach ($juries ?? [] as $jury) {
                 $minVigilantes = max(1, ceil(($jury['candidates_quota'] ?? 0) / 30));
                 $totalSlots += $minVigilantes;
+
+                $current = $jury['current_allocation'] ?? 0;
+                if ($current < $minVigilantes) {
+                    $missingAllocations += ($minVigilantes - $current);
+                }
             }
 
             $stats = [
                 'total_juries' => count($juries ?? []),
                 'total_allocated' => $totalAllocated,
                 'slots_available' => $totalSlots,
+                'missing_allocations' => $missingAllocations,
                 'juries_without_supervisor' => $juriesWithoutSupervisor,
                 'total_candidates' => $totalCandidates
             ];
@@ -1769,6 +2041,56 @@ class JuryController extends Controller
             $created = [];
             $totalCreated = 0;
             $conflicts = [];
+
+            // ========== VALIDAÇÃO DE CONFLITOS DE PAPÉIS (VIGILANTE VS SUPERVISOR) ==========
+            $allVigilanteIds = [];
+            $allSupervisorIds = [];
+
+            // Coletar todos os vigilantes propostos
+            foreach ($disciplines as $discipline) {
+                if (!empty($discipline['rooms'])) {
+                    foreach ($discipline['rooms'] as $room) {
+                        if (!empty($room['vigilantes']) && is_array($room['vigilantes'])) {
+                            foreach ($room['vigilantes'] as $vId) {
+                                if ((int) $vId > 0) {
+                                    $allVigilanteIds[] = (int) $vId;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            $allVigilanteIds = array_unique($allVigilanteIds);
+
+            // Coletar todos os supervisores propostos
+            $proposedSupervisors = $request->input('blockSupervisors') ?? $request->input('supervisors') ?? [];
+            foreach ($proposedSupervisors as $sId) {
+                if ((int) $sId > 0) {
+                    $allSupervisorIds[] = (int) $sId;
+                }
+            }
+            $allSupervisorIds = array_unique($allSupervisorIds);
+
+            // Verificar interseção
+            $roleConflicts = array_intersect($allVigilanteIds, $allSupervisorIds);
+
+            if (!empty($roleConflicts)) {
+                $userModel = new \App\Models\User();
+                $conflictNames = [];
+                foreach ($roleConflicts as $userId) {
+                    $u = $userModel->find($userId);
+                    if ($u) {
+                        $conflictNames[] = $u['name'];
+                    }
+                }
+
+                Response::json([
+                    'success' => false,
+                    'message' => "❌ Conflito de papéis detectado!\n\nOs seguintes utilizadores foram atribuídos como VIGILANTE e SUPERVISOR ao mesmo tempo:\n- " . implode("\n- ", $conflictNames) . "\n\nPor favor, corrija as atribuições antes de salvar."
+                ], 422);
+                return;
+            }
+            // ==============================================================================
 
             foreach ($disciplines as $discipline) {
                 if (empty($discipline['subject']) || empty($discipline['start_time']) || empty($discipline['end_time'])) {

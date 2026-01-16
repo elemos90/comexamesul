@@ -20,6 +20,7 @@ class Jury extends BaseModel
         'created_by',
         'created_at',
         'updated_at',
+        'location_id',
     ];
 
     public function withAllocations(): array
@@ -32,6 +33,7 @@ class Jury extends BaseModel
                        er.capacity as room_capacity,
                        er.floor as room_floor,
                        er.building as room_building,
+                       er.location_id as room_location_id,
                        COALESCE(el.name, j.location) as location
                 FROM juries j
                 LEFT JOIN users s ON s.id = j.supervisor_id
@@ -41,37 +43,54 @@ class Jury extends BaseModel
                 ORDER BY j.subject, j.exam_date, j.start_time, j.room";
         return $this->statement($sql);
     }
-    
+
     public function getGroupedBySubjectAndTime(): array
     {
         $juries = $this->withAllocations();
         $grouped = [];
-        
+
         foreach ($juries as $jury) {
-            // Agrupar por disciplina, data, horário E local
-            // Isso permite que o mesmo local tenha várias disciplinas no mesmo dia
-            $key = $jury['subject'] . '|' . $jury['exam_date'] . '|' . $jury['start_time'] . '|' . $jury['end_time'] . '|' . $jury['location'];
+            // Agrupar por disciplina, data e horário (SEM LOCAL)
+            // Isso permite que vários locais para o mesmo exame fiquem no mesmo bloco
+            $key = $jury['subject'] . '|' . $jury['exam_date'] . '|' . $jury['start_time'] . '|' . $jury['end_time'];
+
             if (!isset($grouped[$key])) {
                 $grouped[$key] = [
                     'subject' => $jury['subject'],
                     'exam_date' => $jury['exam_date'],
                     'start_time' => $jury['start_time'],
                     'end_time' => $jury['end_time'],
-                    'location' => $jury['location'],
+                    'locations' => [] // Nova estrutura para suportar múltiplos locais
+                ];
+            }
+
+            // Agrupar por local dentro do grupo principal
+            $locationName = !empty($jury['location']) ? $jury['location'] : 'Local não especificado';
+            if (!isset($grouped[$key]['locations'][$locationName])) {
+                $grouped[$key]['locations'][$locationName] = [
+                    'name' => $locationName,
                     'juries' => []
                 ];
             }
-            $grouped[$key]['juries'][] = $jury;
+
+            $grouped[$key]['locations'][$locationName]['juries'][] = $jury;
         }
-        
+
+        // Ordenar por data e hora
+        usort($grouped, function ($a, $b) {
+            $t1 = strtotime($a['exam_date'] . ' ' . $a['start_time']);
+            $t2 = strtotime($b['exam_date'] . ' ' . $b['start_time']);
+            return $t1 - $t2;
+        });
+
         return array_values($grouped);
     }
-    
+
     public function getGroupedByLocationAndDate(): array
     {
         $juries = $this->withAllocations();
         $locationGroups = [];
-        
+
         // Primeiro nível: Agrupar por local e data
         foreach ($juries as $jury) {
             $locationKey = $jury['location'] . '|' . $jury['exam_date'];
@@ -82,7 +101,7 @@ class Jury extends BaseModel
                     'disciplines' => []
                 ];
             }
-            
+
             // Segundo nível: Agrupar por disciplina e horário dentro do local
             $disciplineKey = $jury['subject'] . '|' . $jury['start_time'] . '|' . $jury['end_time'];
             if (!isset($locationGroups[$locationKey]['disciplines'][$disciplineKey])) {
@@ -93,17 +112,17 @@ class Jury extends BaseModel
                     'juries' => []
                 ];
             }
-            
+
             $locationGroups[$locationKey]['disciplines'][$disciplineKey]['juries'][] = $jury;
         }
-        
+
         // Converter arrays associativos em numéricos
         $result = [];
         foreach ($locationGroups as $locationGroup) {
             $locationGroup['disciplines'] = array_values($locationGroup['disciplines']);
             $result[] = $locationGroup;
         }
-        
+
         return $result;
     }
 
@@ -124,7 +143,7 @@ class Jury extends BaseModel
         $stmt->execute(['jury' => $juryId]);
         return (int) $stmt->fetchColumn() > 0;
     }
-    
+
     /**
      * Buscar júris de uma vaga específica
      */
@@ -138,6 +157,7 @@ class Jury extends BaseModel
                        er.capacity as room_capacity,
                        er.floor as room_floor,
                        er.building as room_building,
+                       er.location_id as room_location_id,
                        COALESCE(el.name, j.location) as location,
                        COALESCE(el.name, j.location) as location_name
                 FROM juries j
@@ -148,7 +168,7 @@ class Jury extends BaseModel
                 ORDER BY j.exam_date, j.start_time, j.subject, j.room";
         return $this->statement($sql, ['vacancy' => $vacancyId]);
     }
-    
+
     /**
      * CORREÇÃO #6: Buscar júris com estatísticas pré-carregadas (evita N+1)
      */
@@ -166,17 +186,17 @@ class Jury extends BaseModel
                 WHERE j.vacancy_id = :vacancy
                 GROUP BY j.id
                 ORDER BY j.exam_date, j.start_time, j.subject, j.room";
-        
+
         $juries = $this->statement($sql, ['vacancy' => $vacancyId]);
-        
+
         // Adicionar flag de completude
         foreach ($juries as &$jury) {
-            $jury['is_complete'] = (int)$jury['vigilantes_allocated'] >= (int)$jury['required_vigilantes'];
+            $jury['is_complete'] = (int) $jury['vigilantes_allocated'] >= (int) $jury['required_vigilantes'];
         }
-        
+
         return $juries;
     }
-    
+
     /**
      * Calcular número de vigilantes necessários
      * Regra: 1 vigilante por 30 candidatos
@@ -185,7 +205,7 @@ class Jury extends BaseModel
     {
         return (int) ceil($candidatesQuota / 30);
     }
-    
+
     /**
      * Buscar júris agrupados por vaga, local e data
      */
@@ -193,7 +213,7 @@ class Jury extends BaseModel
     {
         $juries = $this->getByVacancy($vacancyId);
         $grouped = [];
-        
+
         foreach ($juries as $jury) {
             $key = $jury['location'] . '|' . $jury['exam_date'];
             if (!isset($grouped[$key])) {
@@ -203,27 +223,29 @@ class Jury extends BaseModel
                     'disciplines' => []
                 ];
             }
-            
+
             $disciplineKey = $jury['subject'] . '|' . $jury['start_time'] . '|' . $jury['end_time'];
             if (!isset($grouped[$key]['disciplines'][$disciplineKey])) {
                 $grouped[$key]['disciplines'][$disciplineKey] = [
                     'subject' => $jury['subject'],
                     'start_time' => $jury['start_time'],
                     'end_time' => $jury['end_time'],
+                    'location' => $jury['location'],
+                    'location_id' => $jury['location_id'] ?: $jury['room_location_id'],
                     'juries' => []
                 ];
             }
-            
+
             $grouped[$key]['disciplines'][$disciplineKey]['juries'][] = $jury;
         }
-        
+
         // Converter para arrays numéricos
         $result = [];
         foreach ($grouped as $locationGroup) {
             $locationGroup['disciplines'] = array_values($locationGroup['disciplines']);
             $result[] = $locationGroup;
         }
-        
+
         return $result;
     }
 }

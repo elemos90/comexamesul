@@ -118,7 +118,7 @@ $allVacancies = $allVacancies ?? [];
     <div class="flex gap-2">
         <!-- Filtro de Vaga -->
         <select id="vacancy-filter" class="px-3 py-2 border rounded-lg bg-white text-sm">
-            <option value="">Todas as Vagas</option>
+            <option value="current">📌 Vaga Atual</option>
             <?php foreach ($allVacancies as $v): ?>
                 <option value="<?= $v['id'] ?>" <?= $vacancyId == $v['id'] ? 'selected' : '' ?>>
                     <?= htmlspecialchars($v['title']) ?>
@@ -207,7 +207,7 @@ $allVacancies = $allVacancies ?? [];
     document.addEventListener('DOMContentLoaded', function () {
         const calendarEl = document.getElementById('calendar');
         const loading = document.getElementById('calendar-loading');
-        
+
         if (!calendarEl) return;
 
         calendar = new FullCalendar.Calendar(calendarEl, {

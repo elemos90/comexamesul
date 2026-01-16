@@ -6,34 +6,34 @@ $breadcrumbs = [
 $canManage = in_array($user['role'], ['coordenador', 'membro'], true);
 $isVigilante = $user['role'] === 'vigilante';
 ?>
-<div class="space-y-6">
+<div class="space-y-4">
     <?php include view_path('partials/breadcrumbs.php'); ?>
 
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-2xl font-semibold text-gray-800">Lista de Júris</h1>
-            <p class="text-sm text-gray-500">Visualização geral dos júris organizados por data e local</p>
+            <h1 class="text-lg font-semibold text-gray-900">Lista de Júris</h1>
+            <p class="text-xs text-gray-500">Visualização geral dos júris organizados por data e local</p>
         </div>
         <div class="flex gap-2">
             <?php if ($canManage): ?>
-            <a href="<?= url('/juries/planning') ?>" class="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded hover:bg-primary-500 flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <a href="<?= url('/juries/planning') ?>" class="btn btn-primary">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
                 Criar & Alocar
             </a>
             <?php endif; ?>
-            <button onclick="window.print()" class="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded hover:bg-gray-500 flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button onclick="window.print()" class="btn btn-secondary">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                 </svg>
                 Imprimir
             </button>
-            <button type="button" data-modal-target="modal-share-email" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-500 flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button type="button" data-modal-target="modal-share-email" class="btn btn-primary">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                 </svg>
-                Partilhar Email
+                Email
             </button>
         </div>
     </div>
@@ -71,10 +71,10 @@ $isVigilante = $user['role'] === 'vigilante';
     <?php else: ?>
         <div class="grid lg:grid-cols-5 gap-6">
             <!-- Painel lateral de vigilantes -->
-            <div class="lg:col-span-1 space-y-4">
-                <div class="bg-white border border-gray-100 rounded-lg shadow-sm p-4 sticky top-4">
-                    <h2 class="text-sm font-semibold text-gray-700 uppercase mb-1">Vigilantes disponíveis</h2>
-                    <p class="text-xs text-gray-500 mb-4">Arraste para alocar aos júris</p>
+            <div class="lg:col-span-1 space-y-3">
+                <div class="bg-white border border-gray-200 rounded-lg p-3 sticky top-4">
+                    <h2 class="text-xs font-semibold text-gray-600 uppercase mb-1">Vigilantes disponíveis</h2>
+                    <p class="text-xs text-gray-400 mb-3">Arraste para alocar</p>
                     <ul id="available-vigilantes" class="space-y-2" data-pool="true">
                         <?php foreach ($vigilantes as $vigilante): ?>
                             <li class="draggable-item" data-id="<?= $vigilante['id'] ?>" tabindex="0">
@@ -99,10 +99,10 @@ $isVigilante = $user['role'] === 'vigilante';
             </div>
 
             <!-- Área principal de júris agrupados -->
-            <div class="lg:col-span-4 space-y-6">
+            <div class="lg:col-span-4 space-y-4">
                 <?php foreach ($groupedJuries as $group): ?>
-                    <div class="bg-white border-2 border-primary-200 rounded-lg shadow-sm">
-                        <!-- Cabeçalho do grupo -->
+                    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                        <!-- Cabeçalho do grupo (Disciplina + Data/HoraO -->
                         <div class="px-5 py-4 bg-primary-50 border-b-2 border-primary-200">
                             <div class="flex items-center justify-between">
                                 <div>
@@ -110,21 +110,40 @@ $isVigilante = $user['role'] === 'vigilante';
                                     <p class="text-sm text-primary-700 mt-1">
                                         <span class="font-medium"><?= htmlspecialchars(date('d/m/Y', strtotime($group['exam_date']))) ?></span>
                                         · <?= htmlspecialchars(substr($group['start_time'], 0, 5)) ?> - <?= htmlspecialchars(substr($group['end_time'], 0, 5)) ?>
-                                        · <?= htmlspecialchars($group['location']) ?>
                                     </p>
                                 </div>
                                 <div class="flex items-center gap-2 text-xs">
+                                    <?php 
+                                    // Contar total de salas
+                                    $totalSalas = 0;
+                                    foreach($group['locations'] as $loc) { $totalSalas += count($loc['juries']); }
+                                    ?>
                                     <span class="px-3 py-1.5 bg-white text-primary-700 font-semibold rounded border border-primary-300">
-                                        <?= count($group['juries']) ?> sala(s)
+                                        <?= $totalSalas ?> sala(s)
                                     </span>
+                                    
                                     <?php if ($canManage): ?>
+                                    <?php 
+                                        // Coletar todos os júris para o botão de editar batch
+                                        // AVISO: A edição em batch pode precisar de ajustes para lidar com múltiplos locais de uma só vez, 
+                                        // ou devemos limitar a edição por local.
+                                        // Por enquanto, vamos coletar tudo flat.
+                                        $allJuriesFlat = [];
+                                        foreach($group['locations'] as $loc) {
+                                            foreach($loc['juries'] as $j) {
+                                                $allJuriesFlat[] = [
+                                                    'id' => $j['id'], 'room' => $j['room'], 'candidates_quota' => $j['candidates_quota']
+                                                ];
+                                            }
+                                        }
+                                    ?>
                                     <button type="button" class="px-3 py-1.5 bg-blue-600 text-white font-medium rounded hover:bg-blue-500 flex items-center gap-1" data-action="edit-discipline-batch" data-group='<?= json_encode([
                                         'subject' => $group['subject'],
                                         'exam_date' => $group['exam_date'],
                                         'start_time' => substr($group['start_time'], 0, 5),
                                         'end_time' => substr($group['end_time'], 0, 5),
-                                        'location' => $group['location'],
-                                        'juries' => array_map(function($j) { return ['id' => $j['id'], 'room' => $j['room'], 'candidates_quota' => $j['candidates_quota']]; }, $group['juries'])
+                                        'location' => implode(', ', array_keys($group['locations'])), // Listar locais
+                                        'juries' => $allJuriesFlat
                                     ]) ?>'>
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -136,115 +155,114 @@ $isVigilante = $user['role'] === 'vigilante';
                             </div>
                         </div>
 
-                        <!-- Salas do grupo -->
-                        <div class="p-5 space-y-4">
-                            <?php foreach ($group['juries'] as $jury): ?>
-                                <div class="border border-gray-200 rounded-lg overflow-hidden hover:border-primary-300 transition-colors">
-                                    <!-- Cabeçalho da sala -->
-                                    <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
-                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-primary-600 text-white text-sm font-bold rounded">
-                                                <?= htmlspecialchars($jury['room']) ?>
-                                            </span>
+                        <!-- Salas do grupo (Agrupadas por Local) -->
+                        <div class="p-5 space-y-6">
+                            <?php foreach ($group['locations'] as $locationName => $locData): ?>
+                                
+                                <!-- Sub-cabeçalho do Local -->
+                                <div class="bg-gray-100 px-3 py-2 rounded border border-gray-200 flex items-center gap-2">
+                                     <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                     </svg>
+                                     <h4 class="font-bold text-gray-700 uppercase text-sm"><?= htmlspecialchars($locationName) ?></h4>
+                                </div>
+
+                                <div class="space-y-4 ml-2 pl-4 border-l-2 border-gray-200">
+                                <?php foreach ($locData['juries'] as $jury): ?>
+                                    <div class="border border-gray-200 rounded-lg overflow-hidden hover:border-primary-300 transition-colors bg-white">
+                                        <!-- Cabeçalho da sala -->
+                                        <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                                            <div class="flex items-center gap-3">
+                                                <span class="inline-flex items-center justify-center w-8 h-8 bg-primary-600 text-white text-sm font-bold rounded">
+                                                    <?= htmlspecialchars($jury['room']) ?>
+                                                </span>
+                                                <div>
+                                                    <p class="text-sm font-semibold text-gray-800">Sala <?= htmlspecialchars($jury['room']) ?></p>
+                                                    <p class="text-xs text-gray-500"><?= (int)$jury['candidates_quota'] ?> candidatos</p>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <button type="button" class="btn-edit-inline px-2 py-1.5 text-xs font-medium bg-blue-100 text-blue-700 rounded hover:bg-blue-200 flex items-center gap-1" data-jury-id="<?= $jury['id'] ?>" title="Edição rápida">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                                    </svg>
+                                                    Rápido
+                                                </button>
+                                                <button type="button" class="px-2 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 rounded hover:bg-gray-200" data-action="open-edit-jury" data-jury='<?= json_encode([
+                                                    'id' => $jury['id'],
+                                                    'subject' => $jury['subject'],
+                                                    'exam_date' => $jury['exam_date'],
+                                                    'start_time' => substr($jury['start_time'], 0, 5),
+                                                    'end_time' => substr($jury['end_time'], 0, 5),
+                                                    'location' => $jury['location'],
+                                                    'room' => $jury['room'],
+                                                    'candidates_quota' => $jury['candidates_quota'],
+                                                    'notes' => $jury['notes'],
+                                                ]) ?>' title="Edição completa">Completo</button>
+                                                <form method="POST" action="<?= url('/juries/' . $jury['id'] . '/delete') ?>" onsubmit="return confirm('Eliminar este júri?');" class="inline">
+                                                    <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
+                                                    <button type="submit" class="px-2 py-1.5 text-xs font-medium bg-red-100 text-red-600 rounded hover:bg-red-200">Eliminar</button>
+                                                </form>
+                                            </div>
+                                        </div>
+    
+                                        <!-- Corpo: Vigilantes e Supervisor -->
+                                        <div class="grid md:grid-cols-2 gap-4 p-4">
+                                            <!-- Vigilantes -->
                                             <div>
-                                                <p class="text-sm font-semibold text-gray-800">Sala <?= htmlspecialchars($jury['room']) ?></p>
-                                                <p class="text-xs text-gray-500"><?= (int)$jury['candidates_quota'] ?> candidatos</p>
-                                            </div>
-                                        </div>
-                                        <div class="flex items-center gap-2">
-                                            <button type="button" class="btn-edit-inline px-2 py-1.5 text-xs font-medium bg-blue-100 text-blue-700 rounded hover:bg-blue-200 flex items-center gap-1" data-jury-id="<?= $jury['id'] ?>" title="Edição rápida">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
-                                                </svg>
-                                                Rápido
-                                            </button>
-                                            <button type="button" class="px-2 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 rounded hover:bg-gray-200" data-action="open-edit-jury" data-jury='<?= json_encode([
-                                                'id' => $jury['id'],
-                                                'subject' => $jury['subject'],
-                                                'exam_date' => $jury['exam_date'],
-                                                'start_time' => substr($jury['start_time'], 0, 5),
-                                                'end_time' => substr($jury['end_time'], 0, 5),
-                                                'location' => $jury['location'],
-                                                'room' => $jury['room'],
-                                                'candidates_quota' => $jury['candidates_quota'],
-                                                'notes' => $jury['notes'],
-                                            ]) ?>' title="Edição completa">Completo</button>
-                                            <form method="POST" action="<?= url('/juries/' . $jury['id'] . '/delete') ?>" onsubmit="return confirm('Eliminar este júri?');" class="inline">
-                                                <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
-                                                <button type="submit" class="px-2 py-1.5 text-xs font-medium bg-red-100 text-red-600 rounded hover:bg-red-200">Eliminar</button>
-                                            </form>
-                                        </div>
-                                    </div>
-
-                                    <!-- Corpo: Vigilantes e Supervisor -->
-                                    <div class="grid md:grid-cols-2 gap-4 p-4">
-                                        <!-- Vigilantes -->
-                                        <div>
-                                            <div class="flex items-center justify-between mb-2">
-                                                <h4 class="text-sm font-semibold text-gray-700 uppercase">Vigilantes</h4>
-                                                <span class="text-xs text-gray-500"><?= count($jury['vigilantes']) ?> alocado(s)</span>
-                                            </div>
-                                            <ul class="dropzone min-h-[100px] border-2 border-dashed border-gray-300 rounded-lg p-3 space-y-2" data-jury="<?= $jury['id'] ?>" data-assign-url="/juries/<?= $jury['id'] ?>/assign" data-unassign-url="/juries/<?= $jury['id'] ?>/unassign">
-                                                <?php foreach ($jury['vigilantes'] as $member): ?>
-                                                    <li class="draggable-item" data-id="<?= $member['id'] ?>" tabindex="0">
-                                                        <div>
-                                                            <p class="text-sm font-medium text-gray-700"><?= htmlspecialchars($member['name']) ?></p>
-                                                            <p class="text-xs text-gray-500"><?= htmlspecialchars($member['email']) ?></p>
-                                                        </div>
-                                                    </li>
-                                                <?php endforeach; ?>
-                                                <?php if (!$jury['vigilantes']): ?>
-                                                    <li class="text-xs text-gray-400 italic text-center py-4">Arraste vigilantes para aqui</li>
-                                                <?php endif; ?>
-                                            </ul>
-                                        </div>
-
-                                        <!-- Supervisor -->
-                                        <div>
-                                            <h4 class="text-sm font-semibold text-gray-700 uppercase mb-2">Supervisor</h4>
-                                            <div class="dropzone-single min-h-[100px] border-2 border-dashed border-amber-300 rounded-lg p-3 bg-amber-50" data-jury="<?= $jury['id'] ?>" data-set-url="/juries/<?= $jury['id'] ?>/set-supervisor">
-                                                <?php if (!empty($jury['supervisor_name'])): ?>
-                                                    <div class="draggable-item bg-amber-100 border-amber-300" data-id="<?= $jury['supervisor_id'] ?>" tabindex="0">
-                                                        <div>
-                                                            <p class="text-sm font-medium text-gray-800"><?= htmlspecialchars($jury['supervisor_name']) ?></p>
-                                                            <p class="text-xs text-amber-700 font-medium">Supervisor designado</p>
-                                                        </div>
-                                                    </div>
-                                                <?php else: ?>
-                                                    <p class="text-xs text-amber-600 italic text-center py-4">Arraste um supervisor elegível</p>
-                                                <?php endif; ?>
-                                            </div>
-                                            
-                                            <!-- Pool de supervisores -->
-                                            <div class="mt-3 border border-gray-200 rounded-lg p-3 bg-gray-50">
-                                                <p class="text-xs text-gray-600 uppercase font-semibold mb-2">Supervisores elegíveis</p>
-                                                <ul class="supervisor-pool space-y-2">
-                                                    <?php foreach ($supervisors as $supervisor): ?>
-                                                        <li class="draggable-item" data-id="<?= $supervisor['id'] ?>" tabindex="0">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <h4 class="text-sm font-semibold text-gray-700 uppercase">Vigilantes</h4>
+                                                    <span class="text-xs text-gray-500"><?= count($jury['vigilantes']) ?> alocado(s)</span>
+                                                </div>
+                                                <ul class="dropzone min-h-[100px] border-2 border-dashed border-gray-300 rounded-lg p-3 space-y-2" data-jury="<?= $jury['id'] ?>" data-assign-url="/juries/<?= $jury['id'] ?>/assign" data-unassign-url="/juries/<?= $jury['id'] ?>/unassign">
+                                                    <?php foreach ($jury['vigilantes'] as $member): ?>
+                                                        <li class="draggable-item" data-id="<?= $member['id'] ?>" tabindex="0">
                                                             <div>
-                                                                <p class="text-xs font-medium text-gray-700"><?= htmlspecialchars($supervisor['name']) ?></p>
-                                                                <p class="text-xs text-gray-500"><?= htmlspecialchars($supervisor['email']) ?></p>
+                                                                <p class="text-sm font-medium text-gray-700"><?= htmlspecialchars($member['name']) ?></p>
+                                                                <p class="text-xs text-gray-500"><?= htmlspecialchars($member['email']) ?></p>
                                                             </div>
                                                         </li>
                                                     <?php endforeach; ?>
-                                                    <?php if (!$supervisors): ?>
-                                                        <li class="text-xs text-gray-400">Sem supervisores elegíveis.</li>
+                                                    <?php if (!$jury['vigilantes']): ?>
+                                                        <li class="text-xs text-gray-400 italic text-center py-4">Arraste vigilantes para aqui</li>
                                                     <?php endif; ?>
                                                 </ul>
                                             </div>
-                                        </div>
-                                    </div>
-
-                                    <?php if ($jury['has_report']): ?>
-                                        <div class="px-4 pb-3">
-                                            <div class="flex items-center gap-2 text-xs text-green-700 bg-green-50 border border-green-200 rounded px-3 py-2">
-                                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                                </svg>
-                                                <span class="font-medium">Relatório submetido</span>
+    
+                                            <!-- Supervisor -->
+                                            <div>
+                                                <h4 class="text-sm font-semibold text-gray-700 uppercase mb-2">Supervisor</h4>
+                                                <div class="dropzone-single min-h-[100px] border-2 border-dashed border-amber-300 rounded-lg p-3 bg-amber-50" data-jury="<?= $jury['id'] ?>" data-set-url="/juries/<?= $jury['id'] ?>/set-supervisor">
+                                                    <?php if (!empty($jury['supervisor_name'])): ?>
+                                                        <div class="draggable-item bg-amber-100 border-amber-300" data-id="<?= $jury['supervisor_id'] ?>" tabindex="0">
+                                                            <div>
+                                                                <p class="text-sm font-medium text-gray-800"><?= htmlspecialchars($jury['supervisor_name']) ?></p>
+                                                                <p class="text-xs text-amber-700 font-medium">Supervisor designado</p>
+                                                            </div>
+                                                        </div>
+                                                    <?php else: ?>
+                                                        <p class="text-xs text-amber-600 italic text-center py-4">Arraste um supervisor elegível</p>
+                                                    <?php endif; ?>
+                                                </div>
+                                                
+                                                <!-- Pool de supervisores (Apenas exibido na primeira sala do grupo no design original, mas aqui repetimos para simplicidade ou refatorar para ficar fixo) -->
+                                                <!-- Removido daqui para reduzir ruído visual, ou manter apenas se necessário -->
                                             </div>
                                         </div>
-                                    <?php endif; ?>
+    
+                                        <?php if ($jury['has_report']): ?>
+                                            <div class="px-4 pb-3">
+                                                <div class="flex items-center gap-2 text-xs text-green-700 bg-green-50 border border-green-200 rounded px-3 py-2">
+                                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                                    </svg>
+                                                    <span class="font-medium">Relatório submetido</span>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
                                 </div>
                             <?php endforeach; ?>
                         </div>

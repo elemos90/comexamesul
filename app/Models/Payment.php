@@ -94,6 +94,7 @@ class Payment extends BaseModel
                     ) AS unique_blocks
                 ) as p
                 INNER JOIN users u ON u.id = p.user_id
+                WHERE u.role NOT IN ('membro', 'coordenador')
                 GROUP BY u.id, u.name, u.nuit, u.bank_name, u.nib, u.email
                 ORDER BY u.name";
 
@@ -127,10 +128,11 @@ class Payment extends BaseModel
 
         // Calcular novos pagamentos
         $payments = $this->calculateForVacancy($vacancyId, $rates);
+        error_log("DEBUG: Payment::generateForVacancy - Calculated " . count($payments) . " payments for vacancy $vacancyId");
 
         $count = 0;
         foreach ($payments as $payment) {
-            $this->create([
+            $created = $this->create([
                 'vacancy_id' => $vacancyId,
                 'user_id' => $payment['user_id'],
                 'nr_vigias' => $payment['nr_vigias'],
@@ -140,8 +142,15 @@ class Payment extends BaseModel
                 'total' => $payment['total'],
                 'estado' => 'previsto',
             ]);
-            $count++;
+
+            if ($created) {
+                $count++;
+            } else {
+                error_log("DEBUG: Payment::generateForVacancy - Failed to create payment for user " . $payment['user_id']);
+            }
         }
+
+        error_log("DEBUG: Payment::generateForVacancy - Total created: $count");
 
         return $count;
     }

@@ -1,0 +1,514 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========================================
+   Design System - Compacto, Elegante, Profissional
+   Portal Comexamesul v2.0
+   ======================================== */
+
+@layer base {
+
+    /* Tipografia base mais refinada */
+    html {
+        font-size: 14px;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+        @apply text-gray-700 bg-gray-50;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        letter-spacing: -0.01em;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        @apply font-semibold text-gray-900;
+        letter-spacing: -0.02em;
+    }
+
+    h1 {
+        @apply text-xl;
+    }
+
+    h2 {
+        @apply text-lg;
+    }
+
+    h3 {
+        @apply text-base;
+    }
+
+    h4 {
+        @apply text-sm;
+    }
+}
+
+/* ========================================
+   Animações Suaves
+   ======================================== */
+
+@keyframes toast-enter {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes toast-exit {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.toast-enter {
+    animation: toast-enter 0.2s ease-out;
+}
+
+.toast-exit {
+    animation: toast-exit 0.2s ease-in;
+}
+
+.animate-fade-in {
+    animation: fade-in 0.15s ease-out;
+}
+
+.animate-slide-up {
+    animation: slide-up 0.2s ease-out;
+}
+
+/* ========================================
+   Scrollbar Moderna
+   ======================================== */
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+}
+
+/* ========================================
+   Componentes - Design Compacto
+   ======================================== */
+
+@layer components {
+
+    /* Botões Compactos */
+    .btn {
+        @apply inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-1;
+    }
+
+    .btn-sm {
+        @apply px-2 py-1 text-xs;
+    }
+
+    .btn-lg {
+        @apply px-4 py-2 text-sm;
+    }
+
+    .btn-primary {
+        @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 shadow-sm;
+    }
+
+    .btn-secondary {
+        @apply bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 focus:ring-gray-400;
+    }
+
+    .btn-danger {
+        @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+    }
+
+    .btn-success {
+        @apply bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500;
+    }
+
+    .btn-ghost {
+        @apply text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:ring-gray-400;
+    }
+
+    .btn-icon {
+        @apply p-1.5 rounded-md;
+    }
+
+    /* Cards Elegantes */
+    .card {
+        @apply bg-white rounded-lg border border-gray-200/80 shadow-sm;
+    }
+
+    .card-compact {
+        @apply bg-white rounded-md border border-gray-200/60;
+    }
+
+    .card-header {
+        @apply px-4 py-3 border-b border-gray-100 flex items-center justify-between;
+    }
+
+    .card-header-compact {
+        @apply px-3 py-2 border-b border-gray-100;
+    }
+
+    .card-body {
+        @apply p-4;
+    }
+
+    .card-body-compact {
+        @apply p-3;
+    }
+
+    .card-footer {
+        @apply px-4 py-3 border-t border-gray-100 bg-gray-50/50;
+    }
+
+    /* Stat Cards */
+    .stat-card {
+        @apply bg-white rounded-lg border border-gray-200/80 p-4 shadow-sm;
+    }
+
+    .stat-value {
+        @apply text-2xl font-bold text-gray-900 tracking-tight;
+    }
+
+    .stat-label {
+        @apply text-xs font-medium text-gray-500 uppercase tracking-wide;
+    }
+
+    /* Form Inputs Compactos */
+    .form-input {
+        @apply block w-full rounded-md border-gray-200 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 py-1.5 px-2.5;
+    }
+
+    .form-select {
+        @apply block w-full rounded-md border-gray-200 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 py-1.5 pl-2.5 pr-8;
+    }
+
+    .form-label {
+        @apply block text-xs font-medium text-gray-600 mb-1;
+    }
+
+    .form-error {
+        @apply mt-1 text-xs text-red-600;
+    }
+
+    .form-group {
+        @apply space-y-1;
+    }
+
+    /* Badges Compactos */
+    .badge {
+        @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+    }
+
+    .badge-primary {
+        @apply bg-blue-50 text-blue-700;
+    }
+
+    .badge-success {
+        @apply bg-emerald-50 text-emerald-700;
+    }
+
+    .badge-warning {
+        @apply bg-amber-50 text-amber-700;
+    }
+
+    .badge-danger {
+        @apply bg-red-50 text-red-700;
+    }
+
+    .badge-gray {
+        @apply bg-gray-100 text-gray-600;
+    }
+
+    .badge-dot {
+        @apply inline-flex items-center gap-1.5;
+    }
+
+    .badge-dot::before {
+        content: '';
+        @apply w-1.5 h-1.5 rounded-full;
+    }
+
+    .badge-dot-success::before {
+        @apply bg-emerald-500;
+    }
+
+    .badge-dot-warning::before {
+        @apply bg-amber-500;
+    }
+
+    .badge-dot-danger::before {
+        @apply bg-red-500;
+    }
+
+    /* Tabelas Compactas */
+    .table-compact {
+        @apply w-full text-sm;
+    }
+
+    .table-compact th {
+        @apply px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50/80 border-b border-gray-200;
+    }
+
+    .table-compact td {
+        @apply px-3 py-2 border-b border-gray-100 text-gray-700;
+    }
+
+    .table-compact tbody tr:hover {
+        @apply bg-gray-50/50;
+    }
+
+    .table-compact tbody tr:last-child td {
+        @apply border-b-0;
+    }
+
+    /* Alerts Compactos */
+    .alert {
+        @apply p-3 rounded-md border text-sm;
+    }
+
+    .alert-info {
+        @apply bg-blue-50 border-blue-200 text-blue-800;
+    }
+
+    .alert-success {
+        @apply bg-emerald-50 border-emerald-200 text-emerald-800;
+    }
+
+    .alert-warning {
+        @apply bg-amber-50 border-amber-200 text-amber-800;
+    }
+
+    .alert-danger {
+        @apply bg-red-50 border-red-200 text-red-800;
+    }
+
+    /* Sidebar Compacta */
+    .sidebar-item {
+        @apply flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors;
+    }
+
+    .sidebar-item-active {
+        @apply bg-blue-50 text-blue-700 font-medium;
+    }
+
+    .sidebar-item:not(.sidebar-item-active) {
+        @apply text-gray-600 hover:text-gray-900 hover:bg-gray-100;
+    }
+
+    .sidebar-icon {
+        @apply text-lg opacity-70;
+    }
+
+    /* Page Header */
+    .page-header {
+        @apply flex items-center justify-between mb-4;
+    }
+
+    .page-title {
+        @apply text-lg font-semibold text-gray-900;
+    }
+
+    .page-subtitle {
+        @apply text-sm text-gray-500;
+    }
+
+    /* Empty State */
+    .empty-state {
+        @apply text-center py-8 px-4;
+    }
+
+    .empty-state-icon {
+        @apply mx-auto w-12 h-12 text-gray-300 mb-3;
+    }
+
+    .empty-state-title {
+        @apply text-sm font-medium text-gray-900 mb-1;
+    }
+
+    .empty-state-text {
+        @apply text-sm text-gray-500;
+    }
+
+    /* Loading States */
+    .skeleton {
+        @apply animate-pulse bg-gray-200 rounded;
+    }
+
+    /* Dropdown/Menu */
+    .dropdown-menu {
+        @apply absolute z-50 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 animate-fade-in;
+    }
+
+    .dropdown-item {
+        @apply flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50;
+    }
+
+    /* Dividers */
+    .divider {
+        @apply border-t border-gray-200 my-3;
+    }
+
+    /* Modal Styles */
+    .modal-backdrop {
+        @apply fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-40;
+    }
+
+    .modal-content {
+        @apply bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 animate-slide-up;
+    }
+
+    .modal-header {
+        @apply flex items-center justify-between px-4 py-3 border-b border-gray-200;
+    }
+
+    .modal-body {
+        @apply p-4;
+    }
+
+    .modal-footer {
+        @apply flex items-center justify-end gap-2 px-4 py-3 border-t border-gray-200 bg-gray-50;
+    }
+
+    /* Tooltip */
+    .tooltip {
+        @apply absolute z-50 px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded shadow-lg;
+    }
+
+    /* Progress */
+    .progress-bar {
+        @apply w-full h-1.5 bg-gray-200 rounded-full overflow-hidden;
+    }
+
+    .progress-bar-fill {
+        @apply h-full rounded-full transition-all duration-300;
+    }
+
+    /* Avatar */
+    .avatar {
+        @apply inline-flex items-center justify-center rounded-full bg-gray-200 text-gray-600 font-medium;
+    }
+
+    .avatar-sm {
+        @apply w-6 h-6 text-xs;
+    }
+
+    .avatar-md {
+        @apply w-8 h-8 text-sm;
+    }
+
+    .avatar-lg {
+        @apply w-10 h-10 text-base;
+    }
+
+    /* Tabs */
+    .tabs {
+        @apply flex border-b border-gray-200;
+    }
+
+    .tab {
+        @apply px-3 py-2 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300 transition-colors;
+    }
+
+    .tab-active {
+        @apply text-blue-600 border-blue-600;
+    }
+}
+
+/* ========================================
+   Utilitários Adicionais
+   ======================================== */
+
+@layer utilities {
+    .text-balance {
+        text-wrap: balance;
+    }
+
+    .line-clamp-1 {
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* Spacing utilities */
+    .compact-spacing {
+        @apply space-y-3;
+    }
+
+    .compact-spacing-sm {
+        @apply space-y-2;
+    }
+
+    /* Transitions */
+    .transition-base {
+        @apply transition-all duration-150 ease-out;
+    }
+
+    /* Focus ring */
+    .ring-focus {
+        @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1;
+    }
+}

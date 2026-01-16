@@ -230,7 +230,8 @@ $preview = $preview ?? ['success' => false, 'data' => []];
                                 <?= htmlspecialchars($p['banco'] ?? '-') ?>
                             </td>
                             <td class="compact-input text-gray-600 font-mono text-xs">
-                                <?= htmlspecialchars($p['numero_conta'] ?? '-') ?></td>
+                                <?= htmlspecialchars($p['numero_conta'] ?? '-') ?>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -254,6 +255,7 @@ $preview = $preview ?? ['success' => false, 'data' => []];
             <form method="POST" action="<?= url('/payments/generate/' . ($vacancy['id'] ?? '')) ?>"
                 onsubmit="return confirm('Deseja gerar o mapa de pagamentos com estes valores?')">
                 <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
+                <input type="hidden" name="vacancy_id" value="<?= htmlspecialchars($vacancy['id'] ?? '') ?>">
                 <button type="submit"
                     class="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 text-sm font-medium flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

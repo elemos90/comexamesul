@@ -63,6 +63,32 @@ if (!function_exists('url')) {
             $basePath = '';
         }
 
+        // Se o script está na raiz (não na pasta public), adicionar /public para recursos estáticos
+        if (!str_contains($scriptName, '/public/')) {
+            // Para rotas/páginas, mantemos o basePath normal
+            // Para recursos estáticos (css, js, assets, images), adicionamos /public
+            $staticExtensions = ['.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.ico', '.woff', '.woff2', '.ttf'];
+            $isStaticResource = false;
+            foreach ($staticExtensions as $ext) {
+                if (str_ends_with($path, $ext)) {
+                    $isStaticResource = true;
+                    break;
+                }
+            }
+            // Também verifica se o path começa com /css/, /js/, /assets/, /images/
+            $staticPaths = ['/css/', '/js/', '/assets/', '/images/'];
+            foreach ($staticPaths as $staticPath) {
+                if (str_starts_with($path, $staticPath) || str_starts_with('/' . ltrim($path, '/'), $staticPath)) {
+                    $isStaticResource = true;
+                    break;
+                }
+            }
+
+            if ($isStaticResource) {
+                return $basePath . '/public/' . ltrim($path, '/');
+            }
+        }
+
         return $basePath . '/' . ltrim($path, '/');
     }
 }

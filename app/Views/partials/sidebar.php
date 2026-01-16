@@ -13,7 +13,12 @@ $roleName = match ($role) {
 };
 
 $items = [
+    // --- MENU PRINCIPAL ---
+    ['header' => 'MENU PRINCIPAL'],
     ['label' => 'Dashboard', 'href' => url('/dashboard'), 'roles' => ['vigilante', 'supervisor', 'membro', 'coordenador'], 'icon' => 'dashboard', 'color' => 'blue'],
+
+    // --- VIGILÂNCIA ---
+    ['header' => 'GESTÃO DE VIGILÂNCIA'],
     ['label' => 'Vagas', 'href' => url('/vacancies'), 'roles' => ['membro', 'coordenador'], 'icon' => 'work', 'color' => 'green'],
     ['label' => 'Candidaturas', 'href' => url('/availability'), 'roles' => ['vigilante', 'supervisor'], 'icon' => 'assignment_turned_in', 'color' => 'purple'],
     [
@@ -27,11 +32,14 @@ $items = [
             ['label' => 'Lista de Vigilantes', 'href' => url('/applications')],
         ]
     ],
+
+    // --- JÚRIS & EXAMES ---
+    ['header' => 'AVALIAÇÕES E EXAMES'],
     [
         'label' => 'Júris',
         'href' => url('/juries'),
         'roles' => ['vigilante', 'supervisor', 'membro', 'coordenador'],
-        'icon' => 'gavel',
+        'icon' => 'groups',
         'color' => 'orange',
         'children' => [
             ['label' => 'Planeamento por Vaga', 'href' => url('/juries/planning-by-vacancy'), 'roles' => ['membro', 'coordenador']],
@@ -53,6 +61,9 @@ $items = [
             ['label' => 'Importar', 'href' => url('/locations/import')],
         ]
     ],
+
+    // --- FINANCEIRO ---
+    ['header' => 'FINANCEIRO'],
     [
         'label' => 'Pagamentos',
         'href' => url('/payments'),
@@ -67,6 +78,9 @@ $items = [
     ],
     // Meu Mapa de Pagamento (para vigilantes e supervisores - item separado)
     ['label' => 'Meu Mapa de Pagamento', 'href' => url('/payments/my-map'), 'roles' => ['vigilante', 'supervisor'], 'icon' => 'receipt_long', 'color' => 'emerald'],
+
+    // --- RELATÓRIOS ---
+    ['header' => 'RELATÓRIOS'],
     [
         'label' => 'Relatórios',
         'href' => url('/reports/consolidated'),
@@ -77,6 +91,9 @@ $items = [
             ['label' => 'Relatório Consolidado', 'href' => url('/reports/consolidated'), 'roles' => ['membro', 'coordenador']],
         ]
     ],
+
+    // --- ADMINISTRAÇÃO ---
+    ['header' => 'ADMINISTRAÇÃO'],
     [
         'label' => 'Dados Mestres',
         'href' => url('/master-data/disciplines'),
@@ -91,6 +108,9 @@ $items = [
     ],
     // Administração - Feature Flags (apenas coordenador)
     ['label' => 'Config. Funcionalidades', 'href' => url('/admin/features'), 'roles' => ['coordenador'], 'icon' => 'tune', 'color' => 'purple'],
+
+    // --- SISTEMA ---
+    ['header' => 'SISTEMA'],
     ['label' => 'Perfil', 'href' => url('/profile'), 'roles' => ['vigilante', 'supervisor', 'membro', 'coordenador'], 'icon' => 'account_circle', 'color' => 'gray'],
 ];
 
@@ -106,71 +126,175 @@ $colorClasses = [
     'gray' => 'text-gray-600 bg-gray-50',
 ];
 ?>
+
+<!-- Injected CSS for Layout Stability -->
+<style>
+    @media (min-width: 768px) {
+        aside#sidebar-desktop {
+            display: flex !important;
+        }
+
+        .md\:hidden {
+            display: none !important;
+        }
+    }
+
+    aside#sidebar-desktop[data-collapsed="true"] {
+        width: 4.5rem !important;
+    }
+
+    aside#sidebar-desktop[data-collapsed="false"] {
+        width: 16rem !important;
+    }
+
+    aside#sidebar-desktop {
+        transition: width 300ms ease-in-out;
+    }
+
+    /* Smooth hover effect for submenu items */
+    .submenu-content a:hover {
+        padding-left: 1.25rem;
+    }
+
+    /* Hide headers when collapsed */
+    aside#sidebar-desktop[data-collapsed="true"] .sidebar-header {
+        display: none;
+    }
+
+    /* Separator for collapsed functionality (optional, or rely on spacing) */
+    aside#sidebar-desktop[data-collapsed="true"] .sidebar-separator {
+        display: block;
+    }
+</style>
+
 <!-- Sidebar Desktop -->
-<aside class="hidden md:block w-72 bg-gradient-to-b from-slate-50 to-white border-r border-gray-200 h-full shadow-sm">
+<aside id="sidebar-desktop"
+    class="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 shadow-md h-full transition-all duration-300 ease-in-out group/sidebar"
+    data-collapsed="false">
+
+    <!-- Header / Branding -->
+    <div class="flex items-center justify-between px-3 py-4 border-b border-gray-100 flex-shrink-0">
+        <!-- Logo Area -->
+        <a href="<?= url('/dashboard') ?>"
+            class="flex items-center gap-3 overflow-hidden transition-all duration-300 group/logo">
+            <img src="<?= url('/assets/images/logo_unilicungo.png') ?>" alt="Logo"
+                class="h-12 w-auto object-contain transition-transform duration-300">
+
+            <div class="flex flex-col sidebar-text transition-opacity duration-300">
+                <span class="font-bold text-gray-800 text-sm leading-tight tracking-tight">Portal</span>
+                <span class="text-[10px] text-gray-500 font-medium uppercase tracking-wider">ComExames</span>
+            </div>
+        </a>
+
+        <!-- Toggle Button -->
+        <button id="sidebar-toggle-btn"
+            class="p-1 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-full transition-all focus:outline-none flex-shrink-0"
+            title="Fixar/Desafixar Menu">
+            <svg id="sidebar-toggle-icon" class="w-5 h-5 transition-transform duration-300" fill="currentColor"
+                viewBox="0 0 24 24">
+                <!-- Icon injected by JS -->
+            </svg>
+        </button>
+    </div>
+
     <!-- Menu Items -->
-    <nav class="p-4 pr-2 space-y-1 overflow-y-auto h-full">
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
         <?php foreach ($items as $item): ?>
-            <?php if (!in_array($role, $item['roles'], true)) {
+
+            <!-- Checks if it is a Header -->
+            <?php if (isset($item['header'])): ?>
+                <div class="sidebar-header mt-2 mb-1 px-3 font-medium text-gray-400 uppercase tracking-widest transition-opacity duration-200"
+                    style="font-size: 9px !important;">
+                    <?= htmlspecialchars($item['header']) ?>
+                </div>
+                <!-- Divider for collapsed state (optional visual cue) -->
+                <!-- <div class="sidebar-separator hidden h-px bg-gray-100 my-2 mx-2"></div> -->
+                <?php continue; ?>
+            <?php endif; ?>
+
+            <?php if (isset($item['roles']) && !in_array($role, $item['roles'], true)) {
                 continue;
             } ?>
             <?php $active = str_starts_with($current, $item['href']); ?>
 
             <?php
             $color = $item['color'] ?? 'gray';
-            $colorClass = $colorClasses[$color] ?? $colorClasses['gray'];
+            // Versão mais sutil do background ativo
+            $activeClass = "bg-{$color}-50 text-{$color}-700";
+            // Hover sutil
+            $hoverClass = "hover:bg-gray-50 hover:text-gray-900";
             ?>
 
             <?php if (!empty($item['children'])): ?>
-                <!-- Item com submenu (accordion) -->
-                <div class="space-y-1">
+                <!-- Item com submenu -->
+                <div class="submenu-wrapper relative group/item" data-has-submenu="true">
+
                     <button type="button"
-                        class="submenu-toggle group w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 <?= $active ? $colorClass . ' shadow-sm' : 'text-gray-700 hover:bg-gray-50' ?>"
+                        class="submenu-toggle w-full flex items-center justify-between px-3 py-2 text-[13px] font-medium rounded-lg transition-all duration-200 border border-transparent <?= $active ? $activeClass : 'text-gray-600 ' . $hoverClass ?>"
                         data-submenu="<?= htmlspecialchars($item['label']) ?>">
-                        <span class="flex items-center gap-3">
+
+                        <div class="flex items-center gap-2 min-w-0">
                             <span
-                                class="material-symbols-rounded text-xl <?= $active ? '' : 'text-gray-400 group-hover:text-gray-600' ?>"><?= $item['icon'] ?? 'radio_button_unchecked' ?></span>
-                            <span><?= htmlspecialchars($item['label']) ?></span>
-                        </span>
-                        <svg class="submenu-icon w-5 h-5 transition-transform duration-300 <?= $active ? 'transform rotate-180' : '' ?>"
+                                class="material-symbols-rounded text-[14px] shrink-0 <?= $active ? '' : 'text-gray-400 group-hover/item:text-gray-600' ?>">
+                                <?= $item['icon'] ?? 'radio_button_unchecked' ?>
+                            </span>
+                            <span class="sidebar-text truncate"><?= htmlspecialchars($item['label']) ?></span>
+                        </div>
+
+                        <svg class="submenu-icon sidebar-text w-4 h-4 shrink-0 text-gray-400 transition-transform duration-300"
                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
+
+                    <!-- Submenu Content -->
                     <div
-                        class="submenu-content ml-8 space-y-0.5 overflow-hidden transition-all duration-300 <?= $active ? 'mt-1' : 'hidden max-h-0' ?>">
+                        class="submenu-content ml-4 pl-3 border-l text-[13px] border-gray-100 space-y-0.5 overflow-hidden transition-all duration-200 hidden max-h-0">
                         <?php foreach ($item['children'] as $child): ?>
                             <?php
-                            // Verificar roles do child se definidas
                             if (isset($child['roles']) && !in_array($role, $child['roles'], true)) {
                                 continue;
                             }
                             $childActive = $current === $child['href'];
                             ?>
                             <a href="<?= $child['href'] ?>"
-                                class="group flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-all duration-200 <?= $childActive ? 'bg-white text-gray-900 font-medium shadow-sm' : 'text-gray-600 hover:bg-white hover:text-gray-900' ?>">
-                                <div
-                                    class="w-1.5 h-1.5 rounded-full transition-colors <?= $childActive ? 'bg-' . $color . '-600' : 'bg-gray-300 group-hover:bg-gray-400' ?>">
-                                </div>
+                                class="flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200 <?= $childActive ? 'text-primary-700 font-medium bg-primary-50' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50' ?>">
                                 <span><?= htmlspecialchars($child['label']) ?></span>
                             </a>
                         <?php endforeach; ?>
                     </div>
                 </div>
+
             <?php else: ?>
                 <!-- Item simples -->
                 <a href="<?= $item['href'] ?>"
-                    class="group flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 <?= $active ? $colorClass . ' shadow-sm' : 'text-gray-700 hover:bg-gray-50' ?>">
+                    class="group/item flex items-center gap-2 px-3 py-2 text-[13px] font-medium rounded-lg transition-all duration-200 border border-transparent <?= $active ? $activeClass : 'text-gray-600 ' . $hoverClass ?>">
                     <span
-                        class="material-symbols-rounded text-xl <?= $active ? '' : 'text-gray-400 group-hover:text-gray-600' ?>"><?= $item['icon'] ?? 'radio_button_unchecked' ?></span>
-                    <span><?= htmlspecialchars($item['label']) ?></span>
+                        class="material-symbols-rounded text-[14px] shrink-0 <?= $active ? '' : 'text-gray-400 group-hover/item:text-gray-600' ?>">
+                        <?= $item['icon'] ?? 'radio_button_unchecked' ?>
+                    </span>
+                    <span class="sidebar-text truncate"><?= htmlspecialchars($item['label']) ?></span>
                 </a>
             <?php endif; ?>
         <?php endforeach; ?>
     </nav>
+
+    <!-- Footer / User Profile -->
+    <div class="p-3 border-t border-gray-100 sidebar-text">
+        <div class="flex items-center gap-3 px-2 py-2 rounded-lg bg-gray-50 border border-gray-100">
+            <div
+                class="w-8 h-8 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-bold text-xs">
+                <?= strtoupper(substr($user['name'] ?? 'U', 0, 1)) ?>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-xs font-semibold text-gray-700 truncate"><?= htmlspecialchars($user['name'] ?? '') ?></p>
+                <p class="text-[10px] text-gray-500 truncate"><?= $roleName ?></p>
+            </div>
+        </div>
+    </div>
 </aside>
 
-<!-- Sidebar Mobile (Slide-out) -->
+<!-- Sidebar Mobile -->
 <div @keydown.escape.window="mobileMenuOpen = false" class="md:hidden">
     <!-- Overlay -->
     <div x-show="mobileMenuOpen" x-transition:enter="transition-opacity ease-linear duration-300"
@@ -180,171 +304,236 @@ $colorClasses = [
         class="fixed inset-0 bg-gray-900 bg-opacity-75 z-40" style="display: none;">
     </div>
 
-    <!-- Menu Slide Panel -->
+    <!-- Menu Slide Panel Mobile -->
     <aside x-show="mobileMenuOpen" x-transition:enter="transform transition ease-in-out duration-300"
         x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0"
         x-transition:leave="transform transition ease-in-out duration-300" x-transition:leave-start="translate-x-0"
         x-transition:leave-end="-translate-x-full"
-        class="fixed inset-y-0 left-0 w-80 bg-gradient-to-b from-slate-50 to-white shadow-2xl z-50 flex flex-col"
-        style="display: none;">
+        class="fixed inset-y-0 left-0 w-80 bg-white shadow-2xl z-50 flex flex-col" style="display: none;">
 
-        <!-- Header Mobile -->
-        <div class="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white">
+        <!-- Mobile Header -->
+        <div class="flex items-center justify-between px-4 py-4 border-b border-gray-100">
             <div class="flex items-center gap-2">
-                <img src="<?= url('/assets/images/logo_unilicungo.png') ?>" alt="UniLicungo"
-                    class="h-8 w-auto object-contain">
-                <span
-                    class="text-base font-semibold text-primary-600"><?= htmlspecialchars(env('APP_NAME', 'Portal')) ?></span>
+                <img src="<?= url('/assets/images/logo_unilicungo.png') ?>" alt="UniLicungo" class="h-8 w-auto">
+                <span class="font-bold text-gray-800">Portal</span>
             </div>
-            <button @click="mobileMenuOpen = false"
-                class="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+            <button @click="mobileMenuOpen = false" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
         </div>
 
-        <!-- Menu Items Mobile -->
         <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
             <?php foreach ($items as $item): ?>
-                <?php if (!in_array($role, $item['roles'], true)) {
+                <?php if (isset($item['header'])) {
+                    // Opcional: Renderizar header no mobile também
+                    echo '<div class="px-4 mt-4 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider">' . htmlspecialchars($item['header']) . '</div>';
+                    continue;
+                } ?>
+                <?php if (isset($item['roles']) && !in_array($role, $item['roles'], true)) {
                     continue;
                 } ?>
                 <?php $active = str_starts_with($current, $item['href']); ?>
-
-                <?php
-                $color = $item['color'] ?? 'gray';
-                $colorClass = $colorClasses[$color] ?? $colorClasses['gray'];
-                ?>
+                <?php $color = $item['color'] ?? 'gray'; ?>
 
                 <?php if (!empty($item['children'])): ?>
-                    <!-- Item com submenu (accordion) -->
                     <div class="space-y-1">
                         <button type="button"
-                            class="submenu-toggle-mobile group w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 <?= $active ? $colorClass . ' shadow-sm' : 'text-gray-700 hover:bg-gray-50' ?>"
-                            data-submenu="<?= htmlspecialchars($item['label']) ?>">
+                            class="submenu-toggle-mobile w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-xl transition-colors <?= $active ? 'bg-' . $color . '-50 text-' . $color . '-700' : 'text-gray-700 hover:bg-gray-50' ?>">
                             <span class="flex items-center gap-3">
                                 <span
-                                    class="material-symbols-rounded text-xl <?= $active ? '' : 'text-gray-400 group-hover:text-gray-600' ?>"><?= $item['icon'] ?? 'radio_button_unchecked' ?></span>
+                                    class="material-symbols-rounded text-xl <?= $active ? '' : 'text-gray-400' ?>"><?= $item['icon'] ?? 'circle' ?></span>
                                 <span><?= htmlspecialchars($item['label']) ?></span>
                             </span>
-                            <svg class="submenu-icon w-5 h-5 transition-transform duration-300 <?= $active ? 'transform rotate-180' : '' ?>"
-                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                            <svg class="submenu-icon w-5 h-5 transition-transform duration-300" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
                         <div
-                            class="submenu-content-mobile ml-8 space-y-0.5 overflow-hidden transition-all duration-300 <?= $active ? 'mt-1' : 'hidden max-h-0' ?>">
+                            class="submenu-content-mobile ml-4 pl-4 border-l border-gray-100 space-y-1 hidden max-h-0 overflow-hidden">
                             <?php foreach ($item['children'] as $child): ?>
-                                <?php
-                                // Verificar roles do child se definidas
-                                if (isset($child['roles']) && !in_array($role, $child['roles'], true)) {
+                                <?php if (isset($child['roles']) && !in_array($role, $child['roles'], true)) {
                                     continue;
-                                }
-                                $childActive = $current === $child['href'];
-                                ?>
-                                <a href="<?= $child['href'] ?>" @click="mobileMenuOpen = false"
-                                    class="group flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-all duration-200 <?= $childActive ? 'bg-white text-gray-900 font-medium shadow-sm' : 'text-gray-600 hover:bg-white hover:text-gray-900' ?>">
-                                    <div
-                                        class="w-1.5 h-1.5 rounded-full transition-colors <?= $childActive ? 'bg-' . $color . '-600' : 'bg-gray-300 group-hover:bg-gray-400' ?>">
-                                    </div>
-                                    <span><?= htmlspecialchars($child['label']) ?></span>
+                                } ?>
+                                <a href="<?= $child['href'] ?>"
+                                    class="block px-4 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-50 hover:text-gray-900">
+                                    <?= htmlspecialchars($child['label']) ?>
                                 </a>
                             <?php endforeach; ?>
                         </div>
                     </div>
                 <?php else: ?>
-                    <!-- Item simples -->
-                    <a href="<?= url('/master-data/rooms') ?>"
-                        class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors <?= str_starts_with($currentPath, '/master-data/rooms') ? 'bg-primary-50 text-primary-700' : 'text-gray-700 hover:bg-gray-100' ?>">
+                    <a href="<?= $item['href'] ?>"
+                        class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-colors <?= $active ? 'bg-' . $color . '-50 text-' . $color . '-700' : 'text-gray-700 hover:bg-gray-50' ?>">
                         <span
-                            class="material-symbols-rounded text-xl <?= $active ? '' : 'text-gray-400 group-hover:text-gray-600' ?>"><?= $item['icon'] ?? 'radio_button_unchecked' ?></span>
+                            class="material-symbols-rounded text-xl <?= $active ? '' : 'text-gray-400' ?>"><?= $item['icon'] ?? 'circle' ?></span>
                         <span><?= htmlspecialchars($item['label']) ?></span>
                     </a>
                 <?php endif; ?>
             <?php endforeach; ?>
         </nav>
-
-        <!-- Footer Mobile (Info do usuário e Logout) -->
-        <div class="border-t border-gray-200 bg-white">
-            <div class="p-4">
-                <div class="flex items-center gap-3 mb-3">
-                    <div
-                        class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-                        <?= strtoupper(substr($user['name'] ?? 'U', 0, 1)) ?>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="font-semibold text-gray-900 text-sm truncate">
-                            <?= htmlspecialchars($user['name'] ?? '') ?>
-                        </div>
-                        <div class="text-xs text-gray-500 truncate">
-                            <?= htmlspecialchars($roleName) ?>
-                        </div>
-                    </div>
-                </div>
-                <!-- Botão Logout -->
-                <form method="POST" action="<?= url('/logout') ?>">
-                    <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
-                    <button type="submit"
-                        class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-sm">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
-                        Terminar Sessão
-                    </button>
-                </form>
-            </div>
-        </div>
     </aside>
 </div>
 
 <script>
-    // Script para toggle de submenu (accordion) - Desktop e Mobile
     document.addEventListener('DOMContentLoaded', function () {
-        // Desktop toggles
-        const submenuToggles = document.querySelectorAll('.submenu-toggle');
-        submenuToggles.forEach(toggle => {
+        const sidebar = document.getElementById('sidebar-desktop');
+        const toggleBtn = document.getElementById('sidebar-toggle-btn');
+        const toggleIcon = document.getElementById('sidebar-toggle-icon');
+        const navItems = sidebar.querySelectorAll('nav > a, nav > div > button.submenu-toggle');
+        const submenuWrappers = sidebar.querySelectorAll('.submenu-wrapper');
+
+        // Paths for Radio Icons
+        const iconChecked = '<path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0-5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>';
+        const iconUnchecked = '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>';
+
+        // Load state
+        const isCollapsedPreference = localStorage.getItem('sidebarCollapsed') === 'true';
+        if (isCollapsedPreference) {
+            applyCollapseState(true);
+        } else {
+            toggleIcon.innerHTML = iconChecked;
+        }
+
+        function applyCollapseState(collapsed) {
+            if (collapsed) {
+                sidebar.setAttribute('data-collapsed', 'true');
+                toggleIcon.innerHTML = iconUnchecked;
+                toggleBtn.setAttribute('title', 'Expandir e Fixar Menu');
+                toggleBtn.classList.add('hidden'); // Hide toggle button
+
+                document.querySelectorAll('.sidebar-text').forEach(el => el.classList.add('hidden'));
+
+                navItems.forEach(item => {
+                    item.classList.add('justify-center');
+                    item.classList.remove('justify-between', 'px-3');
+                    item.classList.add('px-0');
+
+                    if (!item.getAttribute('title')) {
+                        const label = item.getAttribute('data-submenu') || item.querySelector('.sidebar-text')?.textContent;
+                        if (label) item.setAttribute('title', label.trim());
+                    }
+                });
+
+                closeAllSubmenus();
+
+            } else {
+                sidebar.setAttribute('data-collapsed', 'false');
+                toggleIcon.innerHTML = iconChecked;
+                toggleBtn.setAttribute('title', 'Desafixar e Colapsar Menu');
+                toggleBtn.classList.remove('hidden'); // Show toggle button
+
+                document.querySelectorAll('.sidebar-text').forEach(el => el.classList.remove('hidden'));
+
+                navItems.forEach(item => {
+                    item.classList.remove('justify-center', 'px-0');
+                    item.classList.add('px-3');
+                    if (item.classList.contains('submenu-toggle')) {
+                        item.classList.add('justify-between');
+                    }
+                    item.removeAttribute('title');
+                });
+            }
+        }
+
+        // --- Toggle Button Click ---
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function () {
+                const currentPref = localStorage.getItem('sidebarCollapsed') === 'true';
+                const newPref = !currentPref;
+                localStorage.setItem('sidebarCollapsed', newPref);
+                applyCollapseState(newPref);
+            });
+        }
+
+        // --- Hover Interaction with Debounce ---
+        let hoverTimeout = null;
+        let isHoverExpanded = false;
+
+        sidebar.addEventListener('mouseenter', function () {
+            if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                // Add delay before expanding to prevent flickering on quick passes
+                hoverTimeout = setTimeout(() => {
+                    isHoverExpanded = true;
+                    applyCollapseState(false);
+                }, 150); // 150ms delay
+            }
+        });
+
+        sidebar.addEventListener('mouseleave', function () {
+            // Clear any pending expansion
+            if (hoverTimeout) {
+                clearTimeout(hoverTimeout);
+                hoverTimeout = null;
+            }
+
+            if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                isHoverExpanded = false;
+                applyCollapseState(true);
+            }
+        });
+
+        // --- Accordion Logic (Click Only) ---
+        function toggleSubmenu(toggle, forceOpen = null) {
+            const submenuContent = toggle.nextElementSibling;
+            const submenuIcon = toggle.querySelector('.submenu-icon');
+            const isClosed = submenuContent.classList.contains('hidden');
+            const shouldOpen = forceOpen !== null ? forceOpen : isClosed;
+
+            if (shouldOpen) {
+                // Close others
+                document.querySelectorAll('.submenu-toggle').forEach(otherToggle => {
+                    if (otherToggle !== toggle) {
+                        const otherContent = otherToggle.nextElementSibling;
+                        const otherIcon = otherToggle.querySelector('.submenu-icon');
+                        if (!otherContent.classList.contains('hidden')) {
+                            otherContent.style.maxHeight = '0';
+                            setTimeout(() => otherContent.classList.add('hidden', 'max-h-0'), 200);
+                            if (otherIcon) otherIcon.classList.remove('rotate-180');
+                        }
+                    }
+                });
+
+                // Open current
+                submenuContent.classList.remove('hidden', 'max-h-0');
+                requestAnimationFrame(() => {
+                    submenuContent.style.maxHeight = submenuContent.scrollHeight + 'px';
+                });
+                if (submenuIcon) submenuIcon.classList.add('rotate-180');
+            } else {
+                // Close current
+                submenuContent.style.maxHeight = '0';
+                setTimeout(() => submenuContent.classList.add('hidden', 'max-h-0'), 200);
+                if (submenuIcon) submenuIcon.classList.remove('rotate-180');
+            }
+        }
+
+        function closeAllSubmenus() {
+            document.querySelectorAll('.submenu-content:not(.hidden)').forEach(content => {
+                content.style.maxHeight = '0';
+                content.classList.add('hidden', 'max-h-0');
+                const toggle = content.previousElementSibling;
+                const icon = toggle.querySelector('.submenu-icon');
+                if (icon) icon.classList.remove('rotate-180');
+            });
+        }
+
+        // Desktop Click
+        document.querySelectorAll('.submenu-toggle').forEach(toggle => {
             toggle.addEventListener('click', function (e) {
                 e.preventDefault();
-                const submenuContent = this.nextElementSibling;
-                const submenuIcon = this.querySelector('.submenu-icon');
-
-                if (submenuContent.classList.contains('hidden')) {
-                    submenuContent.classList.remove('hidden', 'max-h-0');
-                    submenuContent.style.maxHeight = submenuContent.scrollHeight + 'px';
-                    submenuIcon.classList.add('rotate-180');
-                } else {
-                    submenuContent.style.maxHeight = '0';
-                    setTimeout(() => {
-                        submenuContent.classList.add('hidden', 'max-h-0');
-                    }, 200);
-                    submenuIcon.classList.remove('rotate-180');
-                }
+                toggleSubmenu(this);
             });
         });
 
-        // Mobile toggles
-        const mobileToggles = document.querySelectorAll('.submenu-toggle-mobile');
-        mobileToggles.forEach(toggle => {
+        // Mobile Click
+        document.querySelectorAll('.submenu-toggle-mobile').forEach(toggle => {
             toggle.addEventListener('click', function (e) {
                 e.preventDefault();
-                const submenuContent = this.nextElementSibling;
-                const submenuIcon = this.querySelector('.submenu-icon');
-
-                if (submenuContent.classList.contains('hidden')) {
-                    submenuContent.classList.remove('hidden', 'max-h-0');
-                    submenuContent.style.maxHeight = submenuContent.scrollHeight + 'px';
-                    submenuIcon.classList.add('rotate-180');
-                } else {
-                    submenuContent.style.maxHeight = '0';
-                    setTimeout(() => {
-                        submenuContent.classList.add('hidden', 'max-h-0');
-                    }, 200);
-                    submenuIcon.classList.remove('rotate-180');
-                }
+                toggleSubmenu(this);
             });
         });
-
     });
 </script>

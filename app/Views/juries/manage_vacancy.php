@@ -267,7 +267,7 @@ $juryModel = new \App\Models\Jury();
                                                 <div class="text-sm text-gray-600 space-y-1">
                                                     <p>
                                                         👥 <?= $jury['candidates_quota'] ?> candidatos |
-                                                        2 vigilantes necessários
+                                                        <?= max(1, ceil($jury['candidates_quota'] / 30)) ?> vigilantes necessários
                                                         <?php if (!empty($jury['room_capacity'])): ?>
                                                             | Capacidade da sala: <?= $jury['room_capacity'] ?>
                                                         <?php endif; ?>
@@ -597,6 +597,33 @@ $juryModel = new \App\Models\Jury();
     </div>
 </div>
 
+<!-- Modal: Seletor de Vigilante (Substituto do prompt) -->
+<div id="modal-vigilante-selector"
+    class="modal hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-[60] items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[80vh] flex flex-col">
+        <div class="flex items-center justify-between p-4 border-b">
+            <h3 class="text-lg font-bold text-gray-900">Selecione o Vigilante</h3>
+            <button type="button"
+                onclick="document.getElementById('modal-vigilante-selector').classList.add('hidden'); document.getElementById('modal-vigilante-selector').classList.remove('flex');"
+                class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div id="vigilante-selector-list" class="p-0 overflow-y-auto flex-1">
+            <!-- Lista preenchida via JS -->
+        </div>
+        <div class="p-4 border-t bg-gray-50 flex justify-end">
+            <button type="button"
+                onclick="document.getElementById('modal-vigilante-selector').classList.add('hidden'); document.getElementById('modal-vigilante-selector').classList.remove('flex');"
+                class="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-100">
+                Cancelar
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal: Adicionar Vigilante Manualmente -->
 <div id="modal-add-vigilante"
     class="modal hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-50 items-center justify-center">
@@ -658,35 +685,40 @@ $juryModel = new \App\Models\Jury();
                     <span
                         class="flex items-center justify-center w-6 h-6 bg-primary-600 text-white rounded-full text-xs">1</span>
                     📚 Informações Comuns (aplicadas a todas as salas)
-                </h3>
+                    <h3 class="text-sm font-semibold text-gray-700 mb-4 uppercase flex items-center gap-2">
+                        <span
+                            class="flex items-center justify-center w-6 h-6 bg-primary-600 text-white rounded-full text-xs">1</span>
+                        📚 Informações Comuns (aplicadas a todas as salas)
+                    </h3>
+                    <input type="hidden" id="disc_location_id" name="location_id">
 
-                <div class="grid md:grid-cols-2 gap-4">
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Disciplina *</label>
-                        <input type="text" id="disc_subject" name="subject" list="subjects-list"
-                            class="w-full rounded border border-gray-300 px-3 py-2"
-                            placeholder="Ex: INGLÊS, MATEMÁTICA..." required>
-                    </div>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Disciplina *</label>
+                            <input type="text" id="disc_subject" name="subject" list="subjects-list"
+                                class="w-full rounded border border-gray-300 px-3 py-2"
+                                placeholder="Ex: INGLÊS, MATEMÁTICA..." required>
+                        </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Data do Exame *</label>
-                        <input type="date" id="disc_exam_date" name="exam_date"
-                            class="w-full rounded border border-gray-300 px-3 py-2" required>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Início *</label>
-                            <input type="time" id="disc_start_time" name="start_time"
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Data do Exame *</label>
+                            <input type="date" id="disc_exam_date" name="exam_date"
                                 class="w-full rounded border border-gray-300 px-3 py-2" required>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Fim *</label>
-                            <input type="time" id="disc_end_time" name="end_time"
-                                class="w-full rounded border border-gray-300 px-3 py-2" required>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Início *</label>
+                                <input type="time" id="disc_start_time" name="start_time"
+                                    class="w-full rounded border border-gray-300 px-3 py-2" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Fim *</label>
+                                <input type="time" id="disc_end_time" name="end_time"
+                                    class="w-full rounded border border-gray-300 px-3 py-2" required>
+                            </div>
                         </div>
                     </div>
-                </div>
             </div>
 
             <!-- PASSO 2: Salas -->
@@ -1503,6 +1535,26 @@ $juryModel = new \App\Models\Jury();
         document.getElementById('disc_exam_date').value = disciplineData.juries[0].exam_date;
         document.getElementById('disc_start_time').value = disciplineData.start_time;
         document.getElementById('disc_end_time').value = disciplineData.end_time;
+        
+        // Populate Location ID (Critical for updateDiscipline)
+        // Order of precedence:
+        // 1. Explicit ID from discipline data (added in Jury model)
+        // 2. ID from first jury in the list
+        // 3. Fallback: look up by location name in masterData
+        let locationId = disciplineData.location_id || null;
+
+        if (!locationId && disciplineData.juries && disciplineData.juries.length > 0) {
+            // Try explicit ID from first jury if available
+            if (disciplineData.juries[0].location_id) {
+                locationId = disciplineData.juries[0].location_id;
+            } 
+            // Fallback: look up by location name
+            else if (disciplineData.location) {
+                const loc = masterData.locations.find(l => l.name === disciplineData.location);
+                if (loc) locationId = loc.id;
+            }
+        }
+        document.getElementById('disc_location_id').value = locationId || '';
 
         // Limpar e preencher salas
         const container = document.getElementById('disc-rooms-container');
@@ -1618,7 +1670,9 @@ $juryModel = new \App\Models\Jury();
             subject: formData.get('subject'),
             exam_date: formData.get('exam_date'),
             start_time: formData.get('start_time'),
+            start_time: formData.get('start_time'),
             end_time: formData.get('end_time'),
+            location_id: formData.get('location_id'),
             rooms: [],
             csrf: csrfToken
         };
@@ -1827,26 +1881,64 @@ $juryModel = new \App\Models\Jury();
         buildEditVigilantesSection();
     }
 
+    // Variáveis para controle do modal de seleção
+    let currentSelectorRoomIndex = null;
+
     function editOpenVigilanteSelector(roomIndex) {
+        currentSelectorRoomIndex = roomIndex;
         const allAllocated = Object.values(editVigilantes).flat();
         const available = editEligibleVigilantes.filter(v => !allAllocated.includes(v.id));
 
+        const container = document.getElementById('vigilante-selector-list');
+        container.innerHTML = '';
+
         if (available.length === 0) {
-            alert('❌ Não há vigilantes disponíveis');
-            return;
+            container.innerHTML = `
+                <div class="text-center py-8 text-gray-500">
+                    <p>Todos os vigilantes elegíveis já estão alocados.</p>
+                </div>
+            `;
+        } else {
+            available.forEach(v => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-3 hover:bg-gray-50 border-b last:border-0 cursor-pointer';
+                div.onclick = () => selectVigilanteForRoom(v.id);
+                div.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">
+                            ${v.name.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                            <div class="font-medium text-gray-900">${v.name}</div>
+                            <div class="text-xs text-gray-500">${v.email || 'Sem email'}</div>
+                        </div>
+                    </div>
+                    <button type="button" class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700">
+                        Selecionar
+                    </button>
+                `;
+                container.appendChild(div);
+            });
         }
 
-        const options = available.map((v, i) => `${i + 1}. ${v.name}`).join('\n');
-        const choice = prompt(`Selecione o vigilante:\n\n${options}`);
+        document.getElementById('modal-vigilante-selector').classList.remove('hidden');
+        document.getElementById('modal-vigilante-selector').classList.add('flex');
+    }
 
-        if (choice) {
-            const index = parseInt(choice) - 1;
-            if (index >= 0 && index < available.length) {
-                if (!editVigilantes[roomIndex]) editVigilantes[roomIndex] = [];
-                editVigilantes[roomIndex].push(available[index].id);
-                buildEditVigilantesSection();
-            }
+    function selectVigilanteForRoom(vigilanteId) {
+        if (currentSelectorRoomIndex === null) return;
+
+        if (!editVigilantes[currentSelectorRoomIndex]) {
+            editVigilantes[currentSelectorRoomIndex] = [];
         }
+        
+        editVigilantes[currentSelectorRoomIndex].push(vigilanteId);
+        buildEditVigilantesSection();
+        
+        // Fechar modal
+        document.getElementById('modal-vigilante-selector').classList.add('hidden');
+        document.getElementById('modal-vigilante-selector').classList.remove('flex');
+        currentSelectorRoomIndex = null;
     }
 
     async function buildEditSupervisorsSection() {
@@ -1905,7 +1997,7 @@ $juryModel = new \App\Models\Jury();
                             <span class="text-sm text-gray-600 ml-2">${blockRooms.join(', ')}</span>
                         </div>
                         <span class="px-2 py-1 rounded text-sm font-medium ${isComplete ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'}">
-                            ${isComplete ? '✓ Atribuído' : 'Pendente'}
+                   ${isComplete ? '✓ Atribuído' : 'Pendente'}
                         </span>
                     </div>
                     <select onchange="editAssignBlockSupervisor(${blockIndex}, this.value)"
@@ -1960,11 +2052,23 @@ $juryModel = new \App\Models\Jury();
 
         origShowEditDisciplineModal(disciplineData);
 
-        // Load existing vigilantes from juries data
+        // Load existing vigilantes and supervisors from juries data
         if (disciplineData.juries) {
+            const MAX_JURIS_POR_SUPERVISOR = 10;
+            
             disciplineData.juries.forEach((jury, index) => {
+                // Load Vigilantes
                 if (jury.vigilantes && Array.isArray(jury.vigilantes)) {
                     editVigilantes[index] = jury.vigilantes.map(v => v.user_id || v.id);
+                }
+                
+                // Load Supervisors (per block)
+                if (jury.supervisor_id) {
+                    const blockIndex = Math.floor(index / MAX_JURIS_POR_SUPERVISOR);
+                    // If this block doesn't have a supervisor set yet, use this jury's supervisor
+                    if (!editBlockSupervisors[blockIndex]) {
+                        editBlockSupervisors[blockIndex] = parseInt(jury.supervisor_id);
+                    }
                 }
             });
         }

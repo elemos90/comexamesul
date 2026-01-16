@@ -263,6 +263,34 @@
         </div>
     </div>
 
+    <!-- Secção: Representação Gráfica -->
+    <div class="section">
+        <div class="section-title">REPRESENTAÇÃO GRÁFICA</div>
+        <table style="border: none; width: 100%;">
+            <tr>
+                <td style="border: none; width: 50%; text-align: center; vertical-align: middle;">
+                    <div style="font-weight: bold; margin-bottom: 10px; font-size: 10px; color: #666;">DISTRIBUIÇÃO
+                        GERAL</div>
+                    <?php if (!empty($chart1Base64)): ?>
+                        <img src="data:image/png;base64,<?= $chart1Base64 ?>" style="width: 100%; max-width: 250px;"
+                            alt="Gráfico Distribuição">
+                    <?php else: ?>
+                        <p style="color: #999; font-size: 10px;">Gráfico indisponível</p>
+                    <?php endif; ?>
+                </td>
+                <td style="border: none; width: 50%; text-align: center; vertical-align: middle;">
+                    <div style="font-weight: bold; margin-bottom: 10px; font-size: 10px; color: #666;">POR GÉNERO</div>
+                    <?php if (!empty($chart2Base64)): ?>
+                        <img src="data:image/png;base64,<?= $chart2Base64 ?>" style="width: 100%; max-width: 250px;"
+                            alt="Gráfico Género">
+                    <?php else: ?>
+                        <p style="color: #999; font-size: 10px;">Gráfico indisponível</p>
+                    <?php endif; ?>
+                </td>
+            </tr>
+        </table>
+    </div>
+
     <!-- Secção 3: Estatísticas por Género -->
     <div class="section">
         <div class="section-title">ESTATÍSTICAS CONSOLIDADAS</div>

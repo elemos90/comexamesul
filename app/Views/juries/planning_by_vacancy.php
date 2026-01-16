@@ -871,6 +871,26 @@ $breadcrumbs = [
         }
     }
 
+    function showValidationMessage(message) {
+        if (typeof toastr !== 'undefined') {
+            toastr.error(message);
+        } else {
+            alert(message);
+        }
+    }
+
+    function highlightField(element) {
+        if (!element) return;
+        element.classList.add('border-red-500', 'ring-1', 'ring-red-500', 'bg-red-50');
+
+        const removeHighlight = function () {
+            element.classList.remove('border-red-500', 'ring-1', 'ring-red-500', 'bg-red-50');
+        };
+
+        element.addEventListener('input', removeHighlight, { once: true });
+        element.addEventListener('change', removeHighlight, { once: true });
+    }
+
     function validateCurrentStep() {
         switch (currentStep) {
             case 1:
@@ -887,14 +907,31 @@ $breadcrumbs = [
     }
 
     function validateStep1() {
-        const location = document.querySelector('select[name="location"]').value;
-        const examDate = document.querySelector('input[name="exam_date"]').value;
-        const subject = document.querySelector('select[name="subject"]').value;
-        const startTime = document.querySelector('input[name="start_time"]').value;
-        const endTime = document.querySelector('input[name="end_time"]').value;
+        const form = document.getElementById('form-create-juries');
+        const locationEl = form.querySelector('select[name="location"]');
+        const examDateEl = form.querySelector('input[name="exam_date"]');
+        const subjectEl = form.querySelector('select[name="subject"]');
+        const startTimeEl = form.querySelector('input[name="start_time"]');
+        const endTimeEl = form.querySelector('input[name="end_time"]');
 
-        if (!location || !examDate || !subject || !startTime || !endTime) {
-            alert('❌ Por favor, preencha todos os campos obrigatórios');
+        let hasError = false;
+        const requiredFields = [
+            { el: locationEl, name: 'Local' },
+            { el: examDateEl, name: 'Data do Exame' },
+            { el: subjectEl, name: 'Disciplina' },
+            { el: startTimeEl, name: 'Horário Início' },
+            { el: endTimeEl, name: 'Horário Fim' }
+        ];
+
+        requiredFields.forEach(field => {
+            if (!field.el.value) {
+                highlightField(field.el);
+                hasError = true;
+            }
+        });
+
+        if (hasError) {
+            showValidationMessage('❌ Por favor, preencha todos os campos obrigatórios marcados em vermelho.');
             return false;
         }
 
@@ -909,24 +946,39 @@ $breadcrumbs = [
         const roomRows = document.querySelectorAll('.room-row');
         let valid = true;
         let totalCandidates = 0;
+        let hasEmpty = false;
 
         roomRows.forEach(row => {
-            const room = row.querySelector('.room-select').value;
-            const candidates = parseInt(row.querySelector('.room-capacity').value) || 0;
+            const roomSelect = row.querySelector('.room-select');
+            const capacityInput = row.querySelector('.room-capacity');
+            const room = roomSelect.value;
+            const candidates = parseInt(capacityInput.value) || 0;
 
-            if (!room || candidates < 1) {
+            if (!room) {
+                highlightField(roomSelect);
+                hasEmpty = true;
+                valid = false;
+            }
+            if (candidates < 1) {
+                highlightField(capacityInput);
+                hasEmpty = true;
                 valid = false;
             }
             totalCandidates += candidates;
         });
 
+        if (hasEmpty) {
+            showValidationMessage('❌ Por favor, preencha todas as salas com dados válidos.');
+            return false;
+        }
+
         if (!valid) {
-            alert('❌ Por favor, preencha todas as salas com dados válidos');
+            showValidationMessage('❌ Verifique os dados das salas.');
             return false;
         }
 
         if (roomRows.length === 0) {
-            alert('❌ Adicione pelo menos uma sala');
+            showValidationMessage('❌ Adicione pelo menos uma sala.');
             return false;
         }
 
@@ -951,7 +1003,7 @@ $breadcrumbs = [
         });
 
         if (!allComplete) {
-            alert(`❌ Não é possível avançar. Salas incompletas:\n\n${incompleteRooms.join('\n')}\n\nPor favor aloque vigilantes suficientes antes de continuar.`);
+            showValidationMessage(`❌ Não é possível avançar. Salas incompletas:\n\n${incompleteRooms.join('\n')}\n\nAloque vigilantes suficientes.`);
             return false;
         }
 
@@ -980,7 +1032,7 @@ $breadcrumbs = [
         }
 
         if (missingBlocks.length > 0) {
-            alert(`❌ Não é possível avançar. Blocos sem supervisor:\n\n${missingBlocks.join('\n')}\n\nPor favor atribua um supervisor a cada bloco.`);
+            showValidationMessage(`❌ Não é possível avançar. Blocos sem supervisor:\n\n${missingBlocks.join('\n')}\n\nAtribua um supervisor a cada bloco.`);
             return false;
         }
 
@@ -1052,6 +1104,23 @@ $breadcrumbs = [
     }
 
     // =========================================
+    // HELPER: Get all currently selected supervisors (flattened)
+    // =========================================
+    function getAllSelectedSupervisors() {
+        if (wizardData.blockSupervisors && wizardData.blockSupervisors.length > 0) {
+            return wizardData.blockSupervisors.filter(id => id !== null);
+        }
+        return wizardData.supervisors || [];
+    }
+
+    // =========================================
+    // HELPER: Get all currently selected vigilantes (flattened)
+    // =========================================
+    function getAllSelectedVigilantes() {
+        return Object.values(wizardData.vigilantes).flat();
+    }
+
+    // =========================================
     // STEP 3: VIGILANTES
     // =========================================
 
@@ -1059,28 +1128,24 @@ $breadcrumbs = [
         const container = document.getElementById('vigilantes-allocation-container');
         container.innerHTML = '<div class="text-center py-4"><span class="animate-spin inline-block w-6 h-6 border-2 border-primary-600 border-t-transparent rounded-full"></span> Carregando vigilantes elegíveis...</div>';
 
-        // Carregar vigilantes elegíveis
-        try {
-            const vacancyId = document.getElementById('create_vacancy_id').value;
-            console.log('DEBUG: Fetching vigilantes for vacancy_id =', vacancyId);
-            // Using full path to avoid URL truncation issues
-            const basePath = window.location.pathname.split('/public/')[0] || '';
-            const url = `${basePath}/public/api/vigilantes/eligible?vacancy_id=${vacancyId}`;
-            console.log('DEBUG: API URL =', url);
-            const response = await fetch(url);
-            const result = await response.json();
-            console.log('DEBUG: API result =', result);
+        // Carregar vigilantes elegíveis (apenas se ainda não carregou)
+        if (eligibleVigilantes.length === 0) {
+            try {
+                const vacancyId = document.getElementById('create_vacancy_id').value;
+                const basePath = window.location.pathname.split('/public/')[0] || '';
+                const url = `${basePath}/public/api/vigilantes/eligible?vacancy_id=${vacancyId}`;
+                const response = await fetch(url);
+                const result = await response.json();
 
-            if (result.success) {
-                eligibleVigilantes = result.vigilantes || [];
-                console.log('DEBUG: Found', eligibleVigilantes.length, 'vigilantes');
-            } else {
-                console.error('DEBUG: API returned error:', result.message);
+                if (result.success) {
+                    eligibleVigilantes = result.vigilantes || [];
+                } else {
+                    eligibleVigilantes = [];
+                }
+            } catch (error) {
+                console.error('Erro ao carregar vigilantes:', error);
                 eligibleVigilantes = [];
             }
-        } catch (error) {
-            console.error('Erro ao carregar vigilantes:', error);
-            eligibleVigilantes = [];
         }
 
         // Construir UI para cada sala
@@ -1089,39 +1154,71 @@ $breadcrumbs = [
             const allocated = wizardData.vigilantes[index] || [];
             const required = room.minVigilantes;
             const isComplete = allocated.length >= required;
+            const isOverAllocated = allocated.length > required;
+
+            let cardClass = 'border-red-300 bg-red-50';
+            let iconClass = 'bg-red-100 text-red-700';
+            let badgeClass = 'bg-red-100 text-red-700';
+            
+            if (isOverAllocated) {
+                cardClass = 'border-yellow-400 bg-yellow-50';
+                iconClass = 'bg-yellow-100 text-yellow-700';
+                badgeClass = 'bg-yellow-100 text-yellow-800';
+            } else if (isComplete) {
+                cardClass = 'border-green-300 bg-green-50';
+                iconClass = 'bg-green-100 text-green-700';
+                badgeClass = 'bg-green-100 text-green-700';
+            }
 
             html += `
-                <div class="p-4 border rounded-lg ${isComplete ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}">
+                <div class="p-4 border-2 rounded-lg ${cardClass} transition-colors">
                     <div class="flex items-center justify-between mb-3">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-lg ${isComplete ? 'bg-green-100' : 'bg-red-100'} flex items-center justify-center">
-                                <span class="font-bold ${isComplete ? 'text-green-700' : 'text-red-700'}">${room.room}</span>
+                            <div class="w-10 h-10 rounded-lg ${iconClass} flex items-center justify-center">
+                                <span class="font-bold text-lg">${room.room}</span>
                             </div>
                             <div>
-                                <div class="font-semibold text-gray-900">${room.room}</div>
+                                <div class="font-semibold text-gray-900 flex items-center gap-2">
+                                    ${room.room}
+                                    ${isOverAllocated ? 
+                                        `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-yellow-200 text-yellow-800">
+                                            ⚠️ ${allocated.length - required} extra(s)
+                                        </span>` 
+                                    : ''}
+                                </div>
                                 <div class="text-sm text-gray-600">${room.candidates} candidatos · Mín. ${required} vigilante(s)</div>
                             </div>
                         </div>
                         <div class="flex items-center gap-2">
-                            <span class="px-3 py-1 rounded-full text-sm font-medium ${isComplete ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                            <span class="px-3 py-1 rounded-full text-sm font-medium ${badgeClass}">
                                 ${allocated.length}/${required}
                             </span>
-                            <button type="button" onclick="autoAllocateRoom(${index})" class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-500">
+                            <button type="button" onclick="autoAllocateRoom(${index})" class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-500 shadow-sm">
                                 ⚡ Auto
                             </button>
-                            <button type="button" onclick="openVigilanteSelector(${index})" class="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-500">
+                            <button type="button" onclick="openVigilanteSelector(${index})" class="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-500 shadow-sm">
                                 ✋ Manual
                             </button>
                         </div>
                     </div>
+                    
+                    ${isOverAllocated ? 
+                        `<div class="mb-3 px-3 py-2 bg-yellow-100 border border-yellow-200 rounded text-xs text-yellow-800 flex items-start gap-2">
+                            <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            <span><strong>Atenção:</strong> Você alocou mais vigilantes do que o mínimo exigido (${required}). Certifique-se de que isso é intencional.</span>
+                        </div>` 
+                    : ''}
+
                     <div id="room-${index}-vigilantes" class="flex flex-wrap gap-2">
                         ${allocated.map(v => `
-                            <span class="inline-flex items-center gap-1 px-2 py-1 bg-white border rounded text-sm">
+                            <span class="inline-flex items-center gap-1 px-2 py-1 bg-white border border-gray-200 rounded-md text-sm shadow-sm">
                                 ${getVigilanteName(v)}
-                                <button type="button" onclick="removeVigilante(${index}, ${v})" class="text-red-500 hover:text-red-700">×</button>
+                                <button type="button" onclick="removeVigilante(${index}, ${v})" class="ml-1 text-gray-400 hover:text-red-500 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
                             </span>
                         `).join('')}
-                        ${allocated.length === 0 ? '<span class="text-sm text-gray-500 italic">Nenhum vigilante alocado</span>' : ''}
+                        ${allocated.length === 0 ? '<span class="text-sm text-gray-500 italic py-1">Nenhum vigilante alocado</span>' : ''}
                     </div>
                 </div>
             `;
@@ -1142,13 +1239,24 @@ $breadcrumbs = [
 
         const required = room.minVigilantes;
         const currentlyAllocated = wizardData.vigilantes[roomIndex] || [];
-        const allAllocated = Object.values(wizardData.vigilantes).flat();
+        const allAllocatedVigilantes = getAllSelectedVigilantes();
+        const allAllocatedSupervisors = getAllSelectedSupervisors();
 
-        // Encontrar vigilantes disponíveis
-        const available = eligibleVigilantes.filter(v => !allAllocated.includes(v.id));
+        // Encontrar vigilantes disponíveis (não alocados como vigilantes E não alocados como supervisores)
+        const available = eligibleVigilantes.filter(v =>
+            !allAllocatedVigilantes.includes(v.id) &&
+            !allAllocatedSupervisors.includes(v.id)
+        );
+
+        if (available.length === 0) {
+            toastr.warning('Não há vigilantes disponíveis para alocação automática.');
+            return;
+        }
 
         // Alocar até atingir o mínimo
         const needed = required - currentlyAllocated.length;
+        if (needed <= 0) return;
+
         const toAllocate = available.slice(0, needed).map(v => v.id);
 
         wizardData.vigilantes[roomIndex] = [...currentlyAllocated, ...toAllocate];
@@ -1166,8 +1274,14 @@ $breadcrumbs = [
     let currentSelectorRoomIndex = null;
 
     function openVigilanteSelector(roomIndex) {
-        const allAllocated = Object.values(wizardData.vigilantes).flat();
-        const available = eligibleVigilantes.filter(v => !allAllocated.includes(v.id));
+        const allAllocatedVigilantes = getAllSelectedVigilantes();
+        const allAllocatedSupervisors = getAllSelectedSupervisors();
+
+        // Filtro: Não mostrar quem já é vigilante E quem já é supervisor
+        const available = eligibleVigilantes.filter(v =>
+            !allAllocatedVigilantes.includes(v.id) &&
+            !allAllocatedSupervisors.includes(v.id)
+        );
 
         if (available.length === 0) {
             alert('❌ Não há vigilantes disponíveis para alocar');
@@ -1299,23 +1413,24 @@ $breadcrumbs = [
         document.getElementById('supervisors-needed').textContent = supervisorsNeeded;
         document.getElementById('supervisors-min-count').textContent = supervisorsNeeded;
 
-        container.innerHTML = '<div class="text-center py-4"><span class="animate-spin inline-block w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full"></span> Carregando supervisores elegíveis...</div>';
+        // Carregar supervisores elegíveis (apenas se não carregou)
+        if (eligibleSupervisors.length === 0) {
+            container.innerHTML = '<div class="text-center py-4"><span class="animate-spin inline-block w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full"></span> Carregando supervisores elegíveis...</div>';
+            try {
+                const vacancyId = document.getElementById('create_vacancy_id').value;
+                const basePath = window.location.pathname.split('/public/')[0] || '';
+                const response = await fetch(`${basePath}/public/api/supervisors/eligible?vacancy_id=${vacancyId}`);
+                const result = await response.json();
 
-        // Carregar supervisores elegíveis
-        try {
-            const vacancyId = document.getElementById('create_vacancy_id').value;
-            const basePath = window.location.pathname.split('/public/')[0] || '';
-            const response = await fetch(`${basePath}/public/api/supervisors/eligible?vacancy_id=${vacancyId}`);
-            const result = await response.json();
-
-            if (result.success) {
-                eligibleSupervisors = result.supervisors || [];
-            } else {
+                if (result.success) {
+                    eligibleSupervisors = result.supervisors || [];
+                } else {
+                    eligibleSupervisors = [];
+                }
+            } catch (error) {
+                console.error('Erro ao carregar supervisores:', error);
                 eligibleSupervisors = [];
             }
-        } catch (error) {
-            console.error('Erro ao carregar supervisores:', error);
-            eligibleSupervisors = [];
         }
 
         // Criar blocos de salas (máximo 10 salas por bloco)
@@ -1334,6 +1449,9 @@ $breadcrumbs = [
         if (!wizardData.blockSupervisors) {
             wizardData.blockSupervisors = new Array(blocks.length).fill(null);
         }
+
+        // Identificar vigilantes já alocados para excluí-los da lista de supervisores
+        const allAllocatedVigilantes = getAllSelectedVigilantes();
 
         // Construir UI por blocos
         let html = '<div class="space-y-4">';
@@ -1369,11 +1487,17 @@ $breadcrumbs = [
                             onchange="assignBlockSupervisor(${blockIndex}, this.value)"
                             class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
                             <option value="">-- Selecionar Supervisor --</option>
-                            ${eligibleSupervisors.map(s => `
-                                <option value="${s.id}" ${supervisor === s.id ? 'selected' : ''}>
-                                    ${s.name} (${s.role_label || s.role || 'Supervisor'})
-                                </option>
-                            `).join('')}
+                            ${eligibleSupervisors.map(s => {
+                // Excluir se for vigilante
+                if (allAllocatedVigilantes.includes(s.id)) return '';
+                // Excluir se já for supervisor de OUTRO bloco (opcional, mas bom pra evitar duplicidade)
+                // Mas user pode supervisionar +1 bloco se quiser? User disse "não pode assumir os dois papeis". Nada disse sobre múltiplos blocos.
+                return `
+                                    <option value="${s.id}" ${supervisor === s.id ? 'selected' : ''}>
+                                        ${s.name} (${s.role_label || s.role || 'Supervisor'})
+                                    </option>
+                                `;
+            }).join('')}
                         </select>
                         ${supervisorData ? `
                             <div class="flex items-center gap-2 text-sm text-green-700">
@@ -1459,13 +1583,22 @@ $breadcrumbs = [
         // Initialize block supervisors array
         wizardData.blockSupervisors = [];
 
+        // Identificar quem já é vigilante para excluir da auto-distribuição
+        const allAllocatedVigilantes = getAllSelectedVigilantes();
+        const availableSupervisors = eligibleSupervisors.filter(s => !allAllocatedVigilantes.includes(s.id));
+
+        if (availableSupervisors.length === 0) {
+            toastr.warning('Não há supervisores disponíveis para distribuição automática (todos podem estar alocados como vigilantes).');
+            return;
+        }
+
         // Assign one supervisor to each block using round-robin
         for (let i = 0; i < numBlocks; i++) {
-            if (eligibleSupervisors[i]) {
-                wizardData.blockSupervisors[i] = eligibleSupervisors[i].id;
-            } else if (eligibleSupervisors.length > 0) {
+            if (availableSupervisors[i]) {
+                wizardData.blockSupervisors[i] = availableSupervisors[i].id;
+            } else if (availableSupervisors.length > 0) {
                 // If not enough supervisors, reuse from beginning
-                wizardData.blockSupervisors[i] = eligibleSupervisors[i % eligibleSupervisors.length].id;
+                wizardData.blockSupervisors[i] = availableSupervisors[i % availableSupervisors.length].id;
             }
         }
 

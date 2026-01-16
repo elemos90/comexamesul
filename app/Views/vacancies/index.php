@@ -3,28 +3,26 @@ $title = 'Vagas de vigilancia';
 $breadcrumbs = [
     ['label' => 'Vagas']
 ];
-$isCoordinator = in_array($user['role'], ['coordenador', 'membro'], true);
+// Restringir ações administrativas apenas ao Coordenador (Membros apenas visualizam)
+$isCoordinator = $user['role'] === 'coordenador';
 $isVigilante = $user['role'] === 'vigilante';
 ?>
-<div class="space-y-6">
+<div class="space-y-4">
     <?php include view_path('partials/breadcrumbs.php'); ?>
 
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-2xl font-semibold text-gray-800">Gestao de vagas</h1>
-            <p class="text-sm text-gray-500">Acompanhe as vigias publicadas e o respectivo estado.</p>
+            <h1 class="text-lg font-semibold text-gray-900">Gestão de Vagas</h1>
+            <p class="text-xs text-gray-500">Acompanhe as vagas publicadas e o estado.</p>
         </div>
         <?php if ($isCoordinator): ?>
             <?php if ($hasOpenVacancy ?? false): ?>
-                <button type="button" disabled
-                    class="px-4 py-2 bg-gray-300 text-gray-500 text-sm font-medium rounded cursor-not-allowed"
-                    title="Já existe uma vaga aberta. Feche-a antes de criar nova.">
+                <button type="button" disabled class="btn btn-secondary opacity-50 cursor-not-allowed"
+                    title="Já existe uma vaga aberta">
                     Nova vaga
                 </button>
             <?php else: ?>
-                <button type="button" data-modal-target="modal-create-vacancy"
-                    class="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">Nova
-                    vaga</button>
+                <button type="button" data-modal-target="modal-create-vacancy" class="btn btn-primary">Nova vaga</button>
             <?php endif; ?>
         <?php endif; ?>
     </div>
@@ -61,18 +59,18 @@ $isVigilante = $user['role'] === 'vigilante';
         </div>
     <?php endif; ?>
 
-    <div class="bg-white border border-gray-100 rounded-lg shadow-sm overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
+    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <table class="w-full text-sm">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Titulo
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Título
                     </th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Limite
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Limite
                     </th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado
                     </th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <?= $isVigilante ? 'Detalhes' : 'Accoes' ?>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <?= $isVigilante ? 'Detalhes' : 'Ações' ?>
                     </th>
                 </tr>
             </thead>
@@ -193,8 +191,8 @@ $isVigilante = $user['role'] === 'vigilante';
 <?php if ($isCoordinator): ?>
     <div class="modal fixed inset-0 hidden items-center justify-center z-50" id="modal-create-vacancy" role="dialog"
         aria-modal="true" aria-hidden="true">
-        <div class="modal-backdrop absolute inset-0 bg-gray-900/50"></div>
-        <div class="modal-content relative bg-white w-full max-w-lg mx-4 rounded-lg shadow-lg p-6 focus:outline-none"
+        <div class="modal-backdrop absolute inset-0 bg-gray-900/50 backdrop-blur-sm"></div>
+        <div class="modal-content relative z-50 bg-white w-full max-w-lg mx-4 rounded-lg shadow-lg p-6 focus:outline-none"
             tabindex="-1">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-lg font-semibold text-gray-800">Nova vaga</h2>
@@ -248,8 +246,8 @@ $isVigilante = $user['role'] === 'vigilante';
 
     <div class="modal fixed inset-0 hidden items-center justify-center z-50" id="modal-edit-vacancy" role="dialog"
         aria-modal="true" aria-hidden="true">
-        <div class="modal-backdrop absolute inset-0 bg-gray-900/50"></div>
-        <div class="modal-content relative bg-white w-full max-w-lg mx-4 rounded-lg shadow-lg p-6 focus:outline-none"
+        <div class="modal-backdrop absolute inset-0 bg-gray-900/50 backdrop-blur-sm"></div>
+        <div class="modal-content relative z-50 bg-white w-full max-w-lg mx-4 rounded-lg shadow-lg p-6 focus:outline-none"
             tabindex="-1">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-lg font-semibold text-gray-800">Editar vaga</h2>

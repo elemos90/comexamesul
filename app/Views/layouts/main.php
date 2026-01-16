@@ -34,28 +34,17 @@ $isPublic = $isPublic ?? false;
     <link rel="shortcut icon" type="image/x-icon" href="<?= url('/assets/images/favicon.ico') ?>">
     <link rel="apple-touch-icon" sizes="180x180" href="<?= url('/assets/images/logo_unilicungo.png') ?>">
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS (Compilado Localmente) -->
+    <link rel="stylesheet" href="<?= url('/css/tailwind.css') ?>">
+
+    <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Fontes e Ícones -->
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:wght@300;400;600&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <link rel="stylesheet" href="<?= url('/css/components.css') ?>">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            500: '#0ea5e9',
-                            600: '#0284c7'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
     <style>
         /* Animação de entrada dos toasts */
         @keyframes toast-slide-in {
@@ -217,23 +206,28 @@ $isPublic = $isPublic ?? false;
             </div>
         </main>
     <?php else: ?>
-        <div class="h-screen flex flex-col overflow-hidden bg-slate-50">
-            <!-- Navbar fixo no topo -->
-            <div class="flex-shrink-0">
-                <?php include view_path('partials/navbar.php'); ?>
+        <div class="flex h-screen overflow-hidden bg-gray-100">
+            <!-- Sidebar (Esquerda - Altura Total) -->
+            <div class="flex-shrink-0 h-full z-20 relative print:hidden">
+                <?php include view_path('partials/sidebar.php'); ?>
             </div>
 
-            <!-- Container com sidebar e conteúdo -->
-            <div class="flex flex-1 overflow-hidden">
-                <!-- Sidebar fixo à esquerda -->
-                <div class="flex-shrink-0 overflow-y-auto">
-                    <?php include view_path('partials/sidebar.php'); ?>
-                </div>
+            <!-- Área Direita (Navbar + Conteúdo) - Com margem para separação -->
+            <div class="flex-1 flex flex-col h-full overflow-hidden m-3">
+                <!-- Container com fundo branco para header + conteúdo -->
+                <div class="flex-1 flex flex-col bg-white shadow-sm border border-gray-200 overflow-hidden">
+                    <!-- Navbar (Topo da área direita) -->
+                    <div class="w-full z-10 bg-white border-b border-gray-100 print:hidden">
+                        <?php include view_path('partials/navbar.php'); ?>
+                    </div>
 
-                <!-- Conteúdo principal com scroll -->
-                <main class="flex-1 p-8 space-y-6 overflow-y-auto">
-                    <?= $content ?>
-                </main>
+                    <!-- Conteúdo Principal (Scroll independente) -->
+                    <main class="flex-1 overflow-y-auto overflow-x-hidden p-6 bg-gray-50 scroll-smooth">
+                        <div class="max-w-[1600px] mx-auto">
+                            <?= $content ?>
+                        </div>
+                    </main>
+                </div>
             </div>
         </div>
     <?php endif; ?>

@@ -150,7 +150,16 @@ class PaymentController extends Controller
      */
     public function generate(Request $request)
     {
-        $vacancyId = $request->param('vacancyId');
+        $vacancyId = $request->param('vacancyId') ?: $request->input('vacancy_id');
+
+        if (!$vacancyId) {
+            $_SESSION['flash'] = ['type' => 'error', 'message' => 'ID da vaga não fornecido.'];
+            redirect('/payments');
+            return;
+        }
+
+        error_log("DEBUG: PaymentController::generate called for vacancy $vacancyId");
+
         $result = $this->paymentService->generatePaymentMap($vacancyId);
 
         $_SESSION['flash'] = [

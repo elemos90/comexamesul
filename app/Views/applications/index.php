@@ -3,14 +3,15 @@ $title = 'Revisar Candidaturas';
 $breadcrumbs = [
     ['label' => 'Candidaturas']
 ];
+$isCoordinator = isset($user) && strcasecmp($user['role'], 'coordenador') === 0;
 ?>
-<div class="space-y-6">
+<div class="space-y-4">
     <?php include view_path('partials/breadcrumbs.php'); ?>
 
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-2xl font-semibold text-gray-800">⚡ Candidaturas de Vigilantes</h1>
-            <p class="mt-1 text-sm text-gray-600">Revise e aprove candidaturas para vagas publicadas</p>
+            <h1 class="text-lg font-semibold text-gray-900">Candidaturas de Vigilantes</h1>
+            <p class="text-xs text-gray-500">Revise e aprove candidaturas para vagas</p>
         </div>
         <div class="flex gap-2">
             <?php if (isset($selectedVacancy)): ?>
@@ -41,7 +42,7 @@ $breadcrumbs = [
     </div>
 
     <!-- Seletor de Vaga e Filtros -->
-    <div class="bg-white border border-gray-100 rounded-lg shadow-sm p-6 space-y-4">
+    <div class="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
         <!-- Seletor de Vaga -->
         <div>
             <label class="block text-sm font-semibold text-gray-700 mb-3">Selecione uma Vaga:</label>
@@ -115,18 +116,18 @@ $breadcrumbs = [
     </div>
 
     <?php if ($selectedVacancy): ?>
-        <!-- Estatísticas -->
-        <div class="grid md:grid-cols-4 gap-4">
-            <div class="bg-white border border-gray-100 rounded-lg shadow-sm p-5">
+        <!-- Estatísticas - Compactas -->
+        <div class="grid grid-cols-4 gap-3">
+            <div class="bg-white border border-gray-200 rounded-lg p-3">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-gray-600">Total</p>
-                        <p class="text-3xl font-bold text-gray-800 mt-1" data-stat="total">
+                        <p class="text-xs font-medium text-gray-500 uppercase">Total</p>
+                        <p class="text-xl font-bold text-gray-800 mt-0.5" data-stat="total">
                             <?= array_sum($statistics) ?>
                         </p>
                     </div>
-                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
@@ -134,16 +135,16 @@ $breadcrumbs = [
                 </div>
             </div>
 
-            <div class="bg-white border border-gray-100 rounded-lg shadow-sm p-5">
+            <div class="bg-white border border-gray-200 rounded-lg p-3">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-gray-600">Pendentes</p>
-                        <p class="text-3xl font-bold text-yellow-600 mt-1" data-stat="pending">
+                        <p class="text-xs font-medium text-gray-500 uppercase">Pendentes</p>
+                        <p class="text-xl font-bold text-yellow-600 mt-0.5" data-stat="pending">
                             <?= $statistics['pendente'] ?? 0 ?>
                         </p>
                     </div>
-                    <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -151,16 +152,16 @@ $breadcrumbs = [
                 </div>
             </div>
 
-            <div class="bg-white border border-gray-100 rounded-lg shadow-sm p-5">
+            <div class="bg-white border border-gray-200 rounded-lg p-3">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-gray-600">Aprovadas</p>
-                        <p class="text-3xl font-bold text-green-600 mt-1" data-stat="approved">
+                        <p class="text-xs font-medium text-gray-500 uppercase">Aprovadas</p>
+                        <p class="text-xl font-bold text-green-600 mt-0.5" data-stat="approved">
                             <?= $statistics['aprovada'] ?? 0 ?>
                         </p>
                     </div>
-                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -168,16 +169,16 @@ $breadcrumbs = [
                 </div>
             </div>
 
-            <div class="bg-white border border-gray-100 rounded-lg shadow-sm p-5">
+            <div class="bg-white border border-gray-200 rounded-lg p-3">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-gray-600">Rejeitadas</p>
-                        <p class="text-3xl font-bold text-red-600 mt-1" data-stat="rejected">
+                        <p class="text-xs font-medium text-gray-500 uppercase">Rejeitadas</p>
+                        <p class="text-xl font-bold text-red-600 mt-0.5" data-stat="rejected">
                             <?= $statistics['rejeitada'] ?? 0 ?>
                         </p>
                     </div>
-                    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -188,10 +189,19 @@ $breadcrumbs = [
 
         <!-- Lista de Candidaturas -->
         <div class="bg-white border border-gray-100 rounded-lg shadow-sm">
-            <div class="px-6 py-4 border-b border-gray-100">
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-gray-800">
                     Candidaturas para: <?= htmlspecialchars($selectedVacancy['title']) ?>
                 </h2>
+                <div class="flex items-center gap-2">
+                    <label
+                        class="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-1.5 rounded-lg hover:bg-gray-100 cursor-pointer border border-gray-200 transition-colors">
+                        <input type="checkbox" id="select-all-checkbox"
+                            class="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 cursor-pointer"
+                            onchange="toggleSelectAll(this)">
+                        <span class="font-medium">Selecionar Todos</span>
+                    </label>
+                </div>
             </div>
 
             <?php if (empty($applications)): ?>
@@ -316,28 +326,30 @@ $breadcrumbs = [
 
                                     <!-- Botões para APROVADA -->
                                     <?php if ($app['status'] === 'aprovada'): ?>
-                                        <?php if ($app['supervisor_eligible']): ?>
-                                            <button type="button"
-                                                onclick="toggleSupervisorEligibility(<?= $app['id'] ?>, false, '<?= htmlspecialchars($app['vigilante_name'], ENT_QUOTES) ?>')"
-                                                class="px-3 py-1.5 bg-orange-600 text-white text-xs font-semibold rounded hover:bg-orange-700 transition-colors flex items-center gap-1"
-                                                title="Remover elegibilidade a supervisor">
-                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
-                                                Remover Elegível
-                                            </button>
-                                        <?php else: ?>
-                                            <button type="button"
-                                                onclick="toggleSupervisorEligibility(<?= $app['id'] ?>, true, '<?= htmlspecialchars($app['vigilante_name'], ENT_QUOTES) ?>')"
-                                                class="px-3 py-1.5 bg-purple-600 text-white text-xs font-semibold rounded hover:bg-purple-700 transition-colors flex items-center gap-1 shadow-md"
-                                                title="Marcar como elegível a supervisor">
-                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M5 13l4 4L19 7" />
-                                                </svg>
-                                                👔 Elegível Supervisor
-                                            </button>
+                                        <?php if ($isCoordinator): ?>
+                                            <?php if ($app['supervisor_eligible']): ?>
+                                                <button type="button"
+                                                    onclick="toggleSupervisorEligibility(<?= $app['id'] ?>, false, '<?= htmlspecialchars($app['vigilante_name'], ENT_QUOTES) ?>')"
+                                                    class="px-3 py-1.5 bg-orange-600 text-white text-xs font-semibold rounded hover:bg-orange-700 transition-colors flex items-center gap-1"
+                                                    title="Remover elegibilidade a supervisor">
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                    Remover Elegível
+                                                </button>
+                                            <?php else: ?>
+                                                <button type="button"
+                                                    onclick="toggleSupervisorEligibility(<?= $app['id'] ?>, true, '<?= htmlspecialchars($app['vigilante_name'], ENT_QUOTES) ?>')"
+                                                    class="px-3 py-1.5 bg-purple-600 text-white text-xs font-semibold rounded hover:bg-purple-700 transition-colors flex items-center gap-1 shadow-md"
+                                                    title="Marcar como elegível a supervisor">
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                    👔 Elegível Supervisor
+                                                </button>
+                                            <?php endif; ?>
                                         <?php endif; ?>
                                         <button type="button"
                                             onclick="revertToPending(<?= $app['id'] ?>, '<?= htmlspecialchars($app['vigilante_name'], ENT_QUOTES) ?>')"
@@ -619,15 +631,56 @@ $breadcrumbs = [
         }
     }
 
-    // ===== ALTERNAR ELEGIBILIDADE A SUPERVISOR =====
-    async function toggleSupervisorEligibility(appId, isEligible, vigilanteName) {
-        const action = isEligible ? 'marcar como ELEGÍVEL A SUPERVISOR' : 'REMOVER elegibilidade a supervisor';
-        const message = `${action} para ${vigilanteName}?\n\n${isEligible ? '✓ Este vigilante terá PRIORIDADE na lista de supervisores.' : '✗ Este vigilante perderá a prioridade para supervisor.'}`;
+    function revertToPending(appId, vigilanteName) {
+        showConfirmModal(
+            '↶ Reverter para Pendente',
+            `<strong>${vigilanteName}</strong><br><br>
+            <span class="text-gray-600">A candidatura voltará para o estado inicial para nova revisão.</span>`,
+            () => executeRevert(appId, vigilanteName),
+            'info' // ou 'warning'
+        );
+    }
 
-        if (!confirm(message)) {
-            return;
+    async function executeRevert(appId, vigilanteName) {
+        try {
+            const response = await fetch(`${baseUrl}/applications/${appId}/revert`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ csrf: csrfToken })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showSuccessToast(result.message);
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showErrorToast(result.message || 'Erro ao reverter candidatura');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            showErrorToast('Erro de conexão');
         }
+    }
 
+    // ===== ALTERNAR ELEGIBILIDADE A SUPERVISOR =====
+    function toggleSupervisorEligibility(appId, isEligible, vigilanteName) {
+        const action = isEligible ? 'Marcar como ELEGÍVEL' : 'REMOVER Elegibilidade';
+        const color = isEligible ? 'text-purple-600' : 'text-orange-600';
+
+        showConfirmModal(
+            `${isEligible ? '👔' : '🚫'} ${action}`,
+            `<strong>${vigilanteName}</strong><br><br>
+            <span class="${color}">${isEligible ? '✓ Este vigilante terá PRIORIDADE na lista de supervisores.' : '✗ Este vigilante perderá a prioridade para supervisor.'}</span>`,
+            () => executeToggleSupervisor(appId, isEligible, vigilanteName),
+            isEligible ? 'info' : 'warning'
+        );
+    }
+
+    async function executeToggleSupervisor(appId, isEligible, vigilanteName) {
         try {
             const response = await fetch(`${baseUrl}/applications/${appId}/toggle-supervisor-eligible`, {
                 method: 'POST',
@@ -644,12 +697,8 @@ $breadcrumbs = [
             const result = await response.json();
 
             if (result.success) {
-                const successMsg = isEligible
-                    ? `👔 <strong>${vigilanteName}</strong> agora é elegível a supervisor!`
-                    : `<strong>${vigilanteName}</strong> não é mais elegível a supervisor.`;
-                showSuccessToast(successMsg);
-
-                // Recarregar página para atualizar badge e botão
+                showSuccessToast(result.message);
+                // Atualizar UI localmente ou recarregar
                 setTimeout(() => location.reload(), 1000);
             } else {
                 showErrorToast(result.message || 'Erro ao atualizar elegibilidade');
@@ -924,8 +973,38 @@ $breadcrumbs = [
 
     // ===== GERENCIAMENTO DE SELEÇÃO MÚLTIPLA =====
     function updateBulkButtons() {
-        const checkboxes = document.querySelectorAll('.application-checkbox:checked');
-        const count = checkboxes.length;
+        // Obter checkboxes e estado de visibilidade
+        const allCheckboxes = Array.from(document.querySelectorAll('.application-checkbox'));
+        const visibleCheckboxes = allCheckboxes.filter(cb => {
+            const row = cb.closest('[data-application-row]');
+            return row && row.style.display !== 'none';
+        });
+
+        // Contar marcados
+        const checkedCheckboxes = document.querySelectorAll('.application-checkbox:checked');
+        const count = checkedCheckboxes.length;
+
+        // Atualizar estado do checkbox "Selecionar Todos"
+        const selectAllCb = document.getElementById('select-all-checkbox');
+        if (selectAllCb) {
+            const visibleChecked = visibleCheckboxes.filter(cb => cb.checked);
+            
+            if (visibleCheckboxes.length > 0) {
+                if (visibleChecked.length === visibleCheckboxes.length) {
+                    selectAllCb.checked = true;
+                    selectAllCb.indeterminate = false;
+                } else if (visibleChecked.length > 0) {
+                    selectAllCb.checked = false;
+                    selectAllCb.indeterminate = true;
+                } else {
+                    selectAllCb.checked = false;
+                    selectAllCb.indeterminate = false;
+                }
+            } else {
+                selectAllCb.checked = false;
+                selectAllCb.indeterminate = false;
+            }
+        }
 
         const btnApprove = document.getElementById('btn-approve-selected');
         const btnReject = document.getElementById('btn-reject-selected');
@@ -987,19 +1066,22 @@ $breadcrumbs = [
         // Avisar sobre não-pendentes
         let warningMessage = '';
         if (nonPendingCount > 0) {
-            warningMessage = `\n\n⚠️ ${nonPendingCount} candidatura(s) não-pendente(s) será(ão) ignorada(s).`;
+            warningMessage = `<br><br><span class="text-yellow-600">⚠️ ${nonPendingCount} candidatura(s) não-pendente(s) será(ão) ignorada(s).</span>`;
         }
 
         const names = pendingCheckboxes.map(cb => cb.dataset.appName);
-        const displayNames = names.length <= 5 ? names.join('\n• ') : `${names.slice(0, 5).join('\n• ')}\n... e mais ${names.length - 5}`;
+        const displayNames = names.length <= 5 ? names.join('<br>• ') : `${names.slice(0, 5).join('<br>• ')}<br>... e mais ${names.length - 5}`;
 
-        if (!confirm(`⚡ APROVAR ${pendingCheckboxes.length} CANDIDATURA(S) PENDENTE(S)?\n\n• ${displayNames}${warningMessage}\n\nTodas receberão email de aprovação!\n\nConfirmar?`)) {
-            return;
-        }
+        showConfirmModal(
+            `⚡ Aprovar ${pendingCheckboxes.length} Candidatura(s)`,
+            `<strong>Serão aprovados:</strong><br><br>• ${displayNames}${warningMessage}<br><br>
+            <span class="text-green-600">✓ Todos receberão email de aprovação.</span>`,
+            () => executeBulkApprove(pendingCheckboxes, nonPendingCount),
+            'success'
+        );
+    }
 
-        // Usar apenas as pendentes
-        const checkboxesToProcess = pendingCheckboxes;
-
+    async function executeBulkApprove(pendingCheckboxes, nonPendingCount) {
         // Desabilitar botões durante processamento
         const btnApprove = document.getElementById('btn-approve-selected');
         const btnReject = document.getElementById('btn-reject-selected');
@@ -1014,10 +1096,10 @@ $breadcrumbs = [
         let successCount = 0;
         let errorCount = 0;
         const errorMessages = [];
-        const total = checkboxesToProcess.length;
+        const total = pendingCheckboxes.length;
 
-        for (let i = 0; i < checkboxesToProcess.length; i++) {
-            const checkbox = checkboxesToProcess[i];
+        for (let i = 0; i < pendingCheckboxes.length; i++) {
+            const checkbox = pendingCheckboxes[i];
             const appId = checkbox.dataset.appId;
             const appName = checkbox.dataset.appName;
 
@@ -1052,7 +1134,8 @@ $breadcrumbs = [
         }
 
         // Desmarcar também as não-pendentes ignoradas
-        checkboxes.forEach(cb => {
+        const allCheckboxes = document.querySelectorAll('.application-checkbox:checked');
+        allCheckboxes.forEach(cb => {
             if (cb.dataset.appStatus !== 'pendente') {
                 cb.checked = false;
             }
@@ -1111,8 +1194,8 @@ $breadcrumbs = [
         const names = Array.from(checkboxes).map(cb => cb.dataset.appName);
         const displayNames = names.length <= 3 ? names.join(', ') : `${names.slice(0, 3).join(', ')} e mais ${names.length - 3}`;
 
-        // Preencher modal
-        document.getElementById('reject-vigilante-name').textContent = `${count} Candidatura(s): ${displayNames}`;
+        // Preencher modal - CORRIGIDO ID
+        document.getElementById('reject_vigilante_name').textContent = `${count} Candidatura(s): ${displayNames}`;
         document.getElementById('modal-reject').classList.remove('hidden');
 
         // Armazenar checkboxes para processar depois
@@ -1221,9 +1304,7 @@ $breadcrumbs = [
             // Verificar todos os filtros
             const matchesSearch = !searchTerm || name.includes(searchTerm) || email.includes(searchTerm);
             const matchesStatus = !statusFilter || status === statusFilter;
-            const matchesEligible = !eligibleFilter || eligible === eligibleFilter;
-
-            // Mostrar/ocultar linha
+            const matchesEligible = !eligibleFilter || eligible === eligibleFilter;     // Mostrar/ocultar linha
             if (matchesSearch && matchesStatus && matchesEligible) {
                 row.style.display = '';
                 visibleCount++;
@@ -1244,11 +1325,25 @@ $breadcrumbs = [
         updateBulkButtons();
     }
 
+
     function clearFilters() {
         document.getElementById('filter-search').value = '';
         document.getElementById('filter-status').value = '';
         document.getElementById('filter-eligible').value = '';
         applyFilters();
+    }
+
+    // ===== FUNÇÃO SELECIONAR TODOS =====
+    function toggleSelectAll(source) {
+        const checkboxes = document.querySelectorAll('.application-checkbox');
+        checkboxes.forEach(cb => {
+            // Apenas linhas visíveis
+            const row = cb.closest('[data-application-row]');
+            if (row && row.style.display !== 'none') {
+                cb.checked = source.checked;
+            }
+        });
+        updateBulkButtons();
     }
 
     // ===== INICIALIZAÇÃO =====

@@ -1,0 +1,21 @@
+{
+  "name": "comexamesul",
+  "version": "1.0.0",
+  "description": "Portal da Comissão de Exames de Admissão - UniLicungo",
+  "scripts": {
+    "build:css": "npx tailwindcss -i ./src/input.css -o ./public/css/tailwind.css",
+    "dev:css": "npx tailwindcss -i ./src/input.css -o ./public/css/tailwind.css --watch",
+    "build": "npm run build:css"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0"
+  },
+  "keywords": [
+    "unilicungo",
+    "exames",
+    "admissao",
+    "portal"
+  ],
+  "author": "UniLicungo",
+  "license": "MIT"
+}

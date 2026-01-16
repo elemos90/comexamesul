@@ -33,7 +33,7 @@ class ConsolidatedReportController extends Controller
         $user = Auth::user();
 
         // Verificar acesso (Coordenador ou Membro)
-        if (!in_array($user['role'], ['coordenador', 'membro'])) {
+        if (!in_array(strtolower($user['role']), ['coordenador', 'membro', 'admin'])) {
             return $this->view('errors/403', ['message' => 'Sem permissão para aceder a esta página.']);
         }
 
@@ -63,7 +63,7 @@ class ConsolidatedReportController extends Controller
             $user = Auth::user();
             error_log('[ConsolidatedReport] User: ' . ($user['name'] ?? 'null'));
 
-            if (!in_array($user['role'], ['coordenador', 'membro'])) {
+            if (!in_array(strtolower($user['role']), ['coordenador', 'membro', 'admin'])) {
                 Response::json(['success' => false, 'message' => 'Sem permissão'], 403);
                 return;
             }
@@ -109,34 +109,165 @@ class ConsolidatedReportController extends Controller
      */
     public function exportPdf(Request $request): void
     {
-        $user = Auth::user();
+        try {
+            $user = Auth::user();
 
-        if (!in_array($user['role'], ['coordenador', 'membro'])) {
-            http_response_code(403);
-            die('Sem permissão');
+            if (!in_array(strtolower($user['role']), ['coordenador', 'membro', 'admin'])) {
+                http_response_code(403);
+                die('Sem permissão');
+            }
+
+            $filters = $this->extractFiltersFromQuery($request);
+            $data = $this->reportService->getConsolidatedData($filters);
+
+            // Gerar configurações dos gráficos
+            $chart1Config = [
+                'type' => 'doughnut',
+                'data' => [
+                    'labels' => ['Presentes', 'Ausentes', 'Fraudes'],
+                    'datasets' => [
+                        [
+                            'data' => [
+                                (int) $data['summary']['total_presentes'],
+                                (int) $data['summary']['total_ausentes'],
+                                (int) $data['summary']['total_fraudes']
+                            ],
+                            'backgroundColor' => ['#10b981', '#f59e0b', '#ef4444'],
+                            'borderWidth' => 0
+                        ]
+                    ]
+                ],
+                'options' => [
+                    'plugins' => [
+                        'legend' => ['position' => 'right', 'align' => 'center'],
+                        'datalabels' => ['display' => true, 'color' => '#fff', 'font' => ['weight' => 'bold']]
+                    ],
+                    'cutout' => '50%'
+                ]
+            ];
+
+            $chart2Config = [
+                'type' => 'bar',
+                'data' => [
+                    'labels' => ['Masculino', 'Feminino'],
+                    'datasets' => [
+                        [
+                            'label' => 'Presentes',
+                            'data' => [
+                                (int) $data['statistics']['presentes']['masculino'],
+                                (int) $data['statistics']['presentes']['feminino']
+                            ],
+                            'backgroundColor' => '#10b981'
+                        ],
+                        [
+                            'label' => 'Ausentes',
+                            'data' => [
+                                (int) $data['statistics']['ausentes']['masculino'],
+                                (int) $data['statistics']['ausentes']['feminino']
+                            ],
+                            'backgroundColor' => '#f59e0b'
+                        ]
+                    ]
+                ],
+                'options' => [
+                    'legend' => ['display' => true],
+                    'scales' => [
+                        'x' => ['stacked' => true],
+                        'y' => ['stacked' => true, 'ticks' => ['precision' => 0]]
+                    ]
+                ]
+            ];
+
+            // Buscar imagens em Base64
+            $chart1Base64 = $this->getQuickChartImage($chart1Config);
+            $chart2Base64 = $this->getQuickChartImage($chart2Config);
+
+            // Gerar HTML do relatório
+            ob_start();
+            extract([
+                'data' => $data,
+                'user' => $user,
+                'chart1Base64' => $chart1Base64,
+                'chart2Base64' => $chart2Base64
+            ]);
+            include __DIR__ . '/../Views/reports/consolidated_pdf.php';
+            $html = ob_get_clean();
+
+            // Usar Dompdf se disponível, senão output HTML para impressão
+            if (class_exists('Dompdf\\Dompdf')) {
+                $options = new \Dompdf\Options();
+                $options->set('isRemoteEnabled', true);
+
+                $dompdf = new \Dompdf\Dompdf($options);
+
+                // Contexto para ignorar SSL em ambiente local (QuickChart)
+                $context = stream_context_create([
+                    'ssl' => [
+                        'verify_peer' => false,
+                        'verify_peer_name' => false,
+                        'allow_self_signed' => true
+                    ]
+                ]);
+                $dompdf->setHttpContext($context);
+
+                $dompdf->loadHtml($html);
+                $dompdf->setPaper('A4', 'portrait');
+                $dompdf->render();
+
+                // Limpar qualquer output anterior para garantir download limpo
+                if (ob_get_length())
+                    ob_clean();
+
+                // Forçar headers manualmente para garantir o download correto
+                $filename = 'relatorio_consolidado_' . date('Y-m-d') . '.pdf';
+                header('Content-Type: application/pdf');
+                header('Content-Disposition: attachment; filename="' . $filename . '"');
+                header('Cache-Control: private, max-age=0, must-revalidate');
+                header('Pragma: public');
+
+                echo $dompdf->output();
+                exit;
+            } else {
+                // Fallback: output HTML para impressão no navegador
+                header('Content-Type: text/html; charset=utf-8');
+                echo $html;
+            }
+        } catch (\Exception $e) {
+            error_log('[ExportPDF] Error: ' . $e->getMessage());
+            http_response_code(500);
+            echo 'Erro ao exportar PDF: ' . $e->getMessage();
+        }
+    }
+
+    /**
+     * Helper para obter imagem do QuickChart em Base64
+     */
+    private function getQuickChartImage(array $config): string
+    {
+        $url = 'https://quickchart.io/chart';
+        $payload = json_encode([
+            'width' => 300,
+            'height' => 180,
+            'c' => $config
+        ]);
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Ignorar SSL localmente
+
+        $image = curl_exec($ch);
+
+        if (curl_errno($ch)) {
+            error_log('[QuickChart] CURL Error: ' . curl_error($ch));
+            curl_close($ch);
+            return ''; // Retorna vazio se falhar
         }
 
-        $filters = $this->extractFiltersFromQuery($request);
-        $data = $this->reportService->getConsolidatedData($filters);
-
-        // Gerar HTML do relatório
-        ob_start();
-        extract(['data' => $data, 'user' => $user]);
-        include __DIR__ . '/../Views/reports/consolidated_pdf.php';
-        $html = ob_get_clean();
-
-        // Usar Dompdf se disponível, senão output HTML
-        if (class_exists('Dompdf\Dompdf')) {
-            $dompdf = new \Dompdf\Dompdf();
-            $dompdf->loadHtml($html);
-            $dompdf->setPaper('A4', 'portrait');
-            $dompdf->render();
-            $dompdf->stream('relatorio_consolidado_' . date('Y-m-d') . '.pdf', ['Attachment' => true]);
-        } else {
-            // Fallback: imprimir HTML
-            header('Content-Type: text/html; charset=utf-8');
-            echo $html;
-        }
+        curl_close($ch);
+        return base64_encode($image);
     }
 
     /**
@@ -144,22 +275,28 @@ class ConsolidatedReportController extends Controller
      */
     public function exportExcel(Request $request): void
     {
-        $user = Auth::user();
+        try {
+            $user = Auth::user();
 
-        if (!in_array($user['role'], ['coordenador', 'membro'])) {
-            http_response_code(403);
-            die('Sem permissão');
-        }
+            if (!in_array(strtolower($user['role']), ['coordenador', 'membro', 'admin'])) {
+                http_response_code(403);
+                die('Sem permissão');
+            }
 
-        $filters = $this->extractFiltersFromQuery($request);
-        $data = $this->reportService->getConsolidatedData($filters);
+            $filters = $this->extractFiltersFromQuery($request);
+            $data = $this->reportService->getConsolidatedData($filters);
 
-        // Se PhpSpreadsheet disponível
-        if (class_exists('PhpOffice\PhpSpreadsheet\Spreadsheet')) {
-            $this->generateExcelWithPhpSpreadsheet($data);
-        } else {
-            // Fallback: gerar HTML table como Excel
-            $this->generateExcelFallback($data);
+            // Se PhpSpreadsheet disponível
+            if (class_exists('PhpOffice\\PhpSpreadsheet\\Spreadsheet')) {
+                $this->generateExcelWithPhpSpreadsheet($data);
+            } else {
+                // Fallback: gerar HTML table como Excel
+                $this->generateExcelFallback($data);
+            }
+        } catch (\Exception $e) {
+            error_log('[ExportExcel] Error: ' . $e->getMessage());
+            http_response_code(500);
+            echo 'Erro ao exportar Excel: ' . $e->getMessage();
         }
     }
 
@@ -168,99 +305,105 @@ class ConsolidatedReportController extends Controller
      */
     public function exportCsv(Request $request): void
     {
-        $user = Auth::user();
+        try {
+            $user = Auth::user();
 
-        if (!in_array($user['role'], ['coordenador', 'membro'])) {
-            http_response_code(403);
-            die('Sem permissão');
-        }
+            if (!in_array(strtolower($user['role']), ['coordenador', 'membro', 'admin'])) {
+                http_response_code(403);
+                die('Sem permissão');
+            }
 
-        $filters = $this->extractFiltersFromQuery($request);
-        $data = $this->reportService->getConsolidatedData($filters);
+            $filters = $this->extractFiltersFromQuery($request);
+            $data = $this->reportService->getConsolidatedData($filters);
 
-        $filename = 'relatorio_consolidado_' . date('Y-m-d') . '.csv';
+            $filename = 'relatorio_consolidado_' . date('Y-m-d') . '.csv';
 
-        header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
 
-        $output = fopen('php://output', 'w');
+            $output = fopen('php://output', 'w');
 
-        // BOM para Excel reconhecer UTF-8
-        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            // BOM para Excel reconhecer UTF-8
+            fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-        // Cabeçalho
-        fputcsv($output, ['RELATÓRIO CONSOLIDADO DE EXAMES'], ';');
-        fputcsv($output, ['Gerado em: ' . $data['generated_at']], ';');
-        fputcsv($output, [], ';');
+            // Cabeçalho
+            fputcsv($output, ['RELATÓRIO CONSOLIDADO DE EXAMES'], ';');
+            fputcsv($output, ['Gerado em: ' . $data['generated_at']], ';');
+            fputcsv($output, [], ';');
 
-        // Resumo
-        fputcsv($output, ['=== RESUMO GERAL ==='], ';');
-        fputcsv($output, ['Total de Exames', $data['summary']['total_exames']], ';');
-        fputcsv($output, ['Total de Júris/Salas', $data['summary']['total_juris']], ';');
-        fputcsv($output, ['Candidatos Esperados', $data['summary']['total_esperados']], ';');
-        fputcsv($output, ['Presentes', $data['summary']['total_presentes']], ';');
-        fputcsv($output, ['Ausentes', $data['summary']['total_ausentes']], ';');
-        fputcsv($output, ['Fraudes', $data['summary']['total_fraudes']], ';');
-        fputcsv($output, [], ';');
+            // Resumo
+            fputcsv($output, ['=== RESUMO GERAL ==='], ';');
+            fputcsv($output, ['Total de Exames', $data['summary']['total_exames']], ';');
+            fputcsv($output, ['Total de Júris/Salas', $data['summary']['total_juris']], ';');
+            fputcsv($output, ['Candidatos Esperados', $data['summary']['total_esperados']], ';');
+            fputcsv($output, ['Presentes', $data['summary']['total_presentes']], ';');
+            fputcsv($output, ['Ausentes', $data['summary']['total_ausentes']], ';');
+            fputcsv($output, ['Fraudes', $data['summary']['total_fraudes']], ';');
+            fputcsv($output, [], ';');
 
-        // Estatísticas por género
-        fputcsv($output, ['=== ESTATÍSTICAS POR GÉNERO ==='], ';');
-        fputcsv($output, ['Indicador', 'Masculino', 'Feminino', 'Total'], ';');
-        fputcsv($output, [
-            'Presentes',
-            $data['statistics']['presentes']['masculino'],
-            $data['statistics']['presentes']['feminino'],
-            $data['statistics']['presentes']['total']
-        ], ';');
-        fputcsv($output, [
-            'Ausentes',
-            $data['statistics']['ausentes']['masculino'],
-            $data['statistics']['ausentes']['feminino'],
-            $data['statistics']['ausentes']['total']
-        ], ';');
-        fputcsv($output, [
-            'Fraudes',
-            $data['statistics']['fraudes']['masculino'],
-            $data['statistics']['fraudes']['feminino'],
-            $data['statistics']['fraudes']['total']
-        ], ';');
-        fputcsv($output, [], ';');
-
-        // Por disciplina
-        fputcsv($output, ['=== DETALHAMENTO POR DISCIPLINA ==='], ';');
-        fputcsv($output, ['Disciplina', 'Salas', 'Esperados', 'Presentes', 'Ausentes', 'Fraudes', 'Taxa Presença (%)'], ';');
-        foreach ($data['by_discipline'] as $disc) {
+            // Estatísticas por género
+            fputcsv($output, ['=== ESTATÍSTICAS POR GÉNERO ==='], ';');
+            fputcsv($output, ['Indicador', 'Masculino', 'Feminino', 'Total'], ';');
             fputcsv($output, [
-                $disc['disciplina'],
-                $disc['salas'],
-                $disc['esperados'],
-                $disc['presentes'],
-                $disc['ausentes'],
-                $disc['fraudes'],
-                $disc['taxa_presenca']
+                'Presentes',
+                $data['statistics']['presentes']['masculino'],
+                $data['statistics']['presentes']['feminino'],
+                $data['statistics']['presentes']['total']
             ], ';');
-        }
-        fputcsv($output, [], ';');
+            fputcsv($output, [
+                'Ausentes',
+                $data['statistics']['ausentes']['masculino'],
+                $data['statistics']['ausentes']['feminino'],
+                $data['statistics']['ausentes']['total']
+            ], ';');
+            fputcsv($output, [
+                'Fraudes',
+                $data['statistics']['fraudes']['masculino'],
+                $data['statistics']['fraudes']['feminino'],
+                $data['statistics']['fraudes']['total']
+            ], ';');
+            fputcsv($output, [], ';');
 
-        // Ocorrências
-        if (!empty($data['occurrences'])) {
-            fputcsv($output, ['=== OCORRÊNCIAS ==='], ';');
-            fputcsv($output, ['Data', 'Disciplina', 'Local', 'Sala', 'Fraudes M', 'Fraudes F', 'Observações'], ';');
-            foreach ($data['occurrences'] as $occ) {
+            // Por disciplina
+            fputcsv($output, ['=== DETALHAMENTO POR DISCIPLINA ==='], ';');
+            fputcsv($output, ['Disciplina', 'Salas', 'Esperados', 'Presentes', 'Ausentes', 'Fraudes', 'Taxa Presença (%)'], ';');
+            foreach ($data['by_discipline'] as $disc) {
                 fputcsv($output, [
-                    $occ['data'],
-                    $occ['disciplina'],
-                    $occ['local'],
-                    $occ['sala'],
-                    $occ['fraudes_m'],
-                    $occ['fraudes_f'],
-                    $occ['observacoes'] ?? ''
+                    $disc['disciplina'],
+                    $disc['salas'],
+                    $disc['esperados'],
+                    $disc['presentes'],
+                    $disc['ausentes'],
+                    $disc['fraudes'],
+                    $disc['taxa_presenca']
                 ], ';');
             }
-        }
+            fputcsv($output, [], ';');
 
-        fclose($output);
-        exit;
+            // Ocorrências
+            if (!empty($data['occurrences'])) {
+                fputcsv($output, ['=== OCORRÊNCIAS ==='], ';');
+                fputcsv($output, ['Data', 'Disciplina', 'Local', 'Sala', 'Fraudes M', 'Fraudes F', 'Observações'], ';');
+                foreach ($data['occurrences'] as $occ) {
+                    fputcsv($output, [
+                        $occ['data'],
+                        $occ['disciplina'],
+                        $occ['local'],
+                        $occ['sala'],
+                        $occ['fraudes_m'],
+                        $occ['fraudes_f'],
+                        $occ['observacoes'] ?? ''
+                    ], ';');
+                }
+            }
+
+            fclose($output);
+            exit;
+        } catch (\Exception $e) {
+            error_log('[ExportCSV] Error: ' . $e->getMessage());
+            http_response_code(500);
+            echo 'Erro ao exportar CSV: ' . $e->getMessage();
+        }
     }
 
     /**

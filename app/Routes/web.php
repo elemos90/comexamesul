@@ -82,20 +82,20 @@ $router->get('/payments/my-map', 'PaymentController@myMap', ['AuthMiddleware']);
 // Planejamento com Drag-and-Drop (ANTES de /juries/{id})
 $router->get('/juries/planning', 'JuryController@planning', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
 
-// Calendário Visual de Júris
-$router->get('/juries/calendar', 'JuryController@calendar', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro,vigilante']);
-$router->get('/api/juries/calendar-events', 'JuryController@calendarEvents', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro,vigilante']);
+// Calendário Visual de Júris (JuryCalendarController)
+$router->get('/juries/calendar', 'JuryCalendarController@calendar', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro,vigilante']);
+$router->get('/api/juries/calendar-events', 'JuryCalendarController@calendarEvents', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro,vigilante']);
 
-// Novo: Planejamento por Vaga (Smart Allocation)
-$router->get('/juries/planning-by-vacancy', 'JuryController@planningByVacancy', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
-$router->get('/juries/vacancy/{id}/manage', 'JuryController@manageVacancyJuries', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
-$router->post('/juries/create-for-vacancy', 'JuryController@createJuriesForVacancy', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
-$router->post('/juries/vacancy/auto-allocate', 'JuryController@autoAllocateVacancy', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
-$router->post('/juries/vacancy/clear-allocations', 'JuryController@clearVacancyAllocations', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
-$router->get('/juries/vacancy/{id}/stats', 'JuryController@getVacancyStats', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
-$router->post('/juries/vacancy/{id}/validate', 'JuryController@validateVacancyPlanning', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
-$router->get('/juries/{id}/eligible-vigilantes', 'JuryController@getEligibleForJury', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
-$router->get('/juries/vacancy/{id}/approved-candidates', 'JuryController@getVacancyApprovedCandidates', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+// Planejamento por Vaga - Wizard (JuryWizardController)
+$router->get('/juries/planning-by-vacancy', 'JuryWizardController@planningByVacancy', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->get('/juries/vacancy/{id}/manage', 'JuryWizardController@manageVacancyJuries', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->post('/juries/create-for-vacancy', 'JuryWizardController@createJuriesForVacancy', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+$router->post('/juries/vacancy/auto-allocate', 'JuryWizardController@autoAllocateVacancy', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+$router->post('/juries/vacancy/clear-allocations', 'JuryWizardController@clearVacancyAllocations', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+$router->get('/juries/vacancy/{id}/stats', 'JuryWizardController@getVacancyStats', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->post('/juries/vacancy/{id}/validate', 'JuryWizardController@validateVacancyPlanning', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+$router->get('/juries/{id}/eligible-vigilantes', 'JuryWizardController@getEligibleForJury', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->get('/juries/vacancy/{id}/approved-candidates', 'JuryWizardController@getVacancyApprovedCandidates', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
 
 // API para supervisores
 $router->get('/api/users/supervisors', 'JuryController@getEligibleSupervisors', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
@@ -103,7 +103,7 @@ $router->get('/api/users/supervisors', 'JuryController@getEligibleSupervisors', 
 // API para o Wizard de Criação de Júris
 $router->get('/api/vigilantes/eligible', 'JuryController@getEligibleVigilantesForWizard', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
 $router->get('/api/supervisors/eligible', 'JuryController@getEligibleSupervisorsForWizard', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
-$router->post('/juries/bulk-assign-supervisor', 'JuryController@bulkAssignSupervisor', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+$router->post('/juries/bulk-assign-supervisor', 'JuryBulkController@bulkAssignSupervisor', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
 
 // API para alocação de supervisores por blocos (v2.7)
 $router->post('/juries/supervisors/auto-allocate', 'JuryAllocationController@autoAllocateSupervisors', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
@@ -118,25 +118,24 @@ $router->post('/juries/vigilantes/auto-distribute', 'JuryAllocationController@au
 
 $router->get('/juries/{id}', 'JuryController@show', ['AuthMiddleware']);
 $router->post('/juries', 'JuryController@store', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
-$router->post('/juries/create-batch', 'JuryController@createBatch', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
-$router->post('/juries/create-location-batch', 'JuryController@createLocationBatch', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
-$router->post('/juries/update-batch', 'JuryController@updateBatch', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
-
-// Nova API: Criação em Lote de Júris (múltiplas salas para mesmo exame)
-$router->post('/juries/create-bulk', 'JuryController@createBulk', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+// Operações em Lote (JuryBulkController)
+$router->post('/juries/create-batch', 'JuryBulkController@createBatch', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+$router->post('/juries/create-location-batch', 'JuryBulkController@createLocationBatch', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+$router->post('/juries/update-batch', 'JuryBulkController@updateBatch', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+$router->post('/juries/create-bulk', 'JuryBulkController@createBulk', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
 
 // API para Edição e Remoção de Júris (NOVOS - Gestão de Alocações Melhorada)
 $router->get('/juries/{id}/details', 'JuryController@getDetails', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
 $router->post('/juries/{id}/update', 'JuryController@updateJury', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
 $router->post('/juries/{id}/delete', 'JuryController@deleteJury', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
-$router->post('/juries/vacancy/{vacancy_id}/update-discipline', 'JuryController@updateDiscipline', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+$router->post('/juries/vacancy/{vacancy_id}/update-discipline', 'JuryBulkController@updateDiscipline', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
 
 // Rotas de gestão de júris
 $router->post('/juries/{id}/update-quick', 'JuryController@updateQuick', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
 $router->post('/juries/{id}/assign', 'JuryController@assign', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
 $router->post('/juries/{id}/unassign', 'JuryController@unassign', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
 $router->post('/juries/{id}/set-supervisor', 'JuryController@setSupervisor', ['AuthMiddleware', 'RoleMiddleware:coordenador', 'CsrfMiddleware']);
-$router->post('/juries/sync-room-names', 'JuryController@syncRoomNames', ['AuthMiddleware', 'RoleMiddleware:coordenador', 'CsrfMiddleware']);
+$router->post('/juries/sync-room-names', 'JuryBulkController@syncRoomNames', ['AuthMiddleware', 'RoleMiddleware:coordenador', 'CsrfMiddleware']);
 
 // API de Alocação Inteligente
 $router->post('/api/allocation/can-assign', 'JuryController@canAssign', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);

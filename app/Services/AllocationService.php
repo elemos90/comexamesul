@@ -116,6 +116,33 @@ class AllocationService
             ];
         }
 
+        // 5a. [CRITYCAL] Verificar se já é SUPERVISOR do mesmo exame (Subject + Time)
+        // Uma pessoa não pode ser vigilante e supervisor ao mesmo tempo
+        $stmtSup = $this->db->prepare(
+            "SELECT j.id, j.room FROM juries j
+             WHERE j.supervisor_id = :vigilante_id
+               AND j.subject = :subject
+               AND j.exam_date = :exam_date
+               AND j.start_time = :start_time
+               AND j.end_time = :end_time"
+        );
+        $stmtSup->execute([
+            'vigilante_id' => $vigilanteId,
+            'subject' => $jury['subject'],
+            'exam_date' => $jury['exam_date'],
+            'start_time' => $jury['start_time'],
+            'end_time' => $jury['end_time']
+        ]);
+        $isSupervisor = $stmtSup->fetch();
+
+        if ($isSupervisor) {
+            return [
+                'can_assign' => false,
+                'reason' => "Conflito: Esta pessoa já é SUPERVISOR deste exame (Sala {$isSupervisor['room']}). Remova a supervisão antes.",
+                'severity' => 'error'
+            ];
+        }
+
         // 6. Verificar equilíbrio de carga (warning, não bloqueia)
         $workload = $this->getVigilanteWorkload($vigilanteId);
         $avgWorkload = $this->getAverageWorkload();
@@ -184,6 +211,31 @@ class AllocationService
             ];
         }
 
+        // 3a. Verificar se já está alocado como VIGILANTE neste período
+        // Um supervisor não pode vigiar e supervisionar ao mesmo tempo
+        $stmtVig = $this->db->prepare("
+            SELECT j.room FROM jury_vigilantes jv
+            INNER JOIN juries j ON j.id = jv.jury_id
+            WHERE jv.vigilante_id = :supervisor
+              AND j.exam_date = :date
+              AND (j.start_time < :end_time AND :start_time < j.end_time)
+        ");
+        $stmtVig->execute([
+            'supervisor' => $supervisorId,
+            'date' => $jury['exam_date'],
+            'end_time' => $jury['end_time'],
+            'start_time' => $jury['start_time']
+        ]);
+        $isVigilante = $stmtVig->fetch();
+
+        if ($isVigilante) {
+            return [
+                'can_assign' => false,
+                'reason' => "Conflito: Esta pessoa já está alocada como VIGILANTE na sala {$isVigilante['room']}. Remova a alocação de vigilante antes.",
+                'severity' => 'error'
+            ];
+        }
+
         // 4. Verificar equilíbrio de carga
         $workload = $this->getVigilanteWorkload($supervisorId);
         $avgWorkload = $this->getAverageWorkload();
@@ -211,11 +263,17 @@ class AllocationService
         $validation = $this->canAssignVigilante($vigilanteId, $juryId);
 
         if (!$validation['can_assign']) {
-            return [
-                'success' => false,
-                'message' => $validation['reason']
-            ];
+            // Se o erro for de capacidade, permitimos tentar o "Force Logic" abaixo
+            // Verificamos se a 'reason' menciona capacidade.
+            if (strpos($validation['reason'], 'Capacidade') === false) {
+                return [
+                    'success' => false,
+                    'message' => $validation['reason']
+                ];
+            }
+            // Se for capacidade, continuamos para o bloco try-catch onde tratamos isso
         }
+
 
         try {
             $this->db->beginTransaction();
@@ -243,6 +301,63 @@ class AllocationService
 
         } catch (\Exception $e) {
             $this->db->rollBack();
+
+            // Lógica de Retry para Erro de Capacidade (Trigger)
+            if (strpos($e->getMessage(), 'Capacidade') !== false) {
+                try {
+                    // 1. Calcular nova capacidade necessária
+                    $stmtCount = $this->db->prepare("SELECT COUNT(*) FROM jury_vigilantes WHERE jury_id = :id");
+                    $stmtCount->execute(['id' => $juryId]);
+                    $actualCount = (int) $stmtCount->fetchColumn();
+                    $newCapacity = $actualCount + 1;
+
+                    // 2. Atualizar capacidade no banco (tenta ambas as colunas por compatibilidade)
+                    $updated = false;
+                    try {
+                        $stmtUpdate = $this->db->prepare("UPDATE juries SET vigilantes_capacity = :cap WHERE id = :id");
+                        $updated = $stmtUpdate->execute(['cap' => $newCapacity, 'id' => $juryId]);
+                    } catch (\Exception $ignore) {
+                    }
+
+                    if (!$updated) {
+                        try {
+                            $stmtUpdatePT = $this->db->prepare("UPDATE juries SET vigilantes_capacidade = :cap WHERE id = :id");
+                            $stmtUpdatePT->execute(['cap' => $newCapacity, 'id' => $juryId]);
+                        } catch (\Exception $ignore) {
+                        }
+                    }
+
+                    // 3. Re-tentar alocação
+                    $this->db->beginTransaction();
+                    $juryVigilante = new JuryVigilante();
+                    $juryVigilante->create([
+                        'jury_id' => $juryId,
+                        'vigilante_id' => $vigilanteId,
+                        'assigned_by' => $assignedBy,
+                        'created_at' => now()
+                    ]);
+
+                    ActivityLogger::log('jury_vigilantes', $juryId, 'assign_force', [
+                        'vigilante_id' => $vigilanteId,
+                        'new_capacity' => $newCapacity
+                    ]);
+
+                    $this->db->commit();
+
+                    return [
+                        'success' => true,
+                        'message' => 'Vigilante alocado (capacidade ajustada para ' . $newCapacity . ').'
+                    ];
+
+                } catch (\Exception $ex) {
+                    // Se falhar novamente, retormar erro original ou novo erro
+                    return [
+                        'success' => false,
+                        'message' => 'Erro ao forçar alocação: ' . $ex->getMessage()
+                    ];
+                }
+            }
+
             return [
                 'success' => false,
                 'message' => 'Erro ao alocar vigilante: ' . $e->getMessage()
@@ -616,8 +731,10 @@ class AllocationService
     public function getAverageWorkload(): float
     {
         $stmt = $this->db->query("
-            SELECT AVG(workload_score) FROM vw_vigilante_workload 
-            WHERE available_for_vigilance = 1
+            SELECT AVG(vw.workload_score) 
+            FROM vw_vigilante_workload vw
+            INNER JOIN users u ON u.id = vw.user_id
+            WHERE u.available_for_vigilance = 1
         ");
         return (float) $stmt->fetchColumn();
     }

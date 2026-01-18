@@ -153,7 +153,8 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
         .btn-allocate,
         .btn-remove,
         button[onclick*="editJuryInVacancy"],
-        button[onclick*="deleteJury"] {
+        button[onclick*="deleteJury"],
+        .no-print {
             display: none !important;
         }
 
@@ -163,12 +164,73 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
         }
 
         .allocation-table {
-            font-size: 0.75rem;
+            font-size: 0.65rem;
+            /* Reduzir fonte para caber */
+            width: 100%;
+        }
+
+        /* Forçar cores de fundo em impressão */
+        .group-header,
+        .subtotal-row,
+        .total-row,
+        .allocation-table th {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        /* Fallback para navegadores teimosos (box-shadow hack) */
+        .group-header {
+            background-color: #e2e8f0 !important;
+            box-shadow: inset 0 0 0 1000px #e2e8f0 !important;
+            color: #1e40af !important;
+        }
+
+        .subtotal-row {
+            background-color: #fef9c3 !important;
+            box-shadow: inset 0 0 0 1000px #fef9c3 !important;
+        }
+
+        .total-row {
+            background-color: #f97316 !important;
+            box-shadow: inset 0 0 0 1000px #f97316 !important;
+            color: white !important;
+        }
+
+        .discipline-total-row {
+            background-color: #f59e0b !important;
+            box-shadow: inset 0 0 0 1000px #f59e0b !important;
+            color: #451a03 !important;
+        }
+
+        .grand-total-row {
+            background-color: #f97316 !important;
+            box-shadow: inset 0 0 0 1000px #c2410c !important;
+            color: white !important;
+        }
+
+        /* Reforçar bordas */
+        /* Reforçar bordas */
+        .total-row td,
+        .discipline-total-row td,
+        .grand-total-row td {
+            border-top: 2px solid #000 !important;
+            border-bottom: 2px solid #000 !important;
+        }
+
+        .subtotal-row td {
+            border-top: 2px solid #facc15 !important;
+            border-bottom: 2px solid #facc15 !important;
         }
 
         body {
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+            background-color: white;
+        }
+
+        @page {
+            margin: 1cm;
+            size: landscape;
         }
     }
 
@@ -729,6 +791,31 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
                                 </td>
                             </tr>
                         <?php else:
+                            // CÁLCULO PRÉVIO: Totais por Disciplina
+                            $disciplineTotals = [];
+                            foreach ($groupedJuries as $g) {
+                                $subj = $g['subject'];
+                                if (!isset($disciplineTotals[$subj])) {
+                                    $disciplineTotals[$subj] = ['candidates' => 0, 'vigilantes' => 0, 'juries' => 0];
+                                }
+
+                                $juriesList = [];
+                                if (isset($g['locations'])) {
+                                    foreach ($g['locations'] as $loc) {
+                                        foreach ($loc['juries'] as $j)
+                                            $juriesList[] = $j;
+                                    }
+                                } elseif (isset($g['juries'])) {
+                                    $juriesList = $g['juries'];
+                                }
+
+                                foreach ($juriesList as $j) {
+                                    $disciplineTotals[$subj]['candidates'] += (int) $j['candidates_quota'];
+                                    $disciplineTotals[$subj]['vigilantes'] += count($j['vigilantes'] ?? []);
+                                    $disciplineTotals[$subj]['juries']++;
+                                }
+                            }
+
                             // Agrupar júris por local dentro de cada exame
                             $lastSupervisor = null;
                             $totalCandidatos = 0;
@@ -960,10 +1047,14 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
                                                                             title="Supervisor">👑</span>
                                                                     <?php endif; ?>
                                                                 </div>
-                                                                <button type="button" class="text-red-400 hover:text-red-700 remove-vigilante"
+                                                                <button type="button"
+                                                                    class="text-red-400 hover:text-red-700 remove-vigilante p-1 rounded hover:bg-red-50 transition-colors"
                                                                     data-jury-id="<?= $jury['id'] ?>" data-vigilante-id="<?= $v['id'] ?>"
                                                                     title="Remover">
-                                                                    <i class="fas fa-times"></i>
+                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                            d="M6 18L18 6M6 6l12 12"></path>
+                                                                    </svg>
                                                                 </button>
                                                             </div>
                                                         <?php endforeach; ?>
@@ -983,14 +1074,24 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
                                                 <?= $vigilantesCount ?>
                                             </td>
                                             <td class="text-center align-middle space-x-2">
-                                                <button type="button" class="text-blue-500 hover:text-blue-700 edit-jury-btn p-1"
+                                                <button type="button"
+                                                    class="text-blue-500 hover:text-blue-700 edit-jury-btn p-1 rounded hover:bg-blue-50 transition-colors"
                                                     data-jury-id="<?= $jury['id'] ?>" data-room="<?= htmlspecialchars($jury['room']) ?>"
                                                     data-quota="<?= $jury['candidates_quota'] ?>" title="Editar">
-                                                    <i class="fas fa-edit"></i>
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                                        </path>
+                                                    </svg>
                                                 </button>
-                                                <button type="button" class="text-red-500 hover:text-red-700 delete-jury-btn p-1"
+                                                <button type="button"
+                                                    class="text-red-500 hover:text-red-700 delete-jury-btn p-1 rounded hover:bg-red-50 transition-colors"
                                                     data-jury-id="<?= $jury['id'] ?>" title="Remover">
-                                                    <i class="fas fa-trash-alt"></i>
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                                        </path>
+                                                    </svg>
                                                 </button>
                                             </td>
                                         </tr>
@@ -1015,16 +1116,31 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
                                                 <div class="flex flex-col text-xs text-gray-600">
                                                     <?php
                                                     $locSupervisors = [];
+                                                    $supervisedCount = 0;
                                                     foreach ($allLocationJuries as $j) {
                                                         if (!empty($j['supervisor_name'])) {
                                                             $locSupervisors[$j['supervisor_id']] = $j['supervisor_name'];
+                                                            $supervisedCount++;
                                                         }
                                                     }
                                                     if (empty($locSupervisors)) {
                                                         echo '<span class="text-red-500 font-bold">⚠️ Sem supervisor</span>';
                                                     } else {
                                                         foreach ($locSupervisors as $sid => $sname) {
-                                                            echo "<span class='font-medium block'>👑 $sname</span>";
+                                                            echo "<div class='flex items-center gap-1'><span class='font-medium'>👑 $sname</span>";
+
+                                                            // Alerta de Parcial
+                                                            if ($supervisedCount < count($allLocationJuries)) {
+                                                                echo "<span class='text-xs text-orange-600 font-bold ml-1' title='Apenas $supervisedCount de " . count($allLocationJuries) . " salas possuem supervisor. Clique em Definir para aplicar a todos.'>(Parcial)</span>";
+                                                            }
+
+                                                            // Botão para remover supervisor do grupo
+                                                            if (!empty($firstJury['id'])) {
+                                                                echo "<button onclick='removeSupervisorFromAllJuries({$firstJury['id']}, \"" . addslashes($sname) . "\")' class='text-red-500 hover:text-red-700 text-xs ml-1 p-0.5 rounded hover:bg-red-50 transition-colors' title='Remover Supervisor do Grupo'>
+                                                                    <svg class='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 18L18 6M6 6l12 12'></path></svg>
+                                                                </button>";
+                                                            }
+                                                            echo "</div>";
                                                         }
                                                     }
                                                     ?>
@@ -1056,30 +1172,83 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
 
                                 <?php // Total Geral do Grupo
                                         if ($examCandidates > 0): ?>
-                                    <tr class="total-row" style="background-color: #ffc000; border-top: 2px solid #b45309;">
-                                        <!-- Colunas de Alinhamento (3) -->
-                                        <td class="bg-white border-r-2 border-gray-300"></td>
-                                        <td class="bg-white border-r-2 border-gray-300"></td>
-                                        <td class="bg-gray-50 border-r-2 border-gray-300"></td>
-
-                                        <td colspan="1"
-                                            style="text-align: right; padding-right: 16px; font-weight: 700; color: #78350f;">TOTAL
+                                    <tr class="total-row"
+                                        style="background-color: #f97316; color: white; border-top: 2px solid #ea580c; border-bottom: 2px solid #ea580c;">
+                                        <!-- Merged Label (Date, Time, Subject, Room) -->
+                                        <td colspan="4" class="text-right px-4 py-2 font-bold uppercase tracking-wider"
+                                            style="background-color: inherit; color: inherit; border-right: 1px solid rgba(255,255,255,0.2);">
+                                            TOTAL <?= strtoupper($group['subject']) ?>
                                         </td>
-                                        <td style="text-align: center; font-weight: 700; color: #78350f;">
+
+                                        <!-- Candidates Count -->
+                                        <td
+                                            style="text-align: center; font-weight: 800; background-color: inherit; color: inherit; border-right: 1px solid rgba(255,255,255,0.2); font-size: 1rem;">
                                             <?= number_format($examCandidates, 0) ?>
                                         </td>
-                                        <td></td>
-                                        <td style="text-align: center; font-weight: 700; color: #78350f;">
+
+                                        <!-- Vigilantes List (Empty) -->
+                                        <td style="background-color: inherit; border-right: 1px solid rgba(255,255,255,0.2);">
+                                            <div class="flex items-center justify-center gap-4 text-xs font-medium opacity-90">
+                                                <span>Candidatos: <strong><?= $examCandidates ?></strong></span>
+                                                <span>Júris: <strong><?= count($allLocationJuries) ?></strong></span>
+                                                <span>Vigilantes: <strong><?= $examVigilantes ?></strong></span>
+                                            </div>
+                                        </td>
+
+                                        <!-- Vigilantes Count -->
+                                        <td
+                                            style="text-align: center; font-weight: 800; background-color: inherit; color: inherit; border-right: 1px solid rgba(255,255,255,0.2); font-size: 1rem;">
                                             <?= $examVigilantes ?>
                                         </td>
-                                        <td></td>
+
+                                        <!-- Actions (Empty) -->
+                                        <td style="background-color: inherit;"></td>
+                                        <td style="background-color: inherit;"></td>
                                     </tr>
                                 <?php endif; ?>
 
-                            <?php endforeach; // Fim loop grupos de exame 
-                            ?>
+                                <?php
+                                // VERIFICAR SE É O ÚLTIMO GRUPO DESTA DISCIPLINA
+                                // Se o próximo grupo for de outra disciplina (ou não existir), imprime o total agora.
+                                $currentSubject = $group['subject'];
+                                $nextGroup = $groupedJuries[$groupIndex + 1] ?? null;
+                                $nextSubject = $nextGroup['subject'] ?? null;
+
+                                if ($currentSubject !== $nextSubject && isset($disciplineTotals[$currentSubject])):
+                                    $totals = $disciplineTotals[$currentSubject];
+                                    ?>
+                                    <tr class="discipline-total-row"
+                                        style="background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%); border-top: 3px solid #d97706; border-bottom: 3px solid #d97706;">
+                                        <td colspan="8" class="py-3 px-6">
+                                            <div class="flex items-center justify-between">
+                                                <span class="font-extrabold text-amber-900 text-base uppercase tracking-wide">
+                                                    📚 TOTAL <?= strtoupper($currentSubject) ?>
+                                                </span>
+                                                <div class="flex gap-8 font-bold text-amber-900">
+                                                    <span class="flex items-center gap-2">
+                                                        <span class="text-sm opacity-75">Candidatos:</span>
+                                                        <span class="text-lg"><?= number_format($totals['candidates'], 0) ?></span>
+                                                    </span>
+                                                    <span class="flex items-center gap-2">
+                                                        <span class="text-sm opacity-75">Júris:</span>
+                                                        <span class="text-lg"><?= $totals['juries'] ?></span>
+                                                    </span>
+                                                    <span class="flex items-center gap-2">
+                                                        <span class="text-sm opacity-75">Vigilantes:</span>
+                                                        <span class="text-lg"><?= $totals['vigilantes'] ?></span>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
+
+                            <?php endforeach; // Fim loop grupos de exame ?>
 
                             <!-- LINHA DE TOTALIZAÇÃO GERAL -->
+                            <tr class="grand-total-row"
+                                style="background-color: #f97316; color: white; border-top: 4px solid #c2410c;">
+                                <!-- Colunas de Alinhamento (3) -->
                             <tr class="grand-total-row"
                                 style="background-color: #f97316; color: white; border-top: 4px solid #c2410c;">
                                 <!-- Colunas de Alinhamento (3) -->
@@ -1351,16 +1520,13 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
 
 <script>
     const csrfToken = '<?= csrf_token() ?>';
-    const baseUrl = '<?= rtrim(dirname($_SERVER['SCRIPT_NAME']), '/') ?>';
-
-    /**
-     * Escape HTML para prevenir XSS em JavaScript
+    const baseUrl = '<?= rtrim(dirname($_SERVER['SCRIPT_NAME']), '/') ?>';      /*       * * Escape HTML para prevenir XSS em JavaScript
      */
     function escapeHtml(text) {
         if (!text) return '';
         const div = document.createElement('div');
         div.textContent = text;
-        return div.innerHTML;
+        return div.in    nerHTML;
     }
 
     /**
@@ -2304,7 +2470,12 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
         const contentEl = document.getElementById('supervisor-select-content');
 
         try {
-            const response = await fetch(`${baseUrl}/api/users/supervisors`, {
+            const params = new URLSearchParams();
+            if (examDate) params.append('exam_date', examDate);
+            if (startTime) params.append('start_time', startTime);
+            if (endTime) params.append('end_time', endTime);
+
+            const response = await fetch(`${baseUrl}/api/users/supervisors?${params.toString()}`, {
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
@@ -2781,5 +2952,37 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
         updateStateCounts();
         applyFilters();
         console.log('✅ Módulo de filtros inicializado');
+        // ========== EVENT LISTENERS ADICIONAIS ==========
+        document.addEventListener('click', function (e) {
+            // Remover Vigilante
+            const removeVigBtn = e.target.closest('.remove-vigilante');
+            if (removeVigBtn) {
+                const juryId = removeVigBtn.dataset.juryId;
+                const vigId = removeVigBtn.dataset.vigilanteId;
+                removeVigilante(juryId, vigId);
+            }
+
+            // Eliminar Júri
+            const deleteJuryBtn = e.target.closest('.delete-jury-btn');
+            if (deleteJuryBtn) {
+                const juryId = deleteJuryBtn.dataset.juryId;
+                // Tentar obter nome da sala para confirmação
+                const row = deleteJuryBtn.closest('tr');
+                let roomName = 'Sala';
+                if (row) {
+                    const roomCell = row.querySelector('td:nth-child(4)'); // Index 4 é Sala nas colunas específicas
+                    if (roomCell) roomName = roomCell.textContent.trim();
+                }
+                deleteJury(juryId, roomName);
+            }
+
+            // Editar Júri
+            const editJuryBtn = e.target.closest('.edit-jury-btn');
+            if (editJuryBtn) {
+                const juryId = editJuryBtn.dataset.juryId;
+                openEditJuryModal(juryId);
+            }
+        });
+
     })();
 </script>

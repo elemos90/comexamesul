@@ -33,73 +33,14 @@ class JuryAllocationController extends Controller
             $juryId = (int) $request->param('id');
             $vigilanteId = (int) $request->input('vigilante_id');
 
-            $juryModel = new Jury();
-            $jury = $juryModel->find($juryId);
-            if (!$jury) {
-                Response::json(['success' => false, 'message' => 'Júri não encontrado.'], 404);
-                return;
+            $allocationService = new AllocationService();
+            $result = $allocationService->assignVigilante($vigilanteId, $juryId, Auth::id());
+
+            if ($result['success']) {
+                Response::json(['success' => true, 'message' => $result['message']]);
+            } else {
+                Response::json(['success' => false, 'message' => $result['message']], 422);
             }
-
-            $userModel = new User();
-            $vigilante = $userModel->find($vigilanteId);
-            if (!$vigilante || $vigilante['role'] !== 'vigilante') {
-                Response::json(['success' => false, 'message' => 'Vigilante inválido.'], 422);
-                return;
-            }
-            if ((int) ($vigilante['available_for_vigilance'] ?? 0) !== 1) {
-                Response::json(['success' => false, 'message' => 'Vigilante sem disponibilidade activa.'], 422);
-                return;
-            }
-
-            $juryVigilantes = new JuryVigilante();
-            if ($juryVigilantes->vigilanteHasConflict($vigilanteId, $jury['exam_date'], $jury['start_time'], $jury['end_time'])) {
-                Response::json(['success' => false, 'message' => 'O vigilante já está alocado a um júri nesse horário.'], 409);
-                return;
-            }
-
-            // VALIDAÇÃO CRÍTICA: Verificar se a pessoa já é supervisor do mesmo exame
-            $isSupervisorOfExam = $juryVigilantes->statement(
-                "SELECT j.id, j.room FROM juries j
-                 WHERE j.supervisor_id = :vigilante_id
-                   AND j.subject = :subject
-                   AND j.exam_date = :exam_date
-                   AND j.start_time = :start_time
-                   AND j.end_time = :end_time",
-                [
-                    'vigilante_id' => $vigilanteId,
-                    'subject' => $jury['subject'],
-                    'exam_date' => $jury['exam_date'],
-                    'start_time' => $jury['start_time'],
-                    'end_time' => $jury['end_time']
-                ]
-            );
-
-            if (!empty($isSupervisorOfExam)) {
-                Response::json([
-                    'success' => false,
-                    'message' => "❌ {$vigilante['name']} já é SUPERVISOR deste exame.\n\n⚠️ Uma pessoa NÃO pode ser vigilante e supervisor ao mesmo tempo no mesmo exame.\n\nRemova-o(a) primeiro como supervisor ou escolha outro vigilante."
-                ], 422);
-                return;
-            }
-
-            $exists = $juryVigilantes->statement(
-                'SELECT * FROM jury_vigilantes WHERE jury_id = :jury AND vigilante_id = :vigilante',
-                ['jury' => $juryId, 'vigilante' => $vigilanteId]
-            );
-            if ($exists) {
-                Response::json(['success' => false, 'message' => 'Vigilante já alocado.'], 422);
-                return;
-            }
-
-            $juryVigilantes->create([
-                'jury_id' => $juryId,
-                'vigilante_id' => $vigilanteId,
-                'assigned_by' => Auth::id(),
-                'created_at' => now(),
-            ]);
-
-            ActivityLogger::log('jury_vigilantes', $juryId, 'assign', ['vigilante_id' => $vigilanteId]);
-            Response::json(['success' => true, 'message' => 'Vigilante alocado com sucesso.']);
         } catch (\Exception $e) {
             Response::json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -114,14 +55,14 @@ class JuryAllocationController extends Controller
             $juryId = (int) $request->param('id');
             $vigilanteId = (int) $request->input('vigilante_id');
 
-            $juryVigilantes = new JuryVigilante();
-            $juryVigilantes->execute(
-                'DELETE FROM jury_vigilantes WHERE jury_id = :jury AND vigilante_id = :vigilante',
-                ['jury' => $juryId, 'vigilante' => $vigilanteId]
-            );
+            $allocationService = new AllocationService();
+            $result = $allocationService->unassignVigilante($vigilanteId, $juryId, Auth::id());
 
-            ActivityLogger::log('jury_vigilantes', $juryId, 'unassign', ['vigilante_id' => $vigilanteId]);
-            Response::json(['success' => true, 'message' => 'Vigilante removido.']);
+            if ($result['success']) {
+                Response::json(['success' => true, 'message' => $result['message']]);
+            } else {
+                Response::json(['success' => false, 'message' => $result['message']], 422);
+            }
         } catch (\Exception $e) {
             Response::json(['success' => false, 'message' => $e->getMessage()], 500);
         }

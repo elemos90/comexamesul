@@ -15,6 +15,21 @@ $router->group(['middleware' => ['GuestMiddleware']], function ($router) {
     $router->post('/register', 'AuthController@register', ['CsrfMiddleware']);
     $router->get('/password/forgot', 'AuthController@showForgotPassword');
     $router->post('/password/forgot', 'AuthController@forgotPassword', ['CsrfMiddleware']);
+
+    // Nova Recuperação de Conta (Wizard)
+    $router->get('/recover', 'AuthController@showRecoverStep1'); // Username
+    $router->post('/recover/check', 'AuthController@checkUsername', ['CsrfMiddleware']);
+    $router->get('/recover/method', 'AuthController@showRecoverStep2'); // Select Method
+    $router->post('/recover/method', 'AuthController@selectMethod', ['CsrfMiddleware']);
+    $router->get('/recover/verify', 'AuthController@showRecoverStep3'); // Input Credential
+    $router->post('/recover/verify', 'AuthController@verifyCredential', ['CsrfMiddleware']);
+    $router->get('/recover/reset', 'AuthController@showRecoverStep4'); // Set Password
+    $router->post('/recover/reset', 'AuthController@finalizeRecovery', ['CsrfMiddleware']);
+
+    // Fallback (antigo forgot-password, agora dentro do fluxo)
+    $router->get('/recover/fallback', 'AuthController@showFallback');
+    $router->post('/recover/fallback', 'AuthController@processFallback', ['CsrfMiddleware']);
+
     $router->get('/password/reset', 'AuthController@showResetPassword');
     $router->post('/password/reset', 'AuthController@resetPassword', ['CsrfMiddleware']);
     // Stats Routes
@@ -24,12 +39,28 @@ $router->group(['middleware' => ['GuestMiddleware']], function ($router) {
 
 $router->post('/logout', 'AuthController@logout', ['AuthMiddleware', 'CsrfMiddleware']);
 
+// Force password change (requires auth but NOT profile complete)
+$router->get('/auth/force-password-change', 'AuthController@showForcePasswordChange', ['AuthMiddleware']);
+$router->post('/auth/force-password-change', 'AuthController@forcePasswordChange', ['AuthMiddleware', 'CsrfMiddleware']);
+
 $router->get('/dashboard', 'DashboardController@index', ['AuthMiddleware']);
 
+// Profile Wizard (requires auth but NOT profile complete)
+$router->get('/profile/wizard', 'ProfileWizardController@show', ['AuthMiddleware']);
+$router->post('/profile/wizard', 'ProfileWizardController@save', ['AuthMiddleware', 'CsrfMiddleware']);
+
+// Regular profile (requires auth)
 $router->get('/profile', 'ProfileController@show', ['AuthMiddleware']);
 $router->post('/profile', 'ProfileController@update', ['AuthMiddleware', 'CsrfMiddleware']);
 $router->post('/profile/password', 'ProfileController@updatePassword', ['AuthMiddleware', 'CsrfMiddleware']);
 $router->post('/profile/avatar', 'ProfileController@updateAvatar', ['AuthMiddleware', 'CsrfMiddleware']);
+
+// Recuperação de Conta (Configuração)
+$router->get('/profile/recovery', 'ProfileController@showRecovery', ['AuthMiddleware']);
+$router->post('/profile/recovery/keyword', 'ProfileController@updateRecoveryKeyword', ['AuthMiddleware', 'CsrfMiddleware']);
+$router->post('/profile/recovery/pin', 'ProfileController@updateRecoveryPin', ['AuthMiddleware', 'CsrfMiddleware']);
+$router->post('/profile/recovery/questions', 'ProfileController@updateRecoveryQuestions', ['AuthMiddleware', 'CsrfMiddleware']);
+
 
 $router->get('/vacancies', 'VacancyController@index', ['AuthMiddleware']);
 $router->get('/vacancies/{id}', 'VacancyController@show', ['AuthMiddleware']);
@@ -78,9 +109,33 @@ $router->get('/payments/export/{vacancyId}', 'PaymentController@export', ['AuthM
 // Meu Mapa de Pagamento (Individual - Vigilante/Supervisor)
 $router->get('/payments/my-map', 'PaymentController@myMap', ['AuthMiddleware']);
 
+// ==== NOTIFICAÇÕES ====
+// User notifications
+$router->get('/notifications', 'NotificationController@index', ['AuthMiddleware']);
+$router->get('/notifications/unread-count', 'NotificationController@getUnreadCount', ['AuthMiddleware']);
+$router->post('/notifications/{id}/read', 'NotificationController@markAsRead', ['AuthMiddleware']);
+
+// Wizard (Coordenador only)
+$router->get('/notifications/create', 'NotificationController@create', ['AuthMiddleware', 'RoleMiddleware:coordenador']);
+$router->post('/notifications/wizard/step2', 'NotificationController@wizardStep2', ['AuthMiddleware', 'RoleMiddleware:coordenador', 'CsrfMiddleware']);
+$router->get('/notifications/create/step2', 'NotificationController@createStep2', ['AuthMiddleware', 'RoleMiddleware:coordenador']);
+$router->post('/notifications/wizard/step3', 'NotificationController@wizardStep3', ['AuthMiddleware', 'RoleMiddleware:coordenador', 'CsrfMiddleware']);
+$router->get('/notifications/create/step3', 'NotificationController@createStep3', ['AuthMiddleware', 'RoleMiddleware:coordenador']);
+$router->post('/notifications/wizard/step4', 'NotificationController@wizardStep4', ['AuthMiddleware', 'RoleMiddleware:coordenador', 'CsrfMiddleware']);
+$router->get('/notifications/create/step4', 'NotificationController@createStep4', ['AuthMiddleware', 'RoleMiddleware:coordenador']);
+$router->post('/notifications/wizard/step5', 'NotificationController@wizardStep5', ['AuthMiddleware', 'RoleMiddleware:coordenador', 'CsrfMiddleware']);
+$router->get('/notifications/create/step5', 'NotificationController@createStep5', ['AuthMiddleware', 'RoleMiddleware:coordenador']);
+$router->post('/notifications/send', 'NotificationController@send', ['AuthMiddleware', 'RoleMiddleware:coordenador', 'CsrfMiddleware']);
+
+// History (Coordenador only)
+$router->get('/notifications/history', 'NotificationController@history', ['AuthMiddleware', 'RoleMiddleware:coordenador']);
+
 
 // Planejamento com Drag-and-Drop (ANTES de /juries/{id})
 $router->get('/juries/planning', 'JuryController@planning', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+
+// Export Excel
+$router->get('/juries/export/excel', 'JuryController@exportExcel', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro,supervisor,vigilante']);
 
 // Calendário Visual de Júris (JuryCalendarController)
 $router->get('/juries/calendar', 'JuryCalendarController@calendar', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro,vigilante']);
@@ -132,16 +187,16 @@ $router->post('/juries/vacancy/{vacancy_id}/update-discipline', 'JuryBulkControl
 
 // Rotas de gestão de júris
 $router->post('/juries/{id}/update-quick', 'JuryController@updateQuick', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
-$router->post('/juries/{id}/assign', 'JuryController@assign', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
-$router->post('/juries/{id}/unassign', 'JuryController@unassign', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
-$router->post('/juries/{id}/set-supervisor', 'JuryController@setSupervisor', ['AuthMiddleware', 'RoleMiddleware:coordenador', 'CsrfMiddleware']);
+$router->post('/juries/{id}/assign', 'JuryAllocationController@assign', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+$router->post('/juries/{id}/unassign', 'JuryAllocationController@unassign', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+$router->post('/juries/{id}/set-supervisor', 'JuryAllocationController@setSupervisor', ['AuthMiddleware', 'RoleMiddleware:coordenador', 'CsrfMiddleware']);
 $router->post('/juries/sync-room-names', 'JuryBulkController@syncRoomNames', ['AuthMiddleware', 'RoleMiddleware:coordenador', 'CsrfMiddleware']);
 
 // API de Alocação Inteligente
-$router->post('/api/allocation/can-assign', 'JuryController@canAssign', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
-$router->post('/api/allocation/auto-allocate-jury', 'JuryController@autoAllocateJury', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
-$router->post('/api/allocation/auto-allocate-discipline', 'JuryController@autoAllocateDiscipline', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
-$router->post('/api/allocation/swap', 'JuryController@swapVigilantes', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+$router->post('/api/allocation/can-assign', 'JuryAllocationController@canAssign', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->post('/api/allocation/auto-allocate-jury', 'JuryAllocationController@autoAllocateJury', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+$router->post('/api/allocation/auto-allocate-discipline', 'JuryAllocationController@autoAllocateDiscipline', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
+$router->post('/api/allocation/swap', 'JuryAllocationController@swapVigilantes', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
 $router->get('/api/allocation/stats', 'JuryController@getAllocationStats', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
 $router->get('/api/allocation/metrics', 'JuryController@getMetrics', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
 $router->get('/api/allocation/jury-slots/{id}', 'JuryController@getJurySlots', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
@@ -225,3 +280,21 @@ $router->post('/reports/consolidated/generate', 'ConsolidatedReportController@ge
 $router->get('/reports/consolidated/export/pdf', 'ConsolidatedReportController@exportPdf', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
 $router->get('/reports/consolidated/export/excel', 'ConsolidatedReportController@exportExcel', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
 $router->get('/reports/consolidated/export/csv', 'ConsolidatedReportController@exportCsv', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+
+// ============================================
+// ADMINISTRAÇÃO - Gestão de Utilizadores
+// ============================================
+$router->get('/admin/users', 'UserController@index', ['AuthMiddleware', 'RoleMiddleware:coordenador']);
+$router->get('/admin/users/create', 'UserController@create', ['AuthMiddleware', 'RoleMiddleware:coordenador']);
+$router->post('/admin/users', 'UserController@store', ['AuthMiddleware', 'RoleMiddleware:coordenador', 'CsrfMiddleware']);
+$router->get('/admin/users/{id}/edit', 'UserController@edit', ['AuthMiddleware', 'RoleMiddleware:coordenador']);
+$router->post('/admin/users/{id}', 'UserController@update', ['AuthMiddleware', 'RoleMiddleware:coordenador', 'CsrfMiddleware']);
+$router->post('/admin/users/{id}/toggle-status', 'UserController@toggleStatus', ['AuthMiddleware', 'RoleMiddleware:coordenador']);
+$router->post('/admin/users/{id}/promote-supervisor', 'UserController@promoteToSupervisor', ['AuthMiddleware', 'RoleMiddleware:coordenador']);
+$router->post('/admin/users/{id}/promote-member', 'UserController@promoteToCommitteeMember', ['AuthMiddleware', 'RoleMiddleware:coordenador']);
+$router->post('/admin/users/{id}/roles', 'UserController@updateRoles', ['AuthMiddleware', 'RoleMiddleware:coordenador']);
+$router->get('/admin/users/{id}/audit', 'UserController@getAuditLog', ['AuthMiddleware', 'RoleMiddleware:coordenador']);
+
+// Wizard de Reset de Senha (Admin)
+$router->get('/admin/password-reset/{id}', 'UserController@showResolvePasswordReset', ['AuthMiddleware', 'RoleMiddleware:coordenador,admin']);
+$router->post('/admin/password-reset/{id}', 'UserController@resolvePasswordReset', ['AuthMiddleware', 'RoleMiddleware:coordenador,admin', 'CsrfMiddleware']);

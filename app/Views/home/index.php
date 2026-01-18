@@ -59,7 +59,7 @@ $juriesByLocation = $juriesByLocation ?? [];
                         <div class="text-blue-100 text-xs mt-1">Locais de Exame</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-3xl font-bold">15</div>
+                        <div class="text-3xl font-bold"><?= $daysToNextExam ?? 0 ?></div>
                         <div class="text-blue-100 text-xs mt-1">Dias até exame</div>
                     </div>
                     <div class="text-center">
@@ -355,20 +355,19 @@ $juriesByLocation = $juriesByLocation ?? [];
             <div class="flex-1">
                 <h3 class="text-xl font-bold text-gray-900 mb-2">📢 Atualizações Recentes</h3>
                 <div class="space-y-2">
-                    <div class="flex items-center gap-2 text-gray-700">
-                        <span class="text-xs bg-amber-200 px-2 py-1 rounded font-semibold"><?= date('d M') ?></span>
-                        <span>Calendário de exames atualizado para <?= $currentMonth ?></span>
-                    </div>
-                    <div class="flex items-center gap-2 text-gray-700">
-                        <span
-                            class="text-xs bg-amber-200 px-2 py-1 rounded font-semibold"><?= date('d M', strtotime('-2 days')) ?></span>
-                        <span>Novas vagas para vigilantes disponíveis</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-gray-700">
-                        <span
-                            class="text-xs bg-amber-200 px-2 py-1 rounded font-semibold"><?= date('d M', strtotime('-5 days')) ?></span>
-                        <span>Guia do candidato <?= $currentYear ?> disponível para download</span>
-                    </div>
+                    <?php if (empty($recentUpdates)): ?>
+                        <div class="text-gray-500 text-sm">Nenhuma atualização recente.</div>
+                    <?php else: ?>
+                        <?php foreach ($recentUpdates as $update): ?>
+                            <div class="flex items-center gap-2 text-gray-700">
+                                <span
+                                    class="text-xs bg-amber-200 px-2 py-1 rounded font-semibold text-amber-800 whitespace-nowrap">
+                                    <?= htmlspecialchars($update['date']) ?>
+                                </span>
+                                <span class="truncate"><?= htmlspecialchars($update['text']) ?></span>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -408,9 +407,17 @@ $juriesByLocation = $juriesByLocation ?? [];
                             <?php endfor;
 
                             // Dias do mês
+                            // Extract exam days for current month from calendarExams
+                            $examDays = [];
+                            foreach ($calendarExams ?? [] as $exam) {
+                                if (date('Y-m', strtotime($exam['exam_date'])) == date('Y-m')) {
+                                    $examDays[] = (int) date('d', strtotime($exam['exam_date']));
+                                }
+                            }
+
                             for ($dia = 1; $dia <= $diasNoMes; $dia++):
                                 $isHoje = ($dia == $hoje);
-                                $isExame = in_array($dia, [20, 22, 25, 27]); // Dias com exames
+                                $isExame = in_array($dia, $examDays); // Dias com exames reais
                                 $classes = 'p-2 rounded-lg ';
                                 if ($isHoje)
                                     $classes .= 'bg-blue-600 text-white font-bold';
@@ -445,53 +452,32 @@ $juriesByLocation = $juriesByLocation ?? [];
                         Próximos Eventos
                     </h3>
                     <div class="space-y-3">
-                        <div class="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-600">
-                            <div
-                                class="text-center bg-blue-600 text-white rounded-lg px-3 py-1 text-sm font-bold min-w-[60px]">
-                                <div class="text-lg">20</div>
-                                <div class="text-xs">OUT</div>
-                            </div>
-                            <div class="flex-1">
-                                <div class="font-semibold text-gray-900 text-sm">Inscrições Encerram</div>
-                                <div class="text-xs text-gray-600">Último dia para candidaturas</div>
-                            </div>
-                        </div>
-
-                        <div class="flex items-start gap-3 p-3 bg-green-50 rounded-lg border-l-4 border-green-600">
-                            <div
-                                class="text-center bg-green-600 text-white rounded-lg px-3 py-1 text-sm font-bold min-w-[60px]">
-                                <div class="text-lg">22</div>
-                                <div class="text-xs">OUT</div>
-                            </div>
-                            <div class="flex-1">
-                                <div class="font-semibold text-gray-900 text-sm">Exame de Matemática</div>
-                                <div class="text-xs text-gray-600">09:00 - 12:00 · Campus Beira</div>
-                            </div>
-                        </div>
-
-                        <div class="flex items-start gap-3 p-3 bg-purple-50 rounded-lg border-l-4 border-purple-600">
-                            <div
-                                class="text-center bg-purple-600 text-white rounded-lg px-3 py-1 text-sm font-bold min-w-[60px]">
-                                <div class="text-lg">25</div>
-                                <div class="text-xs">OUT</div>
-                            </div>
-                            <div class="flex-1">
-                                <div class="font-semibold text-gray-900 text-sm">Exame de Física</div>
-                                <div class="text-xs text-gray-600">09:00 - 11:30 · Campus Beira</div>
-                            </div>
-                        </div>
-
-                        <div class="flex items-start gap-3 p-3 bg-orange-50 rounded-lg border-l-4 border-orange-600">
-                            <div
-                                class="text-center bg-orange-600 text-white rounded-lg px-3 py-1 text-sm font-bold min-w-[60px]">
-                                <div class="text-lg">27</div>
-                                <div class="text-xs">OUT</div>
-                            </div>
-                            <div class="flex-1">
-                                <div class="font-semibold text-gray-900 text-sm">Publicação de Resultados</div>
-                                <div class="text-xs text-gray-600">Portal online</div>
-                            </div>
-                        </div>
+                        <?php if (empty($upcomingExams)): ?>
+                            <p class="text-gray-500 text-sm p-4 text-center">Nenhum evento próximo.</p>
+                        <?php else: ?>
+                            <?php foreach ($upcomingExams as $index => $exam):
+                                $date = new DateTime($exam['exam_date']);
+                                $colors = ['blue', 'green', 'purple', 'orange', 'red'];
+                                $color = $colors[$index % count($colors)];
+                                ?>
+                                <div
+                                    class="flex items-start gap-3 p-3 bg-<?= $color ?>-50 rounded-lg border-l-4 border-<?= $color ?>-600">
+                                    <div
+                                        class="text-center bg-<?= $color ?>-600 text-white rounded-lg px-3 py-1 text-sm font-bold min-w-[60px]">
+                                        <div class="text-lg"><?= $date->format('d') ?></div>
+                                        <div class="text-xs uppercase"><?= $date->format('M') ?></div>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="font-semibold text-gray-900 text-sm">Exame de
+                                            <?= htmlspecialchars($exam['subject']) ?></div>
+                                        <div class="text-xs text-gray-600">
+                                            <?= substr($exam['start_time'], 0, 5) ?> - <?= substr($exam['end_time'], 0, 5) ?> ·
+                                            <?= htmlspecialchars($exam['location'] ?: 'Local a definir') ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -517,91 +503,57 @@ $juriesByLocation = $juriesByLocation ?? [];
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100">
-                                    <tr class="hover:bg-gray-50 transition-colors">
-                                        <td class="py-4 px-3 font-medium">20/10/2025</td>
-                                        <td class="py-4 px-3">
-                                            <div class="flex items-center gap-2">
-                                                <div class="w-2 h-2 bg-blue-600 rounded-full"></div>
-                                                <span class="font-medium">Matemática</span>
-                                            </div>
-                                        </td>
-                                        <td class="py-4 px-3 text-gray-600">09:00 - 12:00</td>
-                                        <td class="py-4 px-3 text-gray-600">Campus Beira</td>
-                                        <td class="py-4 px-3 text-center">
-                                            <span
-                                                class="inline-flex items-center px-2.5 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">
-                                                ⏰ Em breve
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    <tr class="hover:bg-gray-50 transition-colors">
-                                        <td class="py-4 px-3 font-medium">22/10/2025</td>
-                                        <td class="py-4 px-3">
-                                            <div class="flex items-center gap-2">
-                                                <div class="w-2 h-2 bg-green-600 rounded-full"></div>
-                                                <span class="font-medium">Português</span>
-                                            </div>
-                                        </td>
-                                        <td class="py-4 px-3 text-gray-600">14:00 - 17:00</td>
-                                        <td class="py-4 px-3 text-gray-600">Campus Beira</td>
-                                        <td class="py-4 px-3 text-center">
-                                            <span
-                                                class="inline-flex items-center px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                                                📅 Agendado
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    <tr class="hover:bg-gray-50 transition-colors">
-                                        <td class="py-4 px-3 font-medium">25/10/2025</td>
-                                        <td class="py-4 px-3">
-                                            <div class="flex items-center gap-2">
-                                                <div class="w-2 h-2 bg-purple-600 rounded-full"></div>
-                                                <span class="font-medium">Física</span>
-                                            </div>
-                                        </td>
-                                        <td class="py-4 px-3 text-gray-600">09:00 - 11:30</td>
-                                        <td class="py-4 px-3 text-gray-600">Campus Beira</td>
-                                        <td class="py-4 px-3 text-center">
-                                            <span
-                                                class="inline-flex items-center px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                                                📅 Agendado
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    <tr class="hover:bg-gray-50 transition-colors">
-                                        <td class="py-4 px-3 font-medium">27/10/2025</td>
-                                        <td class="py-4 px-3">
-                                            <div class="flex items-center gap-2">
-                                                <div class="w-2 h-2 bg-orange-600 rounded-full"></div>
-                                                <span class="font-medium">Química</span>
-                                            </div>
-                                        </td>
-                                        <td class="py-4 px-3 text-gray-600">14:00 - 16:30</td>
-                                        <td class="py-4 px-3 text-gray-600">Campus Beira</td>
-                                        <td class="py-4 px-3 text-center">
-                                            <span
-                                                class="inline-flex items-center px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                                                📅 Agendado
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    <tr class="hover:bg-gray-50 transition-colors">
-                                        <td class="py-4 px-3 font-medium">30/10/2025</td>
-                                        <td class="py-4 px-3">
-                                            <div class="flex items-center gap-2">
-                                                <div class="w-2 h-2 bg-red-600 rounded-full"></div>
-                                                <span class="font-medium">Biologia</span>
-                                            </div>
-                                        </td>
-                                        <td class="py-4 px-3 text-gray-600">09:00 - 11:30</td>
-                                        <td class="py-4 px-3 text-gray-600">Campus Beira</td>
-                                        <td class="py-4 px-3 text-center">
-                                            <span
-                                                class="inline-flex items-center px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                                                📅 Agendado
-                                            </span>
-                                        </td>
-                                    </tr>
+                                    <?php if (empty($calendarExams)): ?>
+                                        <tr>
+                                            <td colspan="5" class="py-4 text-center text-gray-500">Nenhum exame agendado.
+                                            </td>
+                                        </tr>
+                                    <?php else: ?>
+                                        <?php foreach ($calendarExams as $index => $exam):
+                                            $date = new DateTime($exam['exam_date']);
+                                            $today = new DateTime();
+                                            $diff = $today->diff($date)->days;
+                                            $isPast = $date < $today;
+
+                                            $statusText = 'Agendado';
+                                            $statusClass = 'bg-blue-100 text-blue-800';
+
+                                            if ($isPast) {
+                                                $statusText = 'Concluído';
+                                                $statusClass = 'bg-gray-100 text-gray-800';
+                                            } elseif ($diff <= 1) {
+                                                $statusText = 'Amanhã';
+                                                $statusClass = 'bg-red-100 text-red-800';
+                                            } elseif ($diff <= 7) {
+                                                $statusText = 'Em breve';
+                                                $statusClass = 'bg-yellow-100 text-yellow-800';
+                                            }
+
+                                            $tags = ['Matemática' => 'blue', 'Português' => 'green', 'Física' => 'purple', 'Química' => 'orange', 'Biologia' => 'red'];
+                                            $subjectColor = $tags[$exam['subject']] ?? 'gray';
+                                            ?>
+                                            <tr class="hover:bg-gray-50 transition-colors">
+                                                <td class="py-4 px-3 font-medium"><?= $date->format('d/m/Y') ?></td>
+                                                <td class="py-4 px-3">
+                                                    <div class="flex items-center gap-2">
+                                                        <div class="w-2 h-2 bg-<?= $subjectColor ?>-600 rounded-full"></div>
+                                                        <span
+                                                            class="font-medium"><?= htmlspecialchars($exam['subject']) ?></span>
+                                                    </div>
+                                                </td>
+                                                <td class="py-4 px-3 text-gray-600"><?= substr($exam['start_time'], 0, 5) ?> -
+                                                    <?= substr($exam['end_time'], 0, 5) ?></td>
+                                                <td class="py-4 px-3 text-gray-600">
+                                                    <?= htmlspecialchars($exam['location'] ?: 'TBA') ?></td>
+                                                <td class="py-4 px-3 text-center">
+                                                    <span
+                                                        class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold <?= $statusClass ?>">
+                                                        <?= $statusText ?>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
                                 </tbody>
                             </table>
                         </div>

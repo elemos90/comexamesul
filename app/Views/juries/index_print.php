@@ -189,10 +189,32 @@ ksort($juriesByDate);
             </thead>
             <tbody>
                 <?php
+                // CÁLCULO PRÉVIO: Totais por Disciplina
+                $disciplineTotals = [];
+                if (!empty($groupedJuries)) {
+                    foreach ($groupedJuries as $g) {
+                        $subj = $g['subject'];
+                        if (!isset($disciplineTotals[$subj])) {
+                            $disciplineTotals[$subj] = ['candidates' => 0, 'vigilantes' => 0, 'juries' => 0];
+                        }
+
+                        foreach ($g['locations'] as $loc) {
+                            foreach ($loc['juries'] as $j) {
+                                $disciplineTotals[$subj]['candidates'] += (int) $j['candidates_quota'];
+                                $disciplineTotals[$subj]['vigilantes'] += count($j['vigilantes'] ?? []);
+                                $disciplineTotals[$subj]['juries']++;
+                            }
+                        }
+                    }
+                }
+
                 $totalGeralCandidatos = 0;
                 $totalGeralVigilantes = 0;
 
-                foreach ($groupedJuries as $group):
+                // Re-indexar array para garantir consistência nas chaves numéricas
+                $groupedJuries = array_values($groupedJuries);
+
+                foreach ($groupedJuries as $groupIndex => $group):
                     // Calcular rowspan total do grupo principal (Exam/Subject/Time)
                     // Rowspan = Para cada local -> (1 header + N juries + 1 subtotal)
                     $totalRowspan = 0;
@@ -321,6 +343,46 @@ ksort($juriesByDate);
                         ?>
 
                     <?php endforeach; // Fim loop locais ?>
+
+                    <?php
+                    // LÓGICA DE EXIBIÇÃO DO TOTAL DA DISCIPLINA
+                    // Verifica se o próximo item é de uma disciplina diferente
+                    $currentSubject = $group['subject'];
+                    $nextGroup = $groupedJuries[$groupIndex + 1] ?? null;
+                    $nextSubject = $nextGroup['subject'] ?? null;
+
+                    if ($currentSubject !== $nextSubject && isset($disciplineTotals[$currentSubject])):
+                        $totals = $disciplineTotals[$currentSubject];
+                        ?>
+                        <tr class="discipline-total-row"
+                            style="background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%); -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+                            <td colspan="8"
+                                style="padding: 8px 12px; border-top: 3px solid #d97706; border-bottom: 3px solid #d97706;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span
+                                        style="font-weight: 900; color: #78350f; font-size: 11pt; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        📚 TOTAL <?= strtoupper($currentSubject) ?>
+                                    </span>
+                                    <div style="display: flex; gap: 24px; font-weight: bold; color: #78350f;">
+                                        <span>
+                                            <span style="font-size: 9pt; opacity: 0.75;">Candidatos:</span>
+                                            <span
+                                                style="font-size: 11pt; margin-left: 4px;"><?= number_format($totals['candidates'], 0) ?></span>
+                                        </span>
+                                        <span>
+                                            <span style="font-size: 9pt; opacity: 0.75;">Júris:</span>
+                                            <span style="font-size: 11pt; margin-left: 4px;"><?= $totals['juries'] ?></span>
+                                        </span>
+                                        <span>
+                                            <span style="font-size: 9pt; opacity: 0.75;">Vigilantes:</span>
+                                            <span style="font-size: 11pt; margin-left: 4px;"><?= $totals['vigilantes'] ?></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endif; ?>
+
                 <?php endforeach; // Fim loop grupos principais ?>
 
                 <!-- Total Geral (Mantido) -->
@@ -361,22 +423,84 @@ ksort($juriesByDate);
 
 <style>
     /* Reset & Base */
-    /* Reset & Base */
     @media print {
-        body {
-            font-family: 'Times New Roman', Times, serif;
-            font-size: 11pt;
-            color: #000;
-            line-height: 1.3;
+        @page {
+            size: A4 portrait;
+            margin: 1.5cm 1cm;
+        }
+
+        /* HIDE EVERYTHING ELSE */
+        body,
+        html {
+            height: auto;
+            overflow: visible;
+        }
+
+        body * {
+            visibility: hidden;
+        }
+
+        /* SHOW ONLY THE PRINT DOCUMENT */
+        .print-document,
+        .print-document * {
+            visibility: visible;
+        }
+
+        .print-document {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            background: white;
+            z-index: 9999;
+        }
+
+        /* Force Hide Specific Elements */
+        nav,
+        aside,
+        .sidebar,
+        .navbar,
+        header,
+        footer,
+        .modal,
+        .no-print,
+        button {
+            display: none !important;
+        }
+
+        /* Ensure tables break correctly */
+        .official-table {
+            page-break-inside: auto;
+        }
+
+        .official-table tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+        }
+
+        .official-table thead {
+            display: table-header-group;
+        }
+
+        .official-table tfoot {
+            display: table-footer-group;
+        }
+
+        /* Ensure colors print */
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
     }
 
-    /* Screen-only */
+    /* Screen-only styles */
     .no-print {
         margin-bottom: 2rem;
     }
 
-    /* Print Document Container */
+    /* Document Container on Screen */
     .print-document {
         background: white;
         padding: 0;
@@ -396,23 +520,6 @@ ksort($juriesByDate);
         object-fit: contain;
     }
 
-    .inst-title {
-        font-weight: bold;
-        text-transform: uppercase;
-        font-size: 12pt;
-        margin-bottom: 2px;
-    }
-
-    .inst-subtitle {
-        font-size: 10pt;
-        margin-bottom: 2px;
-    }
-
-    .inst-dept {
-        font-size: 10pt;
-        font-style: italic;
-    }
-
     /* Official Table Styles */
     .official-table {
         width: 100%;
@@ -424,78 +531,34 @@ ksort($juriesByDate);
     .official-table th,
     .official-table td {
         border: 1px solid #000;
-        /* Strict Black Border */
         padding: 4px 6px;
         vertical-align: middle;
     }
 
-    /* Headers */
     .official-table thead th {
         background-color: #d9d9d9 !important;
-        /* Gray Header */
         color: #000;
         font-weight: bold;
         text-transform: uppercase;
         text-align: center;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-
-    /* Column Widths (Approximate based on image) */
-    .col-dia {
-        width: 10%;
-    }
-
-    .col-hora {
-        width: 8%;
-    }
-
-    .col-exame {
-        width: 15%;
-    }
-
-    .col-salas {
-        width: 20%;
-    }
-
-    .col-ncand {
-        width: 7%;
-    }
-
-    .col-vigilante {
-        width: 33%;
-    }
-
-    .col-nvigias {
-        width: 7%;
     }
 
     /* Hierarchy Styles */
-    .row-location-header td {
+    .location-header td {
         background-color: #ffff00 !important;
-        /* Yellow */
         font-weight: bold;
-        text-align: center;
         text-transform: uppercase;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
     }
 
-    .row-subtotal td {
+    .subtotal-row td {
         background-color: #ffff00 !important;
-        /* Yellow */
         font-weight: bold;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
     }
 
-    .row-total td {
+    .total-row td {
         background-color: #ffc000 !important;
-        /* Orange/Dark Yellow */
         font-weight: bold;
         text-transform: uppercase;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
     }
 
     .text-center {
@@ -508,46 +571,5 @@ ksort($juriesByDate);
 
     .font-bold {
         font-weight: bold;
-    }
-
-    /* Print Specifics */
-    @media print {
-        @page {
-            size: A4 portrait;
-            margin: 1.5cm 1cm;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-        }
-
-        .no-print {
-            display: none !important;
-        }
-
-        /* Table Page Breaking */
-        .official-table {
-            page-break-inside: auto;
-        }
-
-        .official-table tr {
-            page-break-inside: avoid;
-            page-break-after: auto;
-        }
-
-        .official-table thead {
-            display: table-header-group;
-        }
-
-        .official-table tfoot {
-            display: table-footer-group;
-        }
-
-        /* Ensure backgrounds print */
-        * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
     }
 </style>

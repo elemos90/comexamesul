@@ -35,34 +35,44 @@ $openVacanciesCount = count($vacancyModel->openVacancies());
                 </div>
             </div>
         <?php endif; ?>
+
         <h1 class="text-lg md:text-xl font-semibold text-gray-800 mb-3 md:mb-4">Aceder ao portal</h1>
+
         <form method="POST" action="<?= url('/login') ?>" class="space-y-3 md:space-y-4">
             <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
+
             <div>
-                <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                <input type="email" id="email" name="email" value="<?= htmlspecialchars(old('email')) ?>"
+                <label for="username" class="block text-sm font-medium text-gray-700">Nome de utilizador</label>
+                <input type="text" id="username" name="username" value="<?= htmlspecialchars(old('username')) ?>"
                     class="mt-1 w-full rounded border border-gray-300 px-3 py-2 focus:ring-primary-500 focus:border-primary-500"
-                    required>
-                <?php if (!empty($errors['email'])): ?>
-                    <p class="mt-1 text-xs text-red-600"><?= htmlspecialchars($errors['email'][0]) ?></p>
+                    placeholder="ex: joao.silva" required autocomplete="username">
+                <?php if (!empty($errors['username'])): ?>
+                    <p class="mt-1 text-xs text-red-600"><?= htmlspecialchars($errors['username'][0]) ?></p>
                 <?php endif; ?>
+                <p class="mt-1 text-xs text-gray-500">Também pode usar o seu email se ainda não tiver um username.</p>
             </div>
+
             <div>
                 <label for="password" class="block text-sm font-medium text-gray-700">Palavra-passe</label>
                 <input type="password" id="password" name="password"
                     class="mt-1 w-full rounded border border-gray-300 px-3 py-2 focus:ring-primary-500 focus:border-primary-500"
-                    required>
+                    required autocomplete="current-password">
                 <?php if (!empty($errors['password'])): ?>
                     <p class="mt-1 text-xs text-red-600"><?= htmlspecialchars($errors['password'][0]) ?></p>
                 <?php endif; ?>
             </div>
+
             <div class="flex items-center justify-between text-sm">
-                <a class="text-primary-600 hover:text-primary-500" href="<?= url('/password/forgot') ?>">Esqueci a
+                <a class="text-primary-600 hover:text-primary-500" href="<?= url('/recover') ?>">Esqueci a
                     palavra-passe</a>
             </div>
+
             <button type="submit"
-                class="w-full bg-primary-600 text-white font-semibold py-2 rounded hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">Entrar</button>
+                class="w-full bg-primary-600 text-white font-semibold py-2 rounded hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                Entrar
+            </button>
         </form>
+
         <p class="mt-3 md:mt-4 text-sm text-center text-gray-600">
             Ainda não tem conta? <a class="text-primary-600 font-medium hover:underline"
                 href="<?= url('/register') ?>">Crie aqui</a>

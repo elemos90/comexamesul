@@ -35,11 +35,16 @@ $openVacanciesCount = count($vacancyModel->openVacancies());
                 </div>
             </div>
         <?php endif; ?>
+
         <h1 class="text-lg md:text-xl font-semibold text-gray-800 mb-3 md:mb-4">Registar vigilante</h1>
-        <form method="POST" action="<?= url('/register') ?>" class="grid md:grid-cols-2 gap-3 md:gap-4">
+
+        <form method="POST" action="<?= url('/register') ?>" class="grid md:grid-cols-2 gap-3 md:gap-4"
+            id="register-form">
             <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
+
+            <!-- Nome Completo -->
             <div class="md:col-span-2">
-                <label for="name" class="block text-sm font-medium text-gray-700">Nome completo</label>
+                <label for="name" class="block text-sm font-medium text-gray-700">Nome completo *</label>
                 <input type="text" id="name" name="name" value="<?= htmlspecialchars(old('name')) ?>"
                     class="mt-1 w-full rounded border border-gray-300 px-3 py-2 focus:ring-primary-500 focus:border-primary-500"
                     required>
@@ -47,42 +52,132 @@ $openVacanciesCount = count($vacancyModel->openVacancies());
                     <p class="mt-1 text-xs text-red-600"><?= htmlspecialchars($errors['name'][0]) ?></p>
                 <?php endif; ?>
             </div>
+
+            <!-- Username (Obrigatório) -->
             <div>
-                <label for="email" class="block text-sm font-medium text-gray-700">Email institucional</label>
+                <label for="username" class="block text-sm font-medium text-gray-700">Nome de utilizador *</label>
+                <input type="text" id="username" name="username" value="<?= htmlspecialchars(old('username')) ?>"
+                    class="mt-1 w-full rounded border border-gray-300 px-3 py-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="ex: joao.silva" required autocomplete="username" pattern="[a-zA-Z0-9._]+"
+                    title="Apenas letras, números, pontos e underscores">
+                <?php if (!empty($errors['username'])): ?>
+                    <p class="mt-1 text-xs text-red-600"><?= htmlspecialchars($errors['username'][0]) ?></p>
+                <?php endif; ?>
+                <p class="mt-1 text-xs text-gray-500">Será usado para fazer login (ex: nome.apelido)</p>
+            </div>
+
+            <!-- Email (Opcional) -->
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700">Email <span
+                        class="text-gray-400">(opcional)</span></label>
                 <input type="email" id="email" name="email" value="<?= htmlspecialchars(old('email')) ?>"
                     class="mt-1 w-full rounded border border-gray-300 px-3 py-2 focus:ring-primary-500 focus:border-primary-500"
-                    required>
+                    autocomplete="email">
                 <?php if (!empty($errors['email'])): ?>
                     <p class="mt-1 text-xs text-red-600"><?= htmlspecialchars($errors['email'][0]) ?></p>
                 <?php endif; ?>
             </div>
+
+            <!-- Password -->
             <div>
-                <label for="password" class="block text-sm font-medium text-gray-700">Palavra-passe</label>
+                <label for="password" class="block text-sm font-medium text-gray-700">Palavra-passe *</label>
                 <input type="password" id="password" name="password"
                     class="mt-1 w-full rounded border border-gray-300 px-3 py-2 focus:ring-primary-500 focus:border-primary-500"
-                    required>
+                    required minlength="8" autocomplete="new-password">
                 <?php if (!empty($errors['password'])): ?>
                     <p class="mt-1 text-xs text-red-600"><?= htmlspecialchars($errors['password'][0]) ?></p>
                 <?php endif; ?>
+                <div class="mt-1 text-xs text-gray-500" id="password-requirements">
+                    <span id="req-length" class="text-red-500">✗ Mínimo 8 caracteres</span><br>
+                    <span id="req-number" class="text-red-500">✗ Pelo menos 1 número</span><br>
+                    <span id="req-special" class="text-red-500">✗ Pelo menos 1 caractere especial</span>
+                </div>
             </div>
+
+            <!-- Confirmar Password -->
             <div>
                 <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Confirmar
-                    palavra-passe</label>
+                    palavra-passe *</label>
                 <input type="password" id="password_confirmation" name="password_confirmation"
                     class="mt-1 w-full rounded border border-gray-300 px-3 py-2 focus:ring-primary-500 focus:border-primary-500"
-                    required>
+                    required minlength="8" autocomplete="new-password">
+                <p class="mt-1 text-xs text-gray-500" id="password-match"></p>
             </div>
+
             <div class="md:col-span-2 flex items-center justify-between text-sm text-gray-600">
-                <span>Ao registar, confirmo que os dados sao verdadeiros.</span>
-                <a href="<?= url('/login') ?>" class="text-primary-600 font-medium">Ja tenho conta</a>
+                <span>Ao registar, confirmo que os dados são verdadeiros.</span>
+                <a href="<?= url('/login') ?>" class="text-primary-600 font-medium">Já tenho conta</a>
             </div>
+
             <div class="md:col-span-2">
-                <button type="submit"
-                    class="w-full bg-primary-600 text-white font-semibold py-2 rounded hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">Criar
-                    conta</button>
-                <p class="mt-3 text-xs text-gray-500">Depois de criar a conta, pode iniciar sessao com as suas
-                    credenciais.</p>
+                <button type="submit" id="submit-btn"
+                    class="w-full bg-primary-600 text-white font-semibold py-2 rounded hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Criar conta
+                </button>
+                <p class="mt-3 text-xs text-gray-500">Depois de criar a conta, será solicitado a completar o seu perfil.
+                </p>
             </div>
         </form>
     </div>
 </section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const passwordInput = document.getElementById('password');
+        const confirmInput = document.getElementById('password_confirmation');
+        const reqLength = document.getElementById('req-length');
+        const reqNumber = document.getElementById('req-number');
+        const reqSpecial = document.getElementById('req-special');
+        const passwordMatch = document.getElementById('password-match');
+
+        function validatePassword() {
+            const password = passwordInput.value;
+
+            // Mínimo 8 caracteres
+            if (password.length >= 8) {
+                reqLength.textContent = '✓ Mínimo 8 caracteres';
+                reqLength.className = 'text-green-600';
+            } else {
+                reqLength.textContent = '✗ Mínimo 8 caracteres';
+                reqLength.className = 'text-red-500';
+            }
+
+            // Pelo menos 1 número
+            if (/[0-9]/.test(password)) {
+                reqNumber.textContent = '✓ Pelo menos 1 número';
+                reqNumber.className = 'text-green-600';
+            } else {
+                reqNumber.textContent = '✗ Pelo menos 1 número';
+                reqNumber.className = 'text-red-500';
+            }
+
+            // Pelo menos 1 caractere especial
+            if (/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/]/.test(password)) {
+                reqSpecial.textContent = '✓ Pelo menos 1 caractere especial';
+                reqSpecial.className = 'text-green-600';
+            } else {
+                reqSpecial.textContent = '✗ Pelo menos 1 caractere especial';
+                reqSpecial.className = 'text-red-500';
+            }
+
+            checkPasswordMatch();
+        }
+
+        function checkPasswordMatch() {
+            if (confirmInput.value.length > 0) {
+                if (passwordInput.value === confirmInput.value) {
+                    passwordMatch.textContent = '✓ As senhas coincidem';
+                    passwordMatch.className = 'mt-1 text-xs text-green-600';
+                } else {
+                    passwordMatch.textContent = '✗ As senhas não coincidem';
+                    passwordMatch.className = 'mt-1 text-xs text-red-500';
+                }
+            } else {
+                passwordMatch.textContent = '';
+            }
+        }
+
+        passwordInput.addEventListener('input', validatePassword);
+        confirmInput.addEventListener('input', checkPasswordMatch);
+    });
+</script>

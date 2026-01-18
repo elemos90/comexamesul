@@ -24,4 +24,8 @@ class Flash
         unset($_SESSION[self::KEY]);
         return $messages;
     }
+    public static function has(string $type): bool
+    {
+        return !empty($_SESSION[self::KEY][$type]);
+    }
 }

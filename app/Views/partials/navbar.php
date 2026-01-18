@@ -9,9 +9,9 @@ $roleNames = [
 ];
 $roleName = $roleNames[$user['role']] ?? ucfirst($user['role']);
 ?>
-<nav class="bg-white">
-    <div class="max-w-full mx-auto px-6">
-        <div class="flex justify-between h-14 items-center">
+<nav class="bg-white border-b border-gray-100 h-24">
+    <div class="max-w-full mx-auto px-6 h-full">
+        <div class="flex justify-between h-full items-center">
             <!-- Botão Hamburguer (Mobile) -->
             <button @click="mobileMenuOpen = true"
                 class="md:hidden p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none transition-colors">
@@ -36,16 +36,19 @@ $roleName = $roleNames[$user['role']] ?? ucfirst($user['role']);
                 </button>
 
                 <!-- Notificações -->
-                <button type="button"
+                <a href="<?= url('/notifications') ?>" id="notifications-bell"
                     class="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors relative"
                     title="Notificações">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                     </svg>
-                    <!-- Badge de notificação (se houver) -->
-                    <!-- <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span> -->
-                </button>
+                    <!-- Badge de notificação (atualizado dinamicamente) -->
+                    <span id="notifications-count"
+                        class="hidden absolute top-0.5 right-0.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                        0
+                    </span>
+                </a>
 
                 <!-- User Dropdown -->
                 <div class="relative ml-2" x-data="{ open: false }">
@@ -132,3 +135,46 @@ $roleName = $roleNames[$user['role']] ?? ucfirst($user['role']);
         </div>
     </div>
 </nav>
+
+<script>
+    // Notification count polling
+    (function () {
+        const countBadge = document.getElementById('notifications-count');
+        const bellIcon = document.getElementById('notifications-bell');
+
+        if (!countBadge || !bellIcon) return;
+
+        async function fetchNotificationCount() {
+            try {
+                const response = await fetch('<?= url("/notifications/unread-count") ?>', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const count = parseInt(data.count) || 0;
+
+                    if (count > 0) {
+                        countBadge.textContent = count > 99 ? '99+' : count;
+                        countBadge.classList.remove('hidden');
+                        bellIcon.classList.add('text-primary-600');
+                    } else {
+                        countBadge.classList.add('hidden');
+                        bellIcon.classList.remove('text-primary-600');
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to fetch notification count:', error);
+            }
+        }
+
+        // Fetch immediately on page load
+        fetchNotificationCount();
+
+        // Poll every 30 seconds
+        setInterval(fetchNotificationCount, 30000);
+    })();
+</script>

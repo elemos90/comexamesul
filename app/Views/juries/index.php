@@ -263,11 +263,93 @@ $isVigilante = $user['role'] === 'vigilante';
                                         <?php endif; ?>
                                     </div>
                                 <?php endforeach; ?>
-                                </div>
                             <?php endforeach; ?>
+                        </div>
+
+                        <?php
+                            // CALCULAR TOTAIS DA DISCIPLINA (Candidate, Jury, Vigilante)
+                            $discTotalCandidates = 0;
+                            $discTotalJuries = 0;
+                            $discTotalVigilantes = 0;
+
+                            foreach ($group['locations'] as $loc) {
+                                foreach ($loc['juries'] as $j) {
+                                    $discTotalCandidates += (int)$j['candidates_quota'];
+                                    $discTotalJuries++;
+                                    $discTotalVigilantes += count($j['vigilantes']);
+                                }
+                            }
+                        ?>
+                        
+                        <!-- LINHA DE TOTAL DA DISCIPLINA (Igual ao Planeamento Avançado) -->
+                        <div style="background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%); border-top: 3px solid #d97706; border-bottom: 3px solid #d97706;" class="px-6 py-3">
+                            <div class="flex items-center justify-between">
+                                <span class="font-extrabold text-amber-900 text-base uppercase tracking-wide">
+                                    📚 TOTAL <?= strtoupper($group['subject']) ?>
+                                </span>
+                                <div class="flex gap-8 font-bold text-amber-900">
+                                    <span class="flex items-center gap-2">
+                                        <span class="text-sm opacity-75">Candidatos:</span>
+                                        <span class="text-lg"><?= number_format($discTotalCandidates, 0) ?></span>
+                                    </span>
+                                    <span class="flex items-center gap-2">
+                                        <span class="text-sm opacity-75">Júris:</span>
+                                        <span class="text-lg"><?= number_format($discTotalJuries, 0) ?></span>
+                                    </span>
+                                    <span class="flex items-center gap-2">
+                                        <span class="text-sm opacity-75">Vigilantes:</span>
+                                        <span class="text-lg"><?= number_format($discTotalVigilantes, 0) ?></span>
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 <?php endforeach; ?>
+                
+                <?php
+                // NOVO: Totais por disciplina
+                if (!empty($groupedJuries)):
+                    $disciplineTotals = [];
+                    foreach ($groupedJuries as $group) {
+                        $subject = $group['subject'];
+                        if (!isset($disciplineTotals[$subject])) {
+                            $disciplineTotals[$subject] = ['candidates' => 0, 'vigilantes' => 0, 'juries' => 0];
+                        }
+                        foreach ($group['locations'] as $location => $locData) {
+                            foreach ($locData['juries'] as $jury) {
+                                $disciplineTotals[$subject]['candidates'] += (int)$jury['candidates_quota'];
+                                $disciplineTotals[$subject]['vigilantes'] += count($jury['vigilantes'] ?? []);
+                                $disciplineTotals[$subject]['juries']++;
+                            }
+                        }
+                    }
+                    foreach ($disciplineTotals as $subject => $totals):
+                ?>
+                    <div class="bg-gradient-to-r from-amber-300 to-amber-400 border-t-4 border-b-4 border-amber-600 rounded-lg p-4 shadow-lg">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-base font-extrabold text-amber-900 uppercase tracking-wide flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/>
+                                </svg>
+                                📚 TOTAL <?= strtoupper($subject) ?>
+                            </h3>
+                            <div class="flex gap-6 font-bold text-amber-900">
+                                <span class="flex items-center gap-2">
+                                    <span class="text-sm opacity-75">Candidatos:</span>
+                                    <span class="text-lg"><?= number_format($totals['candidates'], 0) ?></span>
+                                </span>
+                                <span class="flex items-center gap-2">
+                                    <span class="text-sm opacity-75">Júris:</span>
+                                    <span class="text-lg"><?= $totals['juries'] ?></span>
+                                </span>
+                                <span class="flex items-center gap-2">
+                                    <span class="text-sm opacity-75">Vigilantes:</span>
+                                    <span class="text-lg"><?= $totals['vigilantes'] ?></span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; endif; ?>
                 
                 <?php if (!$groupedJuries): ?>
                     <div class="bg-white border border-gray-200 rounded-lg p-12 text-center">

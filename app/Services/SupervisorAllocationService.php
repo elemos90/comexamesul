@@ -366,17 +366,43 @@ class SupervisorAllocationService
 
         $oldSupervisorId = $jury['supervisor_id'];
 
-        // Verificar se novo supervisor é válido (qualquer vigilante pode ser supervisor)
+        // Verificar se novo supervisor é válido (vigilante, coordenador ou membro)
         if ($newSupervisorId > 0) {
             $supervisor = $this->userModel->find($newSupervisorId);
-            if (!$supervisor || $supervisor['role'] !== 'vigilante') {
+            if (!$supervisor || !in_array($supervisor['role'], ['vigilante', 'coordenador', 'membro'])) {
                 return [
                     'success' => false,
-                    'message' => 'Apenas vigilantes podem ser supervisores.'
+                    'message' => 'Apenas vigilantes e membros da comissão podem ser supervisores.'
                 ];
             }
 
-            // Verificar conflito de horário
+            // **NOVO: Verificar se já é supervisor em outro exame NO MESMO HORÁRIO**
+            $existingSupervisions = $this->juryModel->statement(
+                "SELECT j.id, j.subject, j.location, j.room
+                 FROM juries j
+                 WHERE j.supervisor_id = :supervisor_id
+                   AND j.exam_date = :exam_date
+                   AND j.id != :jury_id
+                   AND j.start_time < :end_time
+                   AND j.end_time > :start_time",
+                [
+                    'supervisor_id' => $newSupervisorId,
+                    'exam_date' => $jury['exam_date'],
+                    'jury_id' => $juryId,
+                    'start_time' => $jury['start_time'],
+                    'end_time' => $jury['end_time']
+                ]
+            );
+
+            if (!empty($existingSupervisions)) {
+                $conflictDetails = $existingSupervisions[0];
+                return [
+                    'success' => false,
+                    'message' => "Conflito de Supervisão: Este supervisor já está supervisionando '{$conflictDetails['subject']}' em '{$conflictDetails['location']} - {$conflictDetails['room']}' neste horário. Um supervisor não pode estar em dois locais ao mesmo tempo."
+                ];
+            }
+
+            // Verificar conflito de horário (já supervisor em MESMO exame/horário)
             $conflicts = $this->juryModel->statement(
                 "SELECT id FROM juries 
                  WHERE supervisor_id = :supervisor_id
@@ -405,22 +431,45 @@ class SupervisorAllocationService
             }
         }
 
-        // Actualizar
-        $this->juryModel->update($juryId, [
-            'supervisor_id' => $newSupervisorId > 0 ? $newSupervisorId : null,
-            'updated_at' => now()
-        ]);
+        // **CORREÇÃO CRÍTICA: Atribuir a TODOS os júris do mesmo bloco, não apenas um**
+        // Buscar todos os júris do mesmo exame (subject, date, time, location)
+        $blockJuries = $this->juryModel->statement(
+            "SELECT id FROM juries
+             WHERE subject = :subject
+               AND exam_date = :exam_date
+               AND start_time = :start_time
+               AND end_time = :end_time
+               AND location = :location",
+            [
+                'subject' => $jury['subject'],
+                'exam_date' => $jury['exam_date'],
+                'start_time' => $jury['start_time'],
+                'end_time' => $jury['end_time'],
+                'location' => $jury['location']
+            ]
+        );
+
+        $updatedCount = 0;
+        foreach ($blockJuries as $blockJury) {
+            $this->juryModel->update($blockJury['id'], [
+                'supervisor_id' => $newSupervisorId > 0 ? $newSupervisorId : null,
+                'updated_at' => now()
+            ]);
+            $updatedCount++;
+        }
 
         if ($this->config['log_auto_allocation']) {
-            ActivityLogger::log('supervisor_allocation', $juryId, 'reassign', [
+            ActivityLogger::log('supervisor_allocation', $juryId, 'reassign_block', [
                 'old_supervisor_id' => $oldSupervisorId,
-                'new_supervisor_id' => $newSupervisorId
+                'new_supervisor_id' => $newSupervisorId,
+                'updated_count' => $updatedCount,
+                'location' => $jury['location']
             ]);
         }
 
         return [
             'success' => true,
-            'message' => 'Júri reassociado com sucesso.'
+            'message' => "Supervisor atribuído a {$updatedCount} júri(s) em {$jury['location']}"
         ];
     }
 

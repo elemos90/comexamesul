@@ -80,7 +80,7 @@ $items = [
     ['label' => 'Meu Mapa de Pagamento', 'href' => url('/payments/my-map'), 'roles' => ['vigilante', 'supervisor'], 'icon' => 'receipt_long', 'color' => 'emerald'],
 
     // --- RELATÓRIOS ---
-    ['header' => 'RELATÓRIOS'],
+    ['header' => 'RELATÓRIOS', 'roles' => ['membro', 'coordenador']],
     [
         'label' => 'Relatórios',
         'href' => url('/reports/consolidated'),
@@ -93,7 +93,9 @@ $items = [
     ],
 
     // --- ADMINISTRAÇÃO ---
-    ['header' => 'ADMINISTRAÇÃO'],
+    ['header' => 'ADMINISTRAÇÃO', 'roles' => ['coordenador']],
+    // Gestão de Utilizadores (apenas coordenador)
+    ['label' => 'Gestão de Utilizadores', 'href' => url('/admin/users'), 'roles' => ['coordenador'], 'icon' => 'manage_accounts', 'color' => 'blue'],
     [
         'label' => 'Dados Mestres',
         'href' => url('/master-data/disciplines'),
@@ -109,8 +111,23 @@ $items = [
     // Administração - Feature Flags (apenas coordenador)
     ['label' => 'Config. Funcionalidades', 'href' => url('/admin/features'), 'roles' => ['coordenador'], 'icon' => 'tune', 'color' => 'purple'],
 
+    // --- COMUNICAÇÃO ---
+    ['header' => 'COMUNICAÇÃO', 'roles' => ['coordenador', 'membro', 'supervisor', 'vigilante']],
+    [
+        'label' => 'Notificações',
+        'href' => url('/notifications'),
+        'roles' => ['coordenador', 'membro', 'supervisor', 'vigilante'],
+        'icon' => 'notifications',
+        'color' => 'purple',
+        'children' => [
+            ['label' => 'Minhas Notificações', 'href' => url('/notifications'), 'roles' => ['coordenador', 'membro', 'supervisor', 'vigilante']],
+            ['label' => 'Nova Notificação', 'href' => url('/notifications/create'), 'roles' => ['coordenador']],
+            ['label' => 'Histórico', 'href' => url('/notifications/history'), 'roles' => ['coordenador']],
+        ]
+    ],
+
     // --- SISTEMA ---
-    ['header' => 'SISTEMA'],
+    ['header' => 'SISTEMA', 'roles' => ['coordenador', 'membro', 'supervisor', 'vigilante']],
     ['label' => 'Perfil', 'href' => url('/profile'), 'roles' => ['vigilante', 'supervisor', 'membro', 'coordenador'], 'icon' => 'account_circle', 'color' => 'gray'],
 ];
 
@@ -144,7 +161,7 @@ $colorClasses = [
     }
 
     aside#sidebar-desktop[data-collapsed="false"] {
-        width: 16rem !important;
+        width: 18rem !important;
     }
 
     aside#sidebar-desktop {
@@ -169,16 +186,16 @@ $colorClasses = [
 
 <!-- Sidebar Desktop -->
 <aside id="sidebar-desktop"
-    class="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 shadow-md h-full transition-all duration-300 ease-in-out group/sidebar"
+    class="hidden md:flex flex-col w-72 bg-white border-r border-gray-200 shadow-md h-full transition-all duration-300 ease-in-out group/sidebar"
     data-collapsed="false">
 
     <!-- Header / Branding -->
-    <div class="flex items-center justify-between px-3 py-4 border-b border-gray-100 flex-shrink-0">
+    <div class="flex items-center justify-between px-3 h-24 border-b border-gray-100 flex-shrink-0">
         <!-- Logo Area -->
         <a href="<?= url('/dashboard') ?>"
             class="flex items-center gap-3 overflow-hidden transition-all duration-300 group/logo">
             <img src="<?= url('/assets/images/logo_unilicungo.png') ?>" alt="Logo"
-                class="h-12 w-auto object-contain transition-transform duration-300">
+                class="h-16 w-auto object-contain transition-transform duration-300">
 
             <div class="flex flex-col sidebar-text transition-opacity duration-300">
                 <span class="font-bold text-gray-800 text-sm leading-tight tracking-tight">Portal</span>
@@ -198,11 +215,17 @@ $colorClasses = [
     </div>
 
     <!-- Menu Items -->
-    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
+    <nav class="flex-1 px-3 py-4 space-y-2 overflow-y-auto overflow-x-hidden custom-scrollbar">
         <?php foreach ($items as $item): ?>
 
             <!-- Checks if it is a Header -->
             <?php if (isset($item['header'])): ?>
+                <?php
+                // Check if header should be shown for this role
+                if (isset($item['roles']) && !in_array($role, $item['roles'], true)) {
+                    continue;
+                }
+                ?>
                 <div class="sidebar-header mt-2 mb-1 px-3 font-medium text-gray-400 uppercase tracking-widest transition-opacity duration-200"
                     style="font-size: 9px !important;">
                     <?= htmlspecialchars($item['header']) ?>
@@ -230,7 +253,7 @@ $colorClasses = [
                 <div class="submenu-wrapper relative group/item" data-has-submenu="true">
 
                     <button type="button"
-                        class="submenu-toggle w-full flex items-center justify-between px-3 py-2 text-[13px] font-medium rounded-lg transition-all duration-200 border border-transparent <?= $active ? $activeClass : 'text-gray-600 ' . $hoverClass ?>"
+                        class="submenu-toggle w-full flex items-center justify-between px-3 py-2.5 text-[13px] font-medium rounded-lg transition-all duration-200 border border-transparent <?= $active ? $activeClass : 'text-gray-600 ' . $hoverClass ?>"
                         data-submenu="<?= htmlspecialchars($item['label']) ?>">
 
                         <div class="flex items-center gap-2 min-w-0">
@@ -268,7 +291,7 @@ $colorClasses = [
             <?php else: ?>
                 <!-- Item simples -->
                 <a href="<?= $item['href'] ?>"
-                    class="group/item flex items-center gap-2 px-3 py-2 text-[13px] font-medium rounded-lg transition-all duration-200 border border-transparent <?= $active ? $activeClass : 'text-gray-600 ' . $hoverClass ?>">
+                    class="group/item flex items-center gap-2 px-3 py-2.5 text-[13px] font-medium rounded-lg transition-all duration-200 border border-transparent <?= $active ? $activeClass : 'text-gray-600 ' . $hoverClass ?>">
                     <span
                         class="material-symbols-rounded text-[14px] shrink-0 <?= $active ? '' : 'text-gray-400 group-hover/item:text-gray-600' ?>">
                         <?= $item['icon'] ?? 'radio_button_unchecked' ?>
@@ -327,7 +350,11 @@ $colorClasses = [
         <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
             <?php foreach ($items as $item): ?>
                 <?php if (isset($item['header'])) {
-                    // Opcional: Renderizar header no mobile também
+                    // Check if header should be shown for this role
+                    if (isset($item['roles']) && !in_array($role, $item['roles'], true)) {
+                        continue;
+                    }
+                    // Renderizar header no mobile
                     echo '<div class="px-4 mt-4 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider">' . htmlspecialchars($item['header']) . '</div>';
                     continue;
                 } ?>

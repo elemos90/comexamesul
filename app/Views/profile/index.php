@@ -22,6 +22,25 @@ $breadcrumbs = [
                 </span>
             </div>
 
+            <nav class="mt-6 space-y-1">
+                <a href="<?= url('/profile') ?>"
+                    class="flex items-center gap-3 px-4 py-2 bg-primary-50 text-primary-700 rounded-lg font-medium">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Dados Pessoais
+                </a>
+                <a href="<?= url('/profile/recovery') ?>"
+                    class="flex items-center gap-3 px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    Recuperação de Conta
+                </a>
+            </nav>
+
             <div class="mt-6 pt-6 border-t border-gray-200">
                 <div class="flex items-center gap-2 text-sm text-gray-600 mb-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,7 +114,8 @@ $breadcrumbs = [
                                 <option value="">Selecione...</option>
                                 <?php foreach (['M' => 'Masculino', 'F' => 'Feminino', 'O' => 'Outro'] as $key => $label): ?>
                                     <option value="<?= $key ?>" <?= ($user['gender'] ?? '') === $key ? 'selected' : '' ?>>
-                                        <?= $label ?></option>
+                                        <?= $label ?>
+                                    </option>
                                 <?php endforeach; ?>
                             </select>
                             <?php $fieldErrors = validation_errors('gender'); ?>
@@ -112,6 +132,45 @@ $breadcrumbs = [
                             <p class="mt-1 text-xs text-gray-500">9 dígitos (Número Único de Identificação Tributária)
                             </p>
                             <?php $fieldErrors = validation_errors('nuit'); ?>
+                            <?php if (!empty($fieldErrors)): ?>
+                                <p class="mt-1 text-xs text-red-600"><?= htmlspecialchars($fieldErrors[0]) ?></p>
+                            <?php endif; ?>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700" for="birth_date">Data de nascimento
+                                <span class="text-red-500">*</span></label>
+                            <input type="date" class="mt-1 w-full rounded border border-gray-300 px-3 py-2"
+                                id="birth_date" name="birth_date"
+                                value="<?= htmlspecialchars($user['birth_date'] ?? '') ?>" required>
+                            <?php $fieldErrors = validation_errors('birth_date'); ?>
+                            <?php if (!empty($fieldErrors)): ?>
+                                <p class="mt-1 text-xs text-red-600"><?= htmlspecialchars($fieldErrors[0]) ?></p>
+                            <?php endif; ?>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700" for="document_type">Tipo de documento
+                                <span class="text-red-500">*</span></label>
+                            <select id="document_type" name="document_type"
+                                class="mt-1 w-full rounded border border-gray-300 px-3 py-2" required>
+                                <option value="">Selecione...</option>
+                                <option value="BI" <?= ($user['document_type'] ?? '') === 'BI' ? 'selected' : '' ?>>Bilhete
+                                    de Identidade</option>
+                                <option value="Passaporte" <?= ($user['document_type'] ?? '') === 'Passaporte' ? 'selected' : '' ?>>Passaporte</option>
+                                <option value="DIRE" <?= ($user['document_type'] ?? '') === 'DIRE' ? 'selected' : '' ?>>
+                                    DIRE</option>
+                            </select>
+                            <?php $fieldErrors = validation_errors('document_type'); ?>
+                            <?php if (!empty($fieldErrors)): ?>
+                                <p class="mt-1 text-xs text-red-600"><?= htmlspecialchars($fieldErrors[0]) ?></p>
+                            <?php endif; ?>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700" for="document_number">Número do
+                                documento <span class="text-red-500">*</span></label>
+                            <input type="text" class="mt-1 w-full rounded border border-gray-300 px-3 py-2"
+                                id="document_number" name="document_number"
+                                value="<?= htmlspecialchars($user['document_number'] ?? '') ?>" required>
+                            <?php $fieldErrors = validation_errors('document_number'); ?>
                             <?php if (!empty($fieldErrors)): ?>
                                 <p class="mt-1 text-xs text-red-600"><?= htmlspecialchars($fieldErrors[0]) ?></p>
                             <?php endif; ?>
@@ -271,6 +330,18 @@ $breadcrumbs = [
                                 placeholder="12345678901234567890123" maxlength="23" pattern="\d{23}">
                             <p class="mt-1 text-xs text-gray-500">23 dígitos (Número de Identificação Bancária)</p>
                             <?php $fieldErrors = validation_errors('nib'); ?>
+                            <?php if (!empty($fieldErrors)): ?>
+                                <p class="mt-1 text-xs text-red-600"><?= htmlspecialchars($fieldErrors[0]) ?></p>
+                            <?php endif; ?>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700" for="bank_account_holder">Titular da
+                                Conta <span class="text-red-500">*</span></label>
+                            <input type="text" class="mt-1 w-full rounded border border-gray-300 px-3 py-2"
+                                id="bank_account_holder" name="bank_account_holder"
+                                value="<?= htmlspecialchars($user['bank_account_holder'] ?? $user['name'] ?? '') ?>"
+                                required placeholder="Nome conforme aparece na conta bancária">
+                            <?php $fieldErrors = validation_errors('bank_account_holder'); ?>
                             <?php if (!empty($fieldErrors)): ?>
                                 <p class="mt-1 text-xs text-red-600"><?= htmlspecialchars($fieldErrors[0]) ?></p>
                             <?php endif; ?>

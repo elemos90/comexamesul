@@ -57,12 +57,49 @@ class Auth
 
     public static function hasRole(string $role): bool
     {
+        $userId = self::id();
+        if (!$userId) {
+            return false;
+        }
+
+        // Check in user_roles table for multi-role support
+        try {
+            $db = database();
+            $stmt = $db->prepare("SELECT COUNT(*) FROM user_roles WHERE user_id = ? AND role = ?");
+            $stmt->execute([$userId, $role]);
+            if ($stmt->fetchColumn() > 0) {
+                return true;
+            }
+        } catch (\Exception $e) {
+            // Fallback if table doesn't exist
+        }
+
+        // Fallback to session check
         $current = $_SESSION['auth_user_role'] ?? null;
         return $current === $role;
     }
 
     public static function hasAnyRole(array $roles): bool
     {
+        $userId = self::id();
+        if (!$userId) {
+            return false;
+        }
+
+        // Check in user_roles table for multi-role support
+        try {
+            $db = database();
+            $placeholders = implode(',', array_fill(0, count($roles), '?'));
+            $stmt = $db->prepare("SELECT COUNT(*) FROM user_roles WHERE user_id = ? AND role IN ($placeholders)");
+            $stmt->execute(array_merge([$userId], $roles));
+            if ($stmt->fetchColumn() > 0) {
+                return true;
+            }
+        } catch (\Exception $e) {
+            // Fallback if table doesn't exist
+        }
+
+        // Fallback to session check
         $current = $_SESSION['auth_user_role'] ?? null;
         return $current && in_array($current, $roles, true);
     }

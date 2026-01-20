@@ -1,75 +1,75 @@
-<?php
-$title = 'Portal da Comissão de Exames de Admissão';
+﻿<?php
+$title = 'Portal da Comiss├úo de Exames de Admiss├úo';
 $isPublic = true;
 $currentMonth = date('F Y');
 $currentYear = date('Y');
 
-// Garante que as variáveis existem
+// Garante que as vari├íveis existem
 $vacancies = $vacancies ?? [];
 $juriesByLocation = $juriesByLocation ?? [];
 ?>
 
-<!-- Hero Section Modernizado com Imagem Acadêmica -->
+<!-- Hero Section Modernizado com Imagem Acad├¬mica -->
 <section class="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 text-white relative overflow-hidden">
-    <!-- Padrão de fundo sutil -->
+    <!-- Padr├úo de fundo sutil -->
     <div class="absolute inset-0 opacity-10" style="background-image: url('data:image/svg+xml,%3Csvg width=" 60"
         height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" %3E%3Cg fill="none" fill-rule="evenodd"
         %3E%3Cg fill="%23ffffff" fill-opacity="0.1" %3E%3Cpath
         d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"
         /%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
 
-    <!-- Decoração de círculos -->
+    <!-- Decora├º├úo de c├¡rculos -->
     <div class="absolute top-10 right-10 w-72 h-72 bg-white/5 rounded-full blur-3xl"></div>
     <div class="absolute bottom-10 left-10 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl"></div>
 
     <div class="max-w-7xl mx-auto px-4 py-16 md:py-24 relative z-10">
         <div class="grid lg:grid-cols-2 gap-12 items-center">
             <!-- Coluna Esquerda: Texto e CTA -->
-            <div class="space-y-6 flex flex-col items-center lg:items-start text-center lg:text-left">
+            <div class="space-y-6">
                 <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm">
                     <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                     <span>Processo de Exames <?= $currentYear ?> Ativo</span>
                 </div>
-                <h1 class="text-3xl md:text-5xl lg:text-6xl font-bold leading-tight text-white">
-                    Portal de Exames<br>de Admissão
+                <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+                    Portal de Exames<br>de Admiss├úo
                 </h1>
-                <p class="text-lg md:text-xl text-blue-100 italic">
-                    Centro oficial de informações, calendários e recursos para candidatos, vigilantes e membros da
-                    comissão.
+                <p class="text-xl text-blue-100">
+                    Centro oficial de informa├º├Áes, calend├írios e recursos para candidatos, vigilantes e membros da
+                    comiss├úo.
                 </p>
-                <div class="flex flex-wrap justify-center lg:justify-start gap-3">
+                <div class="flex flex-wrap gap-4">
                     <a href="<?= url('/register') ?>"
-                        class="px-5 py-2.5 bg-white text-blue-700 font-semibold rounded-lg hover:bg-blue-50 transition-all shadow-md hover:shadow-lg text-sm md:text-base">
+                        class="px-6 py-3 bg-white text-blue-700 font-semibold rounded-lg hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl">
                         Candidatar-se Agora
                     </a>
                     <a href="<?= url('/login') ?>"
-                        class="px-5 py-2.5 border-2 border-white text-white font-semibold rounded-lg hover:bg-white/10 transition-all text-sm md:text-base">
+                        class="px-6 py-3 border-2 border-white text-white font-semibold rounded-lg hover:bg-white/10 transition-all">
                         Entrar no Sistema
                     </a>
                 </div>
 
-                <!-- Stats inline abaixo dos botões -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                    <div class="text-center lg:text-left">
-                        <div class="text-2xl md:text-3xl font-bold"><?= count($vacancies ?? []) ?></div>
-                        <div class="text-blue-100 text-[10px] md:text-xs mt-1">Vagas Abertas</div>
+                <!-- Stats inline abaixo dos bot├Áes -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4">
+                    <div class="text-center">
+                        <div class="text-3xl font-bold"><?= count($vacancies ?? []) ?></div>
+                        <div class="text-blue-100 text-xs mt-1">Vagas Abertas</div>
                     </div>
-                    <div class="text-center lg:text-left">
-                        <div class="text-2xl md:text-3xl font-bold"><?= count($juriesByLocation ?? []) ?></div>
-                        <div class="text-blue-100 text-[10px] md:text-xs mt-1">Locais de Exame</div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold"><?= count($juriesByLocation ?? []) ?></div>
+                        <div class="text-blue-100 text-xs mt-1">Locais de Exame</div>
                     </div>
-                    <div class="text-center lg:text-left">
-                        <div class="text-2xl md:text-3xl font-bold"><?= $daysToNextExam ?? 0 ?></div>
-                        <div class="text-blue-100 text-[10px] md:text-xs mt-1 leading-none">Dias até exame</div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold">15</div>
+                        <div class="text-blue-100 text-xs mt-1">Dias at├® exame</div>
                     </div>
-                    <div class="text-center lg:text-left">
-                        <div class="text-2xl md:text-3xl font-bold">24/7</div>
-                        <div class="text-blue-100 text-[10px] md:text-xs mt-1">Suporte</div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold">24/7</div>
+                        <div class="text-blue-100 text-xs mt-1">Suporte</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Coluna Direita: Ilustração Vibrante - Oculta em mobile pequeno para salvar espaço -->
+            <!-- Coluna Direita: Ilustra├º├úo Vibrante com Alto Contraste -->
             <div class="hidden lg:block relative">
                 <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto drop-shadow-2xl">
                     <!-- Fundo transparente para contraste com azul -->
@@ -87,7 +87,7 @@ $juriesByLocation = $juriesByLocation ?? [];
                         </filter>
                     </defs>
 
-                    <!-- Círculos de fundo brilhantes -->
+                    <!-- C├¡rculos de fundo brilhantes -->
                     <circle cx="250" cy="250" r="200" fill="url(#glowGradient)" opacity="0.3" />
 
                     <!-- Laptop/Computador Central -->
@@ -99,12 +99,12 @@ $juriesByLocation = $juriesByLocation ?? [];
                         <rect x="165" y="150" width="170" height="130" rx="8" fill="#1F2937" />
                         <rect x="175" y="160" width="150" height="110" rx="4" fill="#FFFFFF" />
 
-                        <!-- Conteúdo da tela - Dashboard -->
+                        <!-- Conte├║do da tela - Dashboard -->
                         <rect x="185" y="170" width="130" height="20" rx="3" fill="#3B82F6" opacity="0.9" />
                         <text x="250" y="184" font-size="10" fill="#FFFFFF" text-anchor="middle"
                             font-weight="bold">PORTAL DE EXAMES</text>
 
-                        <!-- Barras de progresso/estatísticas -->
+                        <!-- Barras de progresso/estat├¡sticas -->
                         <rect x="185" y="200" width="100" height="8" rx="4" fill="#E5E7EB" />
                         <rect x="185" y="200" width="70" height="8" rx="4" fill="#10B981" />
 
@@ -114,28 +114,28 @@ $juriesByLocation = $juriesByLocation ?? [];
                         <rect x="185" y="230" width="100" height="8" rx="4" fill="#E5E7EB" />
                         <rect x="185" y="230" width="60" height="8" rx="4" fill="#F59E0B" />
 
-                        <!-- Ícones na tela -->
+                        <!-- ├ìcones na tela -->
                         <circle cx="195" cy="252" r="8" fill="#3B82F6" opacity="0.2" />
                         <circle cx="215" cy="252" r="8" fill="#10B981" opacity="0.2" />
                         <circle cx="235" cy="252" r="8" fill="#F59E0B" opacity="0.2" />
                     </g>
 
-                    <!-- Troféu Dourado (Sucesso) -->
+                    <!-- Trof├®u Dourado (Sucesso) -->
                     <g class="animate-bounce-trophy">
                         <circle cx="380" cy="180" r="45" fill="#FEF3C7" opacity="0.4" />
-                        <!-- Base do troféu -->
+                        <!-- Base do trof├®u -->
                         <rect x="365" y="210" width="30" height="8" rx="2" fill="#92400E" />
                         <rect x="370" y="218" width="20" height="4" rx="1" fill="#92400E" />
-                        <!-- Taça -->
+                        <!-- Ta├ºa -->
                         <path
                             d="M 365 180 Q 365 160 380 160 Q 395 160 395 180 L 395 195 Q 395 205 380 205 Q 365 205 365 195 Z"
                             fill="#FBBF24" stroke="#F59E0B" stroke-width="2" />
-                        <!-- Alças -->
+                        <!-- Al├ºas -->
                         <path d="M 365 175 Q 355 175 355 185 Q 355 190 360 190" stroke="#F59E0B" stroke-width="2"
                             fill="none" />
                         <path d="M 395 175 Q 405 175 405 185 Q 405 190 400 190" stroke="#F59E0B" stroke-width="2"
                             fill="none" />
-                        <!-- Estrela no troféu -->
+                        <!-- Estrela no trof├®u -->
                         <polygon
                             points="380,175 382,182 390,182 384,187 386,195 380,190 374,195 376,187 370,182 378,182"
                             fill="#FEF3C7" />
@@ -148,7 +148,7 @@ $juriesByLocation = $juriesByLocation ?? [];
                         <path d="M 90 190 L 90 230 L 120 225 L 150 230 L 150 190 Z" fill="#FFFFFF" stroke="#CBD5E1"
                             stroke-width="2" />
                         <line x1="120" y1="190" x2="120" y2="225" stroke="#CBD5E1" stroke-width="2" />
-                        <!-- Páginas -->
+                        <!-- P├íginas -->
                         <line x1="95" y1="200" x2="115" y2="198" stroke="#94A3B8" stroke-width="1.5" />
                         <line x1="95" y1="207" x2="112" y2="205" stroke="#94A3B8" stroke-width="1.5" />
                         <line x1="95" y1="214" x2="110" y2="212" stroke="#94A3B8" stroke-width="1.5" />
@@ -175,13 +175,13 @@ $juriesByLocation = $juriesByLocation ?? [];
                         <circle cx="110" cy="395" r="10" fill="#FBBF24" />
                         <circle cx="110" cy="395" r="7" fill="#F59E0B" />
                         <text x="110" y="399" font-size="10" fill="#FFFFFF" text-anchor="middle"
-                            font-weight="bold">✓</text>
-                        <!-- fita -->
+                            font-weight="bold">Ô£ô</text>
+                        <!-- Fita -->
                         <rect x="108" y="405" width="4" height="12" fill="#EF4444" />
                         <polygon points="108,417 110,420 112,417" fill="#EF4444" />
                     </g>
 
-                    <!-- Relógio/Cronómetro -->
+                    <!-- Rel├│gio/Cron├┤metro -->
                     <g class="animate-rotate-clock">
                         <circle cx="400" cy="350" r="40" fill="#FFFFFF" stroke="#64748B" stroke-width="3" />
                         <circle cx="400" cy="350" r="35" fill="#F8FAFC" />
@@ -191,7 +191,7 @@ $juriesByLocation = $juriesByLocation ?? [];
                         <line x1="400" y1="350" x2="415" y2="350" stroke="#10B981" stroke-width="2.5"
                             stroke-linecap="round" />
                         <circle cx="400" cy="350" r="4" fill="#1F2937" />
-                        <!-- Marcações -->
+                        <!-- Marca├º├Áes -->
                         <circle cx="400" cy="320" r="2" fill="#64748B" />
                         <circle cx="430" cy="350" r="2" fill="#64748B" />
                         <circle cx="400" cy="380" r="2" fill="#64748B" />
@@ -210,7 +210,7 @@ $juriesByLocation = $juriesByLocation ?? [];
                             opacity="0.8" />
                     </g>
 
-                    <!-- Partículas flutuantes -->
+                    <!-- Part├¡culas flutuantes -->
                     <circle cx="180" cy="120" r="4" fill="#FBBF24" opacity="0.6" class="animate-particle" />
                     <circle cx="340" cy="280" r="3" fill="#3B82F6" opacity="0.6" class="animate-particle"
                         style="animation-delay: 1s;" />
@@ -218,6 +218,7 @@ $juriesByLocation = $juriesByLocation ?? [];
                         style="animation-delay: 2s;" />
                 </svg>
 
+                <!-- CSS Animations inline -->
                 <style>
                     @keyframes float-device {
 
@@ -339,88 +340,78 @@ $juriesByLocation = $juriesByLocation ?? [];
     </div>
 </section>
 
-<!-- Notificações e Atualizações -->
-<section class="py-10 bg-gradient-to-r from-amber-50 to-orange-50 border-b-4 border-amber-400">
+<!-- Notifica├º├Áes e Atualiza├º├Áes -->
+<section class="py-12 bg-gradient-to-r from-amber-50 to-orange-50 border-b-4 border-amber-400">
     <div class="max-w-7xl mx-auto px-4">
-        <div class="flex flex-col sm:flex-row items-start gap-4">
+        <div class="flex items-start gap-4">
             <div class="flex-shrink-0">
-                <div class="w-10 h-10 md:w-12 md:h-12 bg-amber-500 rounded-full flex items-center justify-center">
-                    <svg class="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                     </svg>
                 </div>
             </div>
-            <div class="flex-1 min-w-0">
-                <h3 class="text-lg md:text-xl font-bold text-gray-900 mb-2">📢 Atualizações Recentes</h3>
-                <div class="space-y-3">
-                    <?php if (empty($recentUpdates)): ?>
-                        <div class="text-gray-500 text-sm italic">Nenhuma atualização recente.</div>
-                    <?php else: ?>
-                        <?php foreach ($recentUpdates as $update): ?>
-                            <div class="flex flex-col sm:flex-row sm:items-center gap-2 text-gray-700">
-                                <span
-                                    class="inline-block text-[10px] bg-amber-200 px-2 py-0.5 rounded font-bold text-amber-800 self-start sm:self-center">
-                                    <?= htmlspecialchars($update['date']) ?>
-                                </span>
-                                <span class="text-sm md:text-base break-words lg:truncate lg:max-w-3xl"
-                                    title="<?= htmlspecialchars($update['text']) ?>">
-                                    <?= htmlspecialchars($update['text']) ?>
-                                </span>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+            <div class="flex-1">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">­ƒôó Atualiza├º├Áes Recentes</h3>
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2 text-gray-700">
+                        <span class="text-xs bg-amber-200 px-2 py-1 rounded font-semibold"><?= date('d M') ?></span>
+                        <span>Calend├írio de exames atualizado para <?= $currentMonth ?></span>
+                    </div>
+                    <div class="flex items-center gap-2 text-gray-700">
+                        <span
+                            class="text-xs bg-amber-200 px-2 py-1 rounded font-semibold"><?= date('d M', strtotime('-2 days')) ?></span>
+                        <span>Novas vagas para vigilantes dispon├¡veis</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-gray-700">
+                        <span
+                            class="text-xs bg-amber-200 px-2 py-1 rounded font-semibold"><?= date('d M', strtotime('-5 days')) ?></span>
+                        <span>Guia do candidato <?= $currentYear ?> dispon├¡vel para download</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Main Content Grid: Calendário, Exames, Vídeos -->
+<!-- Main Content Grid: Calend├írio, Exames, V├¡deos -->
 <section class="py-16 bg-gray-50">
     <div class="max-w-7xl mx-auto px-4">
         <div class="grid lg:grid-cols-3 gap-8">
 
-            <!-- COLUNA 1: Calendário e Datas Importantes -->
+            <!-- COLUNA 1: Calend├írio e Datas Importantes -->
             <div class="space-y-6">
-                <!-- Mini Calendário -->
+                <!-- Mini Calend├írio -->
                 <div class="bg-white rounded-xl shadow-lg overflow-hidden">
                     <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
-                        <h3 class="text-lg font-bold text-white">📅 <?= date('F Y') ?></h3>
+                        <h3 class="text-lg font-bold text-white">­ƒôà <?= date('F Y') ?></h3>
                     </div>
-                    <div class="p-4 md:p-6">
-                        <div class="grid grid-cols-7 gap-1 md:gap-2 text-center text-sm">
+                    <div class="p-6">
+                        <div class="grid grid-cols-7 gap-2 text-center text-sm">
                             <div class="font-semibold text-gray-600 text-xs">Dom</div>
                             <div class="font-semibold text-gray-600 text-xs">Seg</div>
                             <div class="font-semibold text-gray-600 text-xs">Ter</div>
                             <div class="font-semibold text-gray-600 text-xs">Qua</div>
                             <div class="font-semibold text-gray-600 text-xs">Qui</div>
                             <div class="font-semibold text-gray-600 text-xs">Sex</div>
-                            <div class="font-semibold text-gray-600 text-xs">Sáb</div>
+                            <div class="font-semibold text-gray-600 text-xs">S├íb</div>
 
                             <?php
                             $hoje = (int) date('d');
                             $primeiroDia = (int) date('w', strtotime(date('Y-m-01')));
                             $diasNoMes = (int) date('t');
 
-                            // Espaços vazios antes do primeiro dia
+                            // Espa├ºos vazios antes do primeiro dia
                             for ($i = 0; $i < $primeiroDia; $i++): ?>
                                 <div></div>
                             <?php endfor;
 
-                            // Dias do mês
-                            // Extract exam days for current month from calendarExams
-                            $examDays = [];
-                            foreach ($calendarExams ?? [] as $exam) {
-                                if (date('Y-m', strtotime($exam['exam_date'])) == date('Y-m')) {
-                                    $examDays[] = (int) date('d', strtotime($exam['exam_date']));
-                                }
-                            }
-
+                            // Dias do m├¬s
                             for ($dia = 1; $dia <= $diasNoMes; $dia++):
                                 $isHoje = ($dia == $hoje);
-                                $isExame = in_array($dia, $examDays); // Dias com exames reais
-                                $classes = 'p-1.5 md:p-2 rounded-lg ';
+                                $isExame = in_array($dia, [20, 22, 25, 27]); // Dias com exames
+                                $classes = 'p-2 rounded-lg ';
                                 if ($isHoje)
                                     $classes .= 'bg-blue-600 text-white font-bold';
                                 elseif ($isExame)
@@ -444,133 +435,173 @@ $juriesByLocation = $juriesByLocation ?? [];
                     </div>
                 </div>
 
-                <!-- Próximas Datas Importantes -->
-                <div class="bg-white rounded-xl shadow-lg p-4 md:p-6">
+                <!-- Pr├│ximas Datas Importantes -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
                     <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                         <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Próximos Eventos
+                        Pr├│ximos Eventos
                     </h3>
                     <div class="space-y-3">
-                        <?php if (empty($upcomingExams)): ?>
-                            <p class="text-gray-500 text-sm p-4 text-center">Nenhum evento próximo.</p>
-                        <?php else: ?>
-                            <?php foreach ($upcomingExams as $index => $exam):
-                                $date = new DateTime($exam['exam_date']);
-                                $colors = ['blue', 'green', 'purple', 'orange', 'red'];
-                                $color = $colors[$index % count($colors)];
-                                ?>
-                                <div
-                                    class="flex items-start gap-3 p-3 bg-<?= $color ?>-50 rounded-lg border-l-4 border-<?= $color ?>-600">
-                                    <div
-                                        class="text-center bg-<?= $color ?>-600 text-white rounded-lg px-2 sm:px-3 py-1 text-sm font-bold min-w-[50px] sm:min-w-[60px]">
-                                        <div class="text-lg"><?= $date->format('d') ?></div>
-                                        <div class="text-xs uppercase"><?= $date->format('M') ?></div>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="font-semibold text-gray-900 text-sm">Exame de
-                                            <?= htmlspecialchars($exam['subject']) ?>
-                                        </div>
-                                        <div class="text-xs text-gray-600">
-                                            <?= substr($exam['start_time'], 0, 5) ?> - <?= substr($exam['end_time'], 0, 5) ?> ·
-                                            <?= htmlspecialchars($exam['location'] ?: 'Local a definir') ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
+                        <div class="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-600">
+                            <div
+                                class="text-center bg-blue-600 text-white rounded-lg px-3 py-1 text-sm font-bold min-w-[60px]">
+                                <div class="text-lg">20</div>
+                                <div class="text-xs">OUT</div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-semibold text-gray-900 text-sm">Inscri├º├Áes Encerram</div>
+                                <div class="text-xs text-gray-600">├Ültimo dia para candidaturas</div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3 p-3 bg-green-50 rounded-lg border-l-4 border-green-600">
+                            <div
+                                class="text-center bg-green-600 text-white rounded-lg px-3 py-1 text-sm font-bold min-w-[60px]">
+                                <div class="text-lg">22</div>
+                                <div class="text-xs">OUT</div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-semibold text-gray-900 text-sm">Exame de Matem├ítica</div>
+                                <div class="text-xs text-gray-600">09:00 - 12:00 ┬À Campus Beira</div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3 p-3 bg-purple-50 rounded-lg border-l-4 border-purple-600">
+                            <div
+                                class="text-center bg-purple-600 text-white rounded-lg px-3 py-1 text-sm font-bold min-w-[60px]">
+                                <div class="text-lg">25</div>
+                                <div class="text-xs">OUT</div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-semibold text-gray-900 text-sm">Exame de F├¡sica</div>
+                                <div class="text-xs text-gray-600">09:00 - 11:30 ┬À Campus Beira</div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3 p-3 bg-orange-50 rounded-lg border-l-4 border-orange-600">
+                            <div
+                                class="text-center bg-orange-600 text-white rounded-lg px-3 py-1 text-sm font-bold min-w-[60px]">
+                                <div class="text-lg">27</div>
+                                <div class="text-xs">OUT</div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-semibold text-gray-900 text-sm">Publica├º├úo de Resultados</div>
+                                <div class="text-xs text-gray-600">Portal online</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- COLUNA 2 e 3: Calendário de Exames e Vídeos -->
+            <!-- COLUNA 2 e 3: Calend├írio de Exames e V├¡deos -->
             <div class="lg:col-span-2 space-y-6">
 
-                <!-- Calendário de Exames Completo -->
+                <!-- Calend├írio de Exames Completo -->
                 <div class="bg-white rounded-xl shadow-lg overflow-hidden">
                     <div class="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4">
-                        <h3 class="text-lg font-bold text-white">📋 Calendário de Exames Completo</h3>
+                        <h3 class="text-lg font-bold text-white">­ƒôï Calend├írio de Exames Completo</h3>
                     </div>
-                    <div class="p-4 md:p-6">
-                        <div class="table-responsive">
-                            <table class="table-modern">
+                    <div class="p-6">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
                                 <thead>
                                     <tr class="border-b-2 border-gray-200">
                                         <th class="text-left py-3 px-3 font-semibold text-gray-700">Data</th>
                                         <th class="text-left py-3 px-3 font-semibold text-gray-700">Disciplina</th>
-                                        <th
-                                            class="text-left py-3 px-3 font-semibold text-gray-700 hidden sm:table-cell">
-                                            Horário</th>
-                                        <th
-                                            class="text-left py-3 px-3 font-semibold text-gray-700 hidden md:table-cell">
-                                            Local</th>
-                                        <th
-                                            class="text-center py-3 px-3 font-semibold text-gray-700 hidden sm:table-cell">
-                                            Status</th>
+                                        <th class="text-left py-3 px-3 font-semibold text-gray-700">Hor├írio</th>
+                                        <th class="text-left py-3 px-3 font-semibold text-gray-700">Local</th>
+                                        <th class="text-center py-3 px-3 font-semibold text-gray-700">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100">
-                                    <?php if (empty($calendarExams)): ?>
-                                        <tr>
-                                            <td colspan="5" class="py-4 text-center text-gray-500">Nenhum exame agendado.
-                                            </td>
-                                        </tr>
-                                    <?php else: ?>
-                                        <?php foreach ($calendarExams as $index => $exam):
-                                            $date = new DateTime($exam['exam_date']);
-                                            $today = new DateTime();
-                                            $diff = $today->diff($date)->days;
-                                            $isPast = $date < $today;
-
-                                            $statusText = 'Agendado';
-                                            $statusClass = 'bg-blue-100 text-blue-800';
-
-                                            if ($isPast) {
-                                                $statusText = 'Concluído';
-                                                $statusClass = 'bg-gray-100 text-gray-800';
-                                            } elseif ($diff <= 1) {
-                                                $statusText = 'Amanhã';
-                                                $statusClass = 'bg-red-100 text-red-800';
-                                            } elseif ($diff <= 7) {
-                                                $statusText = 'Em breve';
-                                                $statusClass = 'bg-yellow-100 text-yellow-800';
-                                            }
-
-                                            $tags = ['Matemática' => 'blue', 'Português' => 'green', 'Física' => 'purple', 'Química' => 'orange', 'Biologia' => 'red'];
-                                            $subjectColor = $tags[$exam['subject']] ?? 'gray';
-                                            ?>
-                                            <tr class="hover:bg-gray-50 transition-colors">
-                                                <td class="py-4 px-3 font-medium text-xs sm:text-sm whitespace-nowrap">
-                                                    <?= $date->format('d/m/Y') ?>
-                                                </td>
-                                                <td class="py-4 px-3">
-                                                    <div class="flex items-center gap-2">
-                                                        <div
-                                                            class="w-2 h-2 bg-<?= $subjectColor ?>-600 rounded-full flex-shrink-0">
-                                                        </div>
-                                                        <span
-                                                            class="font-medium text-xs sm:text-sm break-words"><?= htmlspecialchars($exam['subject']) ?></span>
-                                                    </div>
-                                                </td>
-                                                <td
-                                                    class="py-4 px-3 text-gray-600 text-xs sm:text-sm hidden sm:table-cell whitespace-nowrap">
-                                                    <?= substr($exam['start_time'], 0, 5) ?> -
-                                                    <?= substr($exam['end_time'], 0, 5) ?>
-                                                </td>
-                                                <td class="py-4 px-3 text-gray-600 text-xs sm:text-sm hidden md:table-cell">
-                                                    <?= htmlspecialchars($exam['location'] ?: 'TBA') ?>
-                                                </td>
-                                                <td class="py-4 px-3 text-center hidden sm:table-cell">
-                                                    <span
-                                                        class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold <?= $statusClass ?>">
-                                                        <?= $statusText ?>
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="py-4 px-3 font-medium">20/10/2025</td>
+                                        <td class="py-4 px-3">
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-2 h-2 bg-blue-600 rounded-full"></div>
+                                                <span class="font-medium">Matem├ítica</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 text-gray-600">09:00 - 12:00</td>
+                                        <td class="py-4 px-3 text-gray-600">Campus Beira</td>
+                                        <td class="py-4 px-3 text-center">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">
+                                                ÔÅ░ Em breve
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="py-4 px-3 font-medium">22/10/2025</td>
+                                        <td class="py-4 px-3">
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-2 h-2 bg-green-600 rounded-full"></div>
+                                                <span class="font-medium">Portugu├¬s</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 text-gray-600">14:00 - 17:00</td>
+                                        <td class="py-4 px-3 text-gray-600">Campus Beira</td>
+                                        <td class="py-4 px-3 text-center">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                                                ­ƒôà Agendado
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="py-4 px-3 font-medium">25/10/2025</td>
+                                        <td class="py-4 px-3">
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-2 h-2 bg-purple-600 rounded-full"></div>
+                                                <span class="font-medium">F├¡sica</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 text-gray-600">09:00 - 11:30</td>
+                                        <td class="py-4 px-3 text-gray-600">Campus Beira</td>
+                                        <td class="py-4 px-3 text-center">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                                                ­ƒôà Agendado
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="py-4 px-3 font-medium">27/10/2025</td>
+                                        <td class="py-4 px-3">
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-2 h-2 bg-orange-600 rounded-full"></div>
+                                                <span class="font-medium">Qu├¡mica</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 text-gray-600">14:00 - 16:30</td>
+                                        <td class="py-4 px-3 text-gray-600">Campus Beira</td>
+                                        <td class="py-4 px-3 text-center">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                                                ­ƒôà Agendado
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="py-4 px-3 font-medium">30/10/2025</td>
+                                        <td class="py-4 px-3">
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-2 h-2 bg-red-600 rounded-full"></div>
+                                                <span class="font-medium">Biologia</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 text-gray-600">09:00 - 11:30</td>
+                                        <td class="py-4 px-3 text-gray-600">Campus Beira</td>
+                                        <td class="py-4 px-3 text-center">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                                                ­ƒôà Agendado
+                                            </span>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -578,7 +609,7 @@ $juriesByLocation = $juriesByLocation ?? [];
                             <p class="text-sm text-gray-600">Mostrando 5 de 12 exames agendados</p>
                             <a href="<?= url('/guides/indice') ?>"
                                 class="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1">
-                                Ver calendário completo
+                                Ver calend├írio completo
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M9 5l7 7-7 7" />
@@ -588,15 +619,15 @@ $juriesByLocation = $juriesByLocation ?? [];
                     </div>
                 </div>
 
-                <!-- Vídeos de Ajuda e Tutoriais -->
+                <!-- V├¡deos de Ajuda e Tutoriais -->
                 <div class="bg-white rounded-xl shadow-lg overflow-hidden">
                     <div class="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center justify-between">
-                        <h3 class="text-lg font-bold text-white">🎥 Vídeos de Ajuda e Dicas</h3>
+                        <h3 class="text-lg font-bold text-white">­ƒÄÑ V├¡deos de Ajuda e Dicas</h3>
                         <span class="text-xs bg-white/20 px-3 py-1 rounded-full text-white">Novo!</span>
                     </div>
-                    <div class="p-4 md:p-6">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <!-- Vídeo 1 -->
+                    <div class="p-6">
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <!-- V├¡deo 1 -->
                             <div class="bg-gray-50 rounded-xl overflow-hidden hover:shadow-lg transition-all group">
                                 <div
                                     class="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center relative cursor-pointer">
@@ -623,13 +654,13 @@ $juriesByLocation = $juriesByLocation ?? [];
                                             </svg>
                                             5:30 min
                                         </span>
-                                        <span>•</span>
+                                        <span>ÔÇó</span>
                                         <span>1.2k views</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Vídeo 2 -->
+                            <!-- V├¡deo 2 -->
                             <div class="bg-gray-50 rounded-xl overflow-hidden hover:shadow-lg transition-all group">
                                 <div
                                     class="aspect-video bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center relative cursor-pointer">
@@ -647,7 +678,7 @@ $juriesByLocation = $juriesByLocation ?? [];
                                 </div>
                                 <div class="p-4">
                                     <h4 class="font-semibold text-gray-900 mb-1">Dicas para Vigilantes</h4>
-                                    <p class="text-sm text-gray-600 mb-2">O que você precisa saber antes de começar</p>
+                                    <p class="text-sm text-gray-600 mb-2">O que voc├¬ precisa saber antes de come├ºar</p>
                                     <div class="flex items-center gap-3 text-xs text-gray-500">
                                         <span class="flex items-center gap-1">
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -656,13 +687,13 @@ $juriesByLocation = $juriesByLocation ?? [];
                                             </svg>
                                             8:15 min
                                         </span>
-                                        <span>•</span>
+                                        <span>ÔÇó</span>
                                         <span>856 views</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Vídeo 3 -->
+                            <!-- V├¡deo 3 -->
                             <div class="bg-gray-50 rounded-xl overflow-hidden hover:shadow-lg transition-all group">
                                 <div
                                     class="aspect-video bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center relative cursor-pointer">
@@ -689,13 +720,13 @@ $juriesByLocation = $juriesByLocation ?? [];
                                             </svg>
                                             6:45 min
                                         </span>
-                                        <span>•</span>
+                                        <span>ÔÇó</span>
                                         <span>2.1k views</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Vídeo 4 -->
+                            <!-- V├¡deo 4 -->
                             <div class="bg-gray-50 rounded-xl overflow-hidden hover:shadow-lg transition-all group">
                                 <div
                                     class="aspect-video bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center relative cursor-pointer">
@@ -722,7 +753,7 @@ $juriesByLocation = $juriesByLocation ?? [];
                                             </svg>
                                             12:30 min
                                         </span>
-                                        <span>•</span>
+                                        <span>ÔÇó</span>
                                         <span>3.4k views</span>
                                     </div>
                                 </div>
@@ -735,7 +766,7 @@ $juriesByLocation = $juriesByLocation ?? [];
                                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
                                 </svg>
-                                Ver Todos os Vídeos
+                                Ver Todos os V├¡deos
                             </button>
                         </div>
                     </div>
@@ -745,128 +776,77 @@ $juriesByLocation = $juriesByLocation ?? [];
     </div>
 </section>
 
-<!-- Próximos Júris (do código original, mantido) -->
+<!-- Pr├│ximos J├║ris (do c├│digo original, mantido) -->
 <section class="py-16 bg-white">
     <div class="max-w-7xl mx-auto px-4">
         <div class="text-center mb-12">
-            <h2 class="text-3xl font-bold text-gray-900 mb-3">📍 Próximos Júris por Local</h2>
-            <p class="text-gray-600">Consulte os júris agendados para os próximos dias</p>
+            <h2 class="text-3xl font-bold text-gray-900 mb-3">­ƒôì Pr├│ximos J├║ris por Local</h2>
+            <p class="text-gray-600">Consulte os j├║ris agendados para os pr├│ximos dias</p>
         </div>
 
-        <div class="bg-blue-50/50 p-4 md:p-8 rounded-2xl border border-blue-100 shadow-inner">
-            <h2 class="text-2xl font-bold mb-6 text-gray-900 flex items-center gap-2">
-                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                Calendário de Júris
-            </h2>
+        <div class="bg-gradient-to-br from-blue-50 to-purple-50 p-8 rounded-xl shadow-sm">
+            <h2 class="text-xl font-semibold mb-4 text-gray-900">Calend├írio de J├║ris</h2>
 
             <?php if (empty($juriesByLocation)): ?>
-                <div class="bg-white rounded-xl p-8 text-center border border-gray-100 shadow-sm">
-                    <p class="text-gray-500 italic">Nenhum júri registado para os próximos dias.</p>
-                </div>
+                <p class="text-sm text-primary-50">Sem j├║ris registados.</p>
             <?php else: ?>
-                <div class="space-y-4">
+                <div class="space-y-3">
                     <?php foreach ($juriesByLocation as $location => $disciplines): ?>
                         <!-- Grupo por Local -->
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden group/loc">
+                        <div class="bg-white/10 rounded-lg overflow-hidden">
                             <button type="button"
-                                class="w-full px-5 py-4 flex items-center justify-between hover:bg-blue-50/30 transition-all toggle-location"
+                                class="w-full px-4 py-3 flex items-center justify-between hover:bg-white/10 transition-colors toggle-location"
                                 data-location="<?= htmlspecialchars(str_replace(' ', '_', $location)) ?>">
-                                <div class="flex items-center gap-4">
-                                    <div
-                                        class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 group-hover/loc:scale-110 transition-transform">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        </svg>
-                                    </div>
-                                    <div class="text-left">
-                                        <span
-                                            class="block font-bold text-gray-900 md:text-lg"><?= htmlspecialchars($location) ?></span>
-                                        <span
-                                            class="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded uppercase tracking-wider">
-                                            <?= count($disciplines) ?> Disciplina(s)
-                                        </span>
-                                    </div>
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-primary-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    <span class="font-semibold text-left"><?= htmlspecialchars($location) ?></span>
+                                    <span class="text-xs bg-white/20 px-2 py-1 rounded"><?= count($disciplines) ?>
+                                        disciplina(s)</span>
                                 </div>
-                                <svg class="w-6 h-6 text-gray-400 transition-transform duration-300 chevron" fill="none"
-                                    stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 transition-transform chevron" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                 </svg>
                             </button>
 
-                            <div class="location-content hidden border-t border-gray-50 bg-gray-50/30 px-4 py-4 space-y-3">
+                            <div class="location-content hidden px-4 pb-3 space-y-2">
                                 <?php foreach ($disciplines as $discipline): ?>
                                     <!-- Grupo por Disciplina -->
-                                    <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                                    <div class="bg-white/10 rounded overflow-hidden">
                                         <button type="button"
-                                            class="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-all toggle-discipline">
-                                            <div class="flex items-center gap-3 text-left">
-                                                <div class="w-2 h-8 bg-blue-500 rounded-full"></div>
-                                                <div>
-                                                    <p class="font-bold text-gray-900">
-                                                        <?= htmlspecialchars($discipline['subject']) ?>
-                                                    </p>
-                                                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5">
-                                                        <span class="flex items-center gap-1.5 text-xs font-medium text-gray-600">
-                                                            <svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor"
-                                                                viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                                    stroke-width="2"
-                                                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                            </svg>
-                                                            <?= htmlspecialchars(date('d/m/Y', strtotime($discipline['exam_date']))) ?>
-                                                        </span>
-                                                        <span class="flex items-center gap-1.5 text-xs font-medium text-gray-600">
-                                                            <svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor"
-                                                                viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                                    stroke-width="2"
-                                                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                            </svg>
-                                                            <?= htmlspecialchars(substr($discipline['start_time'], 0, 5)) ?> -
-                                                            <?= htmlspecialchars(substr($discipline['end_time'], 0, 5)) ?>
-                                                        </span>
-                                                    </div>
-                                                </div>
+                                            class="w-full px-3 py-2 flex items-center justify-between hover:bg-white/10 transition-colors toggle-discipline">
+                                            <div class="text-left">
+                                                <p class="font-medium text-sm"><?= htmlspecialchars($discipline['subject']) ?></p>
+                                                <p class="text-xs text-primary-100">
+                                                    <?= htmlspecialchars(date('d/m/Y', strtotime($discipline['exam_date']))) ?> ┬À
+                                                    <?= htmlspecialchars(substr($discipline['start_time'], 0, 5)) ?> -
+                                                    <?= htmlspecialchars(substr($discipline['end_time'], 0, 5)) ?>
+                                                </p>
                                             </div>
-                                            <div class="flex items-center gap-3">
+                                            <div class="flex items-center gap-2">
                                                 <span
-                                                    class="hidden md:inline-block text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-100 px-2 py-1 rounded">
-                                                    <?= count($discipline['rooms']) ?> SALAS
-                                                </span>
-                                                <svg class="w-5 h-5 text-gray-400 transition-transform duration-300 chevron"
-                                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    class="text-xs bg-white/20 px-2 py-1 rounded"><?= count($discipline['rooms']) ?>
+                                                    sala(s)</span>
+                                                <svg class="w-4 h-4 transition-transform chevron" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                         d="M19 9l-7 7-7-7" />
                                                 </svg>
                                             </div>
                                         </button>
 
-                                        <div class="discipline-content hidden bg-gray-50/50 border-t border-gray-50 px-4 py-3">
-                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        <div class="discipline-content hidden px-3 pb-2">
+                                            <div class="space-y-1">
                                                 <?php foreach ($discipline['rooms'] as $room): ?>
-                                                    <?php
-                                                    $vigilantes = !empty($room['vigilantes']) ? implode(', ', $room['vigilantes']) : 'Nenhum alocado';
-                                                    $tooltip = "Supervisor: " . ($room['supervisor_name'] ?: 'Não definido') . "\nVigilantes: " . $vigilantes;
-                                                    ?>
-                                                    <div class="bg-white border border-gray-100 rounded-lg px-3 py-2 flex items-center justify-between shadow-sm hover:border-blue-300 transition-colors cursor-help"
-                                                        title="<?= htmlspecialchars($tooltip) ?>">
-                                                        <div class="flex items-center gap-2">
-                                                            <div
-                                                                class="w-6 h-6 bg-blue-50 rounded flex items-center justify-center text-[10px] font-bold text-blue-600 border border-blue-100">
-                                                                <?= htmlspecialchars($room['room']) ?>
-                                                            </div>
-                                                            <span class="text-sm font-medium text-gray-700">Sala
-                                                                <?= htmlspecialchars($room['room']) ?></span>
-                                                        </div>
-                                                        <div class="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded">
-                                                            <?= htmlspecialchars($room['candidates_quota']) ?> CANDIDATOS
-                                                        </div>
+                                                    <div class="bg-white/10 rounded px-3 py-2 text-xs">
+                                                        <span class="font-medium">Sala <?= htmlspecialchars($room['room']) ?></span>
+                                                        <span class="text-primary-100"> ┬À
+                                                            <?= htmlspecialchars($room['candidates_quota']) ?> candidatos</span>
                                                     </div>
                                                 <?php endforeach; ?>
                                             </div>
@@ -885,9 +865,9 @@ $juriesByLocation = $juriesByLocation ?? [];
 <section id="vagas" class="relative bg-gray-50 py-20 scroll-mt-20">
     <div class="max-w-6xl mx-auto px-4">
         <div class="text-center mb-12">
-            <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">Vagas Abertas para Vigilância</h2>
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">Vagas Abertas para Vigil├óncia</h2>
             <p class="text-lg text-gray-600 max-w-2xl mx-auto">Candidate-se para participar como vigilante nos exames de
-                admissão</p>
+                admiss├úo</p>
         </div>
 
         <?php if ($vacancies): ?>
@@ -923,7 +903,7 @@ $juriesByLocation = $juriesByLocation ?? [];
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span>Até <strong
+                            <span>At├® <strong
                                     class="text-gray-700"><?= htmlspecialchars(date('d/m/Y', strtotime($vacancy['deadline_at']))) ?></strong></span>
                         </div>
                         <div class="mb-5 flex items-center gap-2 text-sm text-gray-500">
@@ -931,7 +911,7 @@ $juriesByLocation = $juriesByLocation ?? [];
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <span>Horário: <strong
+                            <span>Hor├írio: <strong
                                     class="text-gray-700"><?= htmlspecialchars(date('H:i', strtotime($vacancy['deadline_at']))) ?></strong></span>
                         </div>
 
@@ -959,7 +939,7 @@ $juriesByLocation = $juriesByLocation ?? [];
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                     </svg>
-                    Ainda não tem conta? Registre-se agora
+                    Ainda n├úo tem conta? Registre-se agora
                 </a>
             </div>
         <?php else: ?>
@@ -968,15 +948,15 @@ $juriesByLocation = $juriesByLocation ?? [];
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <h3 class="text-2xl font-bold text-gray-800 mb-3">Sem vagas disponíveis no momento</h3>
-                <p class="text-gray-600 mb-8 text-lg">Novas oportunidades serão publicadas em breve.</p>
+                <h3 class="text-2xl font-bold text-gray-800 mb-3">Sem vagas dispon├¡veis no momento</h3>
+                <p class="text-gray-600 mb-8 text-lg">Novas oportunidades ser├úo publicadas em breve.</p>
                 <a href="<?= url('/register') ?>"
                     class="inline-flex items-center gap-2 px-8 py-4 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-500 transition-colors shadow-lg">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                     </svg>
-                    Cadastre-se para receber notificações
+                    Cadastre-se para receber notifica├º├Áes
                 </a>
             </div>
         <?php endif; ?>
@@ -995,7 +975,7 @@ $juriesByLocation = $juriesByLocation ?? [];
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
-                    📚 Recursos e Documentos
+                    ­ƒôÜ Recursos e Documentos
                 </h3>
 
                 <div class="space-y-3">
@@ -1011,7 +991,7 @@ $juriesByLocation = $juriesByLocation ?? [];
                         <div class="flex-1">
                             <div class="font-semibold text-gray-900 group-hover:text-blue-700">Guia do Utilizador 2025
                             </div>
-                            <div class="text-sm text-gray-600">Documentação completa do sistema</div>
+                            <div class="text-sm text-gray-600">Documenta├º├úo completa do sistema</div>
                         </div>
                         <svg class="w-5 h-5 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all"
                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1031,7 +1011,7 @@ $juriesByLocation = $juriesByLocation ?? [];
                         <div class="flex-1">
                             <div class="font-semibold text-gray-900 group-hover:text-green-700">Manual do Candidato
                             </div>
-                            <div class="text-sm text-gray-600">PDF · 2.5 MB</div>
+                            <div class="text-sm text-gray-600">PDF ┬À 2.5 MB</div>
                         </div>
                         <svg class="w-5 h-5 text-gray-400 group-hover:text-green-600 group-hover:translate-x-1 transition-all"
                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1081,14 +1061,14 @@ $juriesByLocation = $juriesByLocation ?? [];
                 </div>
             </div>
 
-            <!-- FAQs Rápidas -->
+            <!-- FAQs R├ípidas -->
             <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg p-8">
                 <h3 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                     <svg class="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    ❓ Perguntas Frequentes
+                    ÔØô Perguntas Frequentes
                 </h3>
 
                 <div class="space-y-4">
@@ -1103,16 +1083,16 @@ $juriesByLocation = $juriesByLocation ?? [];
                             </svg>
                         </summary>
                         <div class="px-4 pb-4 text-sm text-gray-600">
-                            Primeiro, crie uma conta no portal. Depois, complete seu perfil com todas as informações
-                            necessárias (telefone, NUIT, NIB, banco). Por fim, acesse a página de "Vagas" e candidate-se
-                            às vagas disponíveis.
+                            Primeiro, crie uma conta no portal. Depois, complete seu perfil com todas as informa├º├Áes
+                            necess├írias (telefone, NUIT, NIB, banco). Por fim, acesse a p├ígina de "Vagas" e candidate-se
+                            ├ás vagas dispon├¡veis.
                         </div>
                     </details>
 
                     <details class="bg-white rounded-lg overflow-hidden group">
                         <summary
                             class="px-4 py-3 font-semibold text-gray-900 cursor-pointer hover:bg-gray-50 transition-colors flex items-center justify-between">
-                            <span>Quanto tempo leva para aprovação?</span>
+                            <span>Quanto tempo leva para aprova├º├úo?</span>
                             <svg class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" fill="none"
                                 stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -1120,7 +1100,7 @@ $juriesByLocation = $juriesByLocation ?? [];
                             </svg>
                         </summary>
                         <div class="px-4 pb-4 text-sm text-gray-600">
-                            A análise das candidaturas geralmente leva de 24 a 48 horas. Você receberá uma notificação
+                            A an├ílise das candidaturas geralmente leva de 24 a 48 horas. Voc├¬ receber├í uma notifica├º├úo
                             por email assim que sua candidatura for avaliada.
                         </div>
                     </details>
@@ -1128,7 +1108,7 @@ $juriesByLocation = $juriesByLocation ?? [];
                     <details class="bg-white rounded-lg overflow-hidden group">
                         <summary
                             class="px-4 py-3 font-semibold text-gray-900 cursor-pointer hover:bg-gray-50 transition-colors flex items-center justify-between">
-                            <span>Quais documentos são necessários?</span>
+                            <span>Quais documentos s├úo necess├írios?</span>
                             <svg class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" fill="none"
                                 stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -1136,7 +1116,7 @@ $juriesByLocation = $juriesByLocation ?? [];
                             </svg>
                         </summary>
                         <div class="px-4 pb-4 text-sm text-gray-600">
-                            Você precisa fornecer: número de telefone válido, NUIT, NIB (número de conta bancária) e
+                            Voc├¬ precisa fornecer: n├║mero de telefone v├ílido, NUIT, NIB (n├║mero de conta banc├íria) e
                             nome do banco. Todos esses dados podem ser cadastrados diretamente no seu perfil.
                         </div>
                     </details>
@@ -1152,7 +1132,7 @@ $juriesByLocation = $juriesByLocation ?? [];
                             </svg>
                         </summary>
                         <div class="px-4 pb-4 text-sm text-gray-600">
-                            Sim, você pode cancelar sua candidatura até 48 horas antes da data do exame. Acesse "Minhas
+                            Sim, voc├¬ pode cancelar sua candidatura at├® 48 horas antes da data do exame. Acesse "Minhas
                             Candidaturas" e clique em "Cancelar" na vaga desejada.
                         </div>
                     </details>
@@ -1168,8 +1148,8 @@ $juriesByLocation = $juriesByLocation ?? [];
                             </svg>
                         </summary>
                         <div class="px-4 pb-4 text-sm text-gray-600">
-                            O pagamento é feito via transferência bancária para o NIB cadastrado no seu perfil,
-                            geralmente processado em até 5 dias úteis após a conclusão do júri.
+                            O pagamento ├® feito via transfer├¬ncia banc├íria para o NIB cadastrado no seu perfil,
+                            geralmente processado em at├® 5 dias ├║teis ap├│s a conclus├úo do j├║ri.
                         </div>
                     </details>
                 </div>
@@ -1191,9 +1171,9 @@ $juriesByLocation = $juriesByLocation ?? [];
 <!-- Call to Action Final -->
 <section class="py-16 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
     <div class="max-w-4xl mx-auto px-4 text-center">
-        <h2 class="text-3xl md:text-4xl font-bold mb-4 text-white">Pronto para Começar?</h2>
-        <p class="text-xl text-blue-100 mb-8">Junte-se a centenas de vigilantes e faça parte do processo de exames de
-            admissão da UniLicungo</p>
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">Pronto para Come├ºar?</h2>
+        <p class="text-xl text-blue-100 mb-8">Junte-se a centenas de vigilantes e fa├ºa parte do processo de exames de
+            admiss├úo da UniLicungo</p>
         <div class="flex flex-wrap justify-center gap-4">
             <a href="<?= url('/register') ?>"
                 class="px-8 py-4 bg-white text-blue-700 font-bold rounded-lg hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1">
@@ -1201,7 +1181,7 @@ $juriesByLocation = $juriesByLocation ?? [];
             </a>
             <a href="<?= url('/login') ?>"
                 class="px-8 py-4 border-2 border-white text-white font-bold rounded-lg hover:bg-white/10 transition-all">
-                Já Tenho Conta
+                J├í Tenho Conta
             </a>
         </div>
     </div>

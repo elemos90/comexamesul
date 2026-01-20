@@ -13,7 +13,7 @@
 }
 
 .modern-card-body {
-    @apply p-6;
+    @apply p-4 md:p-6;
 }
 
 /* BADGES E TAGS */
@@ -73,7 +73,13 @@
 
 /* TABELAS MODERNAS */
 .table-modern {
-    @apply w-full text-sm text-left;
+    @apply w-full text-sm text-left border-collapse;
+}
+
+/* Wrapper para tabelas responsivas */
+.table-responsive {
+    @apply overflow-x-auto w-full -mx-4 px-4 md:mx-0 md:px-0;
+    -webkit-overflow-scrolling: touch;
 }
 
 .table-modern thead {
@@ -119,7 +125,7 @@
 }
 
 .page-title {
-    @apply text-3xl font-bold text-gray-900 mb-2;
+    @apply text-xl md:text-3xl font-bold text-gray-900 mb-2;
 }
 
 .page-subtitle {
@@ -132,6 +138,7 @@
         opacity: 0;
         transform: translateY(10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);

@@ -64,16 +64,32 @@ $isPublic = $isPublic ?? false;
         }
 
         /* Layout fixo: header e sidebar fixos, apenas conteúdo com scroll */
-        /* Apenas para páginas autenticadas */
-        <?php if (!$isPublic): ?>
+        /* Apenas para páginas autenticadas e em telas desktop */
+        @media (min-width: 768px) {
+
+            <?php if (!$isPublic): ?>
+                body,
+                html {
+                    height: 100vh;
+                    overflow: hidden;
+                }
+
+            <?php endif; ?>
+        }
+
+        /* Em mobile, permitimos scroll no body se necessário, mas evitamos horizontal */
+        @media (max-width: 767px) {
+
             body,
             html {
-                height: 100vh;
-                overflow: hidden;
+                overflow-x: hidden;
+                height: auto;
+                min-height: 100vh;
             }
+        }
 
-        <?php else: ?>
-            /* Páginas públicas permitem scroll normal */
+        /* Páginas públicas permitem scroll normal */
+        <?php if ($isPublic): ?>
             body,
             html {
                 overflow: auto;
@@ -212,17 +228,17 @@ $isPublic = $isPublic ?? false;
                 <?php include view_path('partials/sidebar.php'); ?>
             </div>
 
-            <!-- Área Direita (Navbar + Conteúdo) - Com margem para separação -->
-            <div class="flex-1 flex flex-col h-full overflow-hidden m-3">
+            <!-- Área Direita (Navbar + Conteúdo) - Com margem para separação em desktop -->
+            <div class="flex-1 flex flex-col h-full overflow-hidden md:m-3">
                 <!-- Container com fundo branco para header + conteúdo -->
-                <div class="flex-1 flex flex-col bg-white shadow-sm border border-gray-200 overflow-hidden">
+                <div class="flex-1 flex flex-col bg-white shadow-sm md:border md:border-gray-200 overflow-hidden">
                     <!-- Navbar (Topo da área direita) -->
                     <div class="w-full z-10 bg-white border-b border-gray-100 print:hidden">
                         <?php include view_path('partials/navbar.php'); ?>
                     </div>
 
                     <!-- Conteúdo Principal (Scroll independente) -->
-                    <main class="flex-1 overflow-y-auto overflow-x-hidden p-6 bg-gray-50 scroll-smooth">
+                    <main class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 bg-gray-50 scroll-smooth">
                         <div class="max-w-[1600px] mx-auto">
                             <?= $content ?>
                         </div>

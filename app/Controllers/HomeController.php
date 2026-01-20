@@ -19,13 +19,32 @@ class HomeController extends Controller
 
         $vacancies = (new ExamVacancy())->openVacancies();
 
-        // Buscar júris futuros
+        // Buscar júris futuros com supervisor
         $juries = (new Jury())->statement(
-            "SELECT * FROM juries 
-             WHERE exam_date >= CURDATE() 
-             ORDER BY exam_date, start_time 
+            "SELECT j.*, u.name as supervisor_name 
+             FROM juries j
+             LEFT JOIN users u ON u.id = j.supervisor_id
+             WHERE j.exam_date >= CURDATE() 
+             ORDER BY j.exam_date, j.start_time 
              LIMIT 30"
         );
+
+        // Buscar vigilantes para estes júris
+        $juryIds = array_column($juries, 'id');
+        $vigilantesMap = [];
+        if (!empty($juryIds)) {
+            $placeholders = str_repeat('?,', count($juryIds) - 1) . '?';
+            $vigilanteData = (new Jury())->statement(
+                "SELECT jv.jury_id, u.name 
+                 FROM jury_vigilantes jv 
+                 JOIN users u ON u.id = jv.vigilante_id 
+                 WHERE jv.jury_id IN ($placeholders)",
+                $juryIds
+            );
+            foreach ($vigilanteData as $v) {
+                $vigilantesMap[$v['jury_id']][] = $v['name'];
+            }
+        }
 
         // Agrupar júris por local e depois por disciplina
         $juriesByLocation = [];
@@ -53,7 +72,9 @@ class HomeController extends Controller
 
             $juriesByLocation[$location][$disciplineKey]['rooms'][] = [
                 'room' => $jury['room'],
-                'candidates_quota' => $jury['candidates_quota']
+                'candidates_quota' => $jury['candidates_quota'],
+                'supervisor_name' => $jury['supervisor_name'],
+                'vigilantes' => $vigilantesMap[$jury['id']] ?? []
             ];
         }
 

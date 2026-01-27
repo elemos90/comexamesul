@@ -22,49 +22,77 @@ $juriesByLocation = $juriesByLocation ?? [];
     <div class="absolute top-10 right-10 w-72 h-72 bg-white/5 rounded-full blur-3xl"></div>
     <div class="absolute bottom-10 left-10 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl"></div>
 
+    <style>
+        .hero-title {
+            font-family: 'Outfit', sans-serif !important;
+        }
+
+        @media (min-width: 1024px) {
+            .hero-container {
+                align-items: flex-start !important;
+                text-align: left !important;
+            }
+
+            .hero-title {
+                text-align: left !important;
+                font-size: 4.5rem !important;
+                line-height: 1 !important;
+            }
+
+            .hero-text {
+                text-align: left !important;
+            }
+        }
+    </style>
+
     <div class="max-w-7xl mx-auto px-4 py-16 md:py-24 relative z-10">
         <div class="grid lg:grid-cols-2 gap-12 items-center">
             <!-- Coluna Esquerda: Texto e CTA -->
-            <div class="space-y-6 flex flex-col items-center lg:items-start text-center lg:text-left">
+            <div class="hero-container space-y-6 flex flex-col items-center lg:items-start text-center lg:text-left">
                 <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm">
                     <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                     <span>Processo de Exames <?= $currentYear ?> Ativo</span>
                 </div>
-                <h1 class="text-3xl md:text-5xl lg:text-6xl font-bold leading-tight text-white">
+                <h1
+                    class="hero-title font-outfit text-4xl md:text-6xl lg:text-7xl font-bold leading-tight text-white mb-2 text-center lg:text-left">
                     Portal de Exames<br>de Admissão
                 </h1>
-                <p class="text-lg md:text-xl text-blue-100 italic">
+                <p class="hero-text text-xl md:text-2xl text-blue-100 italic max-w-xl text-center lg:text-left">
                     Centro oficial de informações, calendários e recursos para candidatos, vigilantes e membros da
                     comissão.
                 </p>
-                <div class="flex flex-wrap justify-center lg:justify-start gap-3">
+                <div class="flex flex-wrap justify-center lg:justify-start gap-4 pt-4">
                     <a href="<?= url('/register') ?>"
-                        class="px-5 py-2.5 bg-white text-blue-700 font-semibold rounded-lg hover:bg-blue-50 transition-all shadow-md hover:shadow-lg text-sm md:text-base">
+                        class="px-8 py-4 bg-white text-blue-700 font-bold rounded-xl hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl text-lg">
                         Candidatar-se Agora
                     </a>
                     <a href="<?= url('/login') ?>"
-                        class="px-5 py-2.5 border-2 border-white text-white font-semibold rounded-lg hover:bg-white/10 transition-all text-sm md:text-base">
+                        class="px-8 py-4 border-2 border-white text-white font-bold rounded-xl hover:bg-white/10 transition-all text-lg">
                         Entrar no Sistema
                     </a>
                 </div>
 
                 <!-- Stats inline abaixo dos botões -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 pt-8 w-full max-w-2xl">
                     <div class="text-center lg:text-left">
-                        <div class="text-2xl md:text-3xl font-bold"><?= count($vacancies ?? []) ?></div>
-                        <div class="text-blue-100 text-[10px] md:text-xs mt-1">Vagas Abertas</div>
+                        <div class="text-3xl md:text-4xl font-bold"><?= count($vacancies ?? []) ?></div>
+                        <div class="text-blue-100 text-xs md:text-sm mt-1 uppercase tracking-wider font-semibold">Vagas
+                            Abertas</div>
                     </div>
                     <div class="text-center lg:text-left">
-                        <div class="text-2xl md:text-3xl font-bold"><?= count($juriesByLocation ?? []) ?></div>
-                        <div class="text-blue-100 text-[10px] md:text-xs mt-1">Locais de Exame</div>
+                        <div class="text-3xl md:text-4xl font-bold"><?= count($juriesByLocation ?? []) ?></div>
+                        <div class="text-blue-100 text-xs md:text-sm mt-1 uppercase tracking-wider font-semibold">Locais
+                            de Exame</div>
                     </div>
                     <div class="text-center lg:text-left">
-                        <div class="text-2xl md:text-3xl font-bold"><?= $daysToNextExam ?? 0 ?></div>
-                        <div class="text-blue-100 text-[10px] md:text-xs mt-1 leading-none">Dias até exame</div>
+                        <div class="text-3xl md:text-4xl font-bold"><?= $daysToNextExam ?? 0 ?></div>
+                        <div class="text-blue-100 text-xs md:text-sm mt-1 uppercase tracking-wider font-semibold">Dias
+                            até exame</div>
                     </div>
                     <div class="text-center lg:text-left">
-                        <div class="text-2xl md:text-3xl font-bold">24/7</div>
-                        <div class="text-blue-100 text-[10px] md:text-xs mt-1">Suporte</div>
+                        <div class="text-3xl md:text-4xl font-bold">24/7</div>
+                        <div class="text-blue-100 text-xs md:text-sm mt-1 uppercase tracking-wider font-semibold">
+                            Suporte</div>
                     </div>
                 </div>
             </div>
@@ -891,7 +919,7 @@ $juriesByLocation = $juriesByLocation ?? [];
         </div>
 
         <?php if ($vacancies): ?>
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="flex flex-wrap justify-center gap-6">
                 <?php foreach ($vacancies as $vacancy): ?>
                     <?php
                     $deadline = new DateTime($vacancy['deadline_at']);
@@ -901,7 +929,7 @@ $juriesByLocation = $juriesByLocation ?? [];
                     $isExpiringSoon = $daysLeft <= 3;
                     ?>
                     <div
-                        class="bg-white rounded-lg shadow-lg border-2 <?= $isExpiringSoon ? 'border-amber-400' : 'border-gray-100' ?> p-6 hover:shadow-xl transition-shadow">
+                        class="flex-1 min-w-[300px] max-w-sm bg-white rounded-lg shadow-lg border-2 <?= $isExpiringSoon ? 'border-amber-400' : 'border-gray-100' ?> p-6 hover:shadow-xl transition-shadow">
                         <?php if ($isExpiringSoon): ?>
                             <div
                                 class="mb-3 inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-100 px-3 py-1 rounded-full">

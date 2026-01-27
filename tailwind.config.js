@@ -24,6 +24,7 @@ module.exports = {
             },
             fontFamily: {
                 sans: ['Inter', 'system-ui', 'sans-serif'],
+                outfit: ['Outfit', 'sans-serif'],
             },
         },
     },

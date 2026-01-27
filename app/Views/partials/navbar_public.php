@@ -10,6 +10,7 @@ $openVacanciesCount = count($vacancyModel->openVacancies());
                     class="h-10 w-auto object-contain">
                 <span
                     class="text-lg font-bold text-primary-600 hidden md:inline"><?= htmlspecialchars(env('APP_NAME', 'Portal')) ?></span>
+                <span class="text-sm font-bold text-primary-600 md:hidden">COMEXAME</span>
             </a>
             <div class="flex items-center gap-2 sm:gap-4">
                 <?php if ($openVacanciesCount > 0): ?>
@@ -32,7 +33,7 @@ $openVacanciesCount = count($vacancyModel->openVacancies());
                     </a>
                 <?php endif; ?>
                 <a href="<?= url('/login') ?>"
-                    class="hidden sm:block text-sm font-medium text-gray-700 hover:text-primary-600">Entrar</a>
+                    class="text-sm font-medium text-gray-700 hover:text-primary-600">Entrar</a>
                 <a href="<?= url('/register') ?>"
                     class="px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white bg-primary-600 hover:bg-primary-500 rounded-lg shadow-sm transition-colors">Registar</a>
             </div>

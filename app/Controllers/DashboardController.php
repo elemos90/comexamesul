@@ -7,20 +7,15 @@ use App\Models\ExamVacancy;
 use App\Models\Jury;
 use App\Models\JuryVigilante;
 use App\Models\User;
-use App\Services\StatsCacheService;
+use App\Services\CacheService;
+use App\Services\Logger;
 use App\Utils\Auth;
 
 class DashboardController extends Controller
 {
-    private StatsCacheService $cache;
-
-    public function __construct()
-    {
-        $this->cache = new StatsCacheService();
-    }
-
     public function index(Request $request): string
     {
+        $startTime = microtime(true);
         $user = Auth::user();
 
         // If user session exists but user was deleted from database, logout
@@ -47,19 +42,20 @@ class DashboardController extends Controller
 
         if ($user['role'] === 'vigilante') {
             // Cache específico por vigilante
-            $cacheKey = 'dashboard_vigilante_' . $user['id'];
-            $cachedData = $this->cache->remember($cacheKey, function () use ($juryVigilantes, $juries, $user, $vacancies) {
+            $cacheKey = 'dashboard:vigilante:' . $user['id'];
+
+            $cachedData = CacheService::remember($cacheKey, 180, function () use ($vacancies, $juryVigilantes, $juries, $user) {
                 return [
                     'openVacancies' => count($vacancies->openVacancies()),
                     'upcomingJuries' => $this->fetchUpcomingForVigilante($juryVigilantes, $juries, (int) $user['id'])
                 ];
-            }, 180); // 3 minutos
+            });
 
             $data['openVacancies'] = $cachedData['openVacancies'];
             $data['upcomingJuries'] = $cachedData['upcomingJuries'];
         } else {
             // Cache para coordenadores/membros
-            $cachedStats = $this->cache->remember('dashboard_stats', function () use ($userModel, $juries, $vacancies) {
+            $cachedStats = CacheService::remember('dashboard:stats:general', 300, function () use ($userModel, $juries, $vacancies) {
                 $allJuries = $juries->withAllocations();
 
                 // Filtrar apenas júris futuros
@@ -73,12 +69,20 @@ class DashboardController extends Controller
                     'availableVigilantes' => count($userModel->availableVigilantes()),
                     'upcomingJuries' => $this->filterNextDayOnly($futureJuries)
                 ];
-            }, 300); // 5 minutos
+            });
 
             $data['openVacancies'] = $cachedStats['openVacancies'];
             $data['availableVigilantes'] = $cachedStats['availableVigilantes'];
             $data['upcomingJuries'] = $cachedStats['upcomingJuries'];
         }
+
+        // Log performance
+        $duration = microtime(true) - $startTime;
+        Logger::performance('dashboard_load', $duration, [
+            'user_id' => $user['id'],
+            'role' => $user['role'],
+            'cached' => $duration < 0.1 // Se < 100ms, provavelmente foi cache hit
+        ]);
 
         return $this->view('dashboard/index', $data);
     }

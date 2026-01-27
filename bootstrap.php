@@ -29,6 +29,23 @@ if (file_exists($composerAutoload)) {
 
 App\Utils\Env::load(BASE_PATH . '/.env');
 
+// Validar variáveis de ambiente obrigatórias
+try {
+    if (class_exists('App\\Config\\EnvValidator')) {
+        App\Config\EnvValidator::validate();
+    }
+} catch (\RuntimeException $e) {
+    error_log('[BOOTSTRAP] Environment validation failed: ' . $e->getMessage());
+
+    // Em produção, falhar imediatamente
+    if (env('APP_ENV') === 'production') {
+        die('Configuration Error: Please contact system administrator.');
+    }
+
+    // Em desenvolvimento, mostrar erro detalhado
+    die($e->getMessage());
+}
+
 // Definir nome padrão da aplicação se não estiver configurado
 if (!env('APP_NAME')) {
     App\Utils\Env::set('APP_NAME', 'Portal da Comissão de Exames de Admissão');

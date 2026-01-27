@@ -21,15 +21,29 @@ class Env
             if (!str_contains($line, '=')) {
                 continue;
             }
-            [$key, $value] = array_map('trim', explode('=', $line, 2));
-            $value = self::sanitizeValue($value);
+
+            // Split only on first =
+            $parts = explode('=', $line, 2);
+            if (count($parts) !== 2) {
+                continue;
+            }
+
+            $key = trim($parts[0]);
+            $value = trim($parts[1]);
+
+            // Remove quotes if present
+            if (strlen($value) >= 2) {
+                if (
+                    ($value[0] === '"' && substr($value, -1) === '"') ||
+                    ($value[0] === "'" && substr($value, -1) === "'")
+                ) {
+                    $value = substr($value, 1, -1);
+                }
+            }
+
             self::$data[$key] = $value;
-            if (!array_key_exists($key, $_SERVER)) {
-                $_SERVER[$key] = $value;
-            }
-            if (!array_key_exists($key, $_ENV)) {
-                $_ENV[$key] = $value;
-            }
+            $_SERVER[$key] = $value;
+            $_ENV[$key] = $value;
         }
     }
 

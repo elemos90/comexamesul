@@ -369,68 +369,6 @@ class JuryController extends Controller
         }
     }
 
-    private function store_legacy(Request $request)
-    {
-        $data = $request->only(['subject', 'exam_date', 'start_time', 'end_time', 'location', 'room', 'candidates_quota', 'notes']);
-        $validator = new Validator();
-        $rules = [
-            'subject' => 'required|min:3|max:180',
-            'exam_date' => 'required|date',
-            'start_time' => 'required|time',
-            'end_time' => 'required|time',
-            'location' => 'required|max:120',
-            'room' => 'required|max:60',
-            'candidates_quota' => 'required|numeric',
-        ];
-        if (!$validator->validate($data, $rules)) {
-            Flash::add('error', 'Verifique os dados do juri.');
-            $_SESSION['errors'] = $validator->errors();
-            redirect('/juries');
-        }
-
-        // Validar data do júri: não pode ser no passado
-        if (strtotime($data['exam_date']) < strtotime(date('Y-m-d'))) {
-            Flash::add('error', 'Nao e possivel criar juris para datas passadas.');
-            redirect('/juries');
-        }
-
-        $juryModel = new Jury();
-
-        // Verificar se existem júris da mesma disciplina e data com horários diferentes
-        $existingJuries = $juryModel->statement(
-            "SELECT * FROM juries WHERE subject = :subject AND exam_date = :date",
-            ['subject' => $data['subject'], 'date' => $data['exam_date']]
-        );
-
-        if (!empty($existingJuries)) {
-            $firstJury = $existingJuries[0];
-            if ($firstJury['start_time'] !== $data['start_time'] || $firstJury['end_time'] !== $data['end_time']) {
-                Flash::add('warning', 'AVISO: Júris da mesma disciplina devem ter o mesmo horário para evitar fraudes. Horário esperado: ' . substr($firstJury['start_time'], 0, 5) . ' - ' . substr($firstJury['end_time'], 0, 5));
-            }
-        }
-
-        $juryId = $juryModel->create([
-            'subject' => $data['subject'],
-            'exam_date' => $data['exam_date'],
-            'start_time' => $data['start_time'],
-            'end_time' => $data['end_time'],
-            'location' => $data['location'],
-            'room' => $data['room'],
-            'candidates_quota' => (int) $data['candidates_quota'],
-            'notes' => $data['notes'] ?? null,
-            'created_by' => Auth::id(),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-        ActivityLogger::log('juries', $juryId, 'create');
-
-        // Invalidar cache
-        $this->invalidateCache();
-
-        Flash::add('success', 'Juri criado com sucesso.');
-        redirect('/juries');
-    }
-
     public function update(Request $request)
     {
         $id = (int) $request->param('id');
@@ -443,22 +381,6 @@ class JuryController extends Controller
         } else {
             Flash::add('error', $result['message']);
         }
-        redirect('/juries');
-    }
-
-    private function update_legacy(Request $request)
-    {
-        $id = (int) $request->param('id');
-        $data = $request->only(['subject', 'exam_date', 'start_time', 'end_time', 'location', 'room', 'candidates_quota', 'notes']);
-        $juryModel = new Jury();
-        $jury = $juryModel->find($id);
-        if (!$jury) {
-            Flash::add('error', 'Juri nao encontrado.');
-            redirect('/juries');
-        }
-        $juryModel->update($id, array_merge($data, ['updated_at' => now()]));
-        ActivityLogger::log('juries', $id, 'update');
-        Flash::add('success', 'Juri atualizado.');
         redirect('/juries');
     }
 
@@ -479,221 +401,20 @@ class JuryController extends Controller
 
 
 
+    /**
+     * @deprecated Moved to JuryBulkController@createBatch
+     */
     public function createBatch(Request $request)
     {
-        $subject = $request->input('subject');
-        $examDate = $request->input('exam_date');
-        $startTime = $request->input('start_time');
-        $endTime = $request->input('end_time');
-        $location = $request->input('location');
-        $rooms = $request->input('rooms');
-
-        if (empty($rooms) || !is_array($rooms)) {
-            Response::json(['success' => false, 'message' => 'Adicione pelo menos uma sala.'], 400);
-            return;
-        }
-
-        $data = [
-            'subject' => $subject,
-            'exam_date' => $examDate,
-            'start_time' => $startTime,
-            'end_time' => $endTime,
-            'location' => $location,
-        ];
-
-        // Validar dados básicos (pode usar Validator se quiser manter padrão)
-        // Aqui simplificamos pois o serviço não faz validação de request
-        if (empty($subject) || empty($examDate) || empty($startTime) || empty($endTime) || empty($location)) {
-            Response::json(['success' => false, 'message' => 'Preencha todos os campos obrigatórios.'], 400);
-            return;
-        }
-
-        $result = (new \App\Services\JuryService())->createBatch($data, $rooms, Auth::id());
-
-        if ($result['success']) {
-            $this->invalidateCache();
-            Response::json(['success' => true, 'message' => $result['message'], 'count' => $result['count'] ?? 0]);
-        } else {
-            Response::json(['success' => false, 'message' => $result['message']], 400);
-        }
+        // Moved to JuryBulkController
     }
 
-    private function createBatch_legacy(Request $request)
-    {
-        $data = $request->only(['subject', 'exam_date', 'start_time', 'end_time', 'location', 'notes']);
-        $rooms = $request->input('rooms');
-
-        if (empty($rooms) || !is_array($rooms)) {
-            Flash::add('error', 'Adicione pelo menos uma sala.');
-            redirect('/juries');
-        }
-
-        $validator = new Validator();
-        $rules = [
-            'subject' => 'required|min:3|max:180',
-            'exam_date' => 'required|date',
-            'start_time' => 'required|time',
-            'end_time' => 'required|time',
-            'location' => 'required|max:120',
-        ];
-
-        if (!$validator->validate($data, $rules)) {
-            Flash::add('error', 'Verifique os dados da disciplina.');
-            $_SESSION['errors'] = $validator->errors();
-            redirect('/juries');
-        }
-
-        // Validar data do júri: não pode ser no passado
-        if (strtotime($data['exam_date']) < strtotime(date('Y-m-d'))) {
-            Flash::add('error', 'Nao e possivel criar juris para datas passadas.');
-            redirect('/juries');
-        }
-
-        $juryModel = new Jury();
-        $createdCount = 0;
-
-        foreach ($rooms as $room) {
-            if (empty($room['room']) || empty($room['candidates_quota'])) {
-                continue;
-            }
-
-            $juryId = $juryModel->create([
-                'subject' => $data['subject'],
-                'exam_date' => $data['exam_date'],
-                'start_time' => $data['start_time'],
-                'end_time' => $data['end_time'],
-                'location' => $data['location'],
-                'room' => $room['room'],
-                'candidates_quota' => (int) $room['candidates_quota'],
-                'notes' => $data['notes'] ?? null,
-                'created_by' => Auth::id(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            ActivityLogger::log('juries', $juryId, 'create_batch', [
-                'subject' => $data['subject'],
-                'room' => $room['room']
-            ]);
-
-            $createdCount++;
-        }
-
-        Flash::add('success', "Criados {$createdCount} júris para a disciplina {$data['subject']}. Agora arraste vigilantes e supervisores para cada sala.");
-        redirect('/juries');
-    }
-
+    /**
+     * @deprecated Moved to JuryBulkController@createLocationBatch
+     */
     public function createLocationBatch(Request $request)
     {
-        $location = $request->input('location');
-        $examDate = $request->input('exam_date');
-        $disciplines = $request->input('disciplines');
-
-        if (empty($disciplines) || !is_array($disciplines)) {
-            Response::json(['success' => false, 'message' => 'Nenhuma disciplina fornecida.'], 400);
-            return;
-        }
-
-        $result = (new \App\Services\JuryService())->createLocationBatch($location, $examDate, $disciplines, Auth::id());
-
-        if ($result['success']) {
-            $this->invalidateCache();
-            Response::json(['success' => true, 'message' => $result['message'], 'count' => $result['count'] ?? 0]);
-        } else {
-            Response::json(['success' => false, 'message' => $result['message']], 400);
-        }
-    }
-
-    private function createLocationBatch_legacy(Request $request)
-    {
-        $location = $request->input('location');
-        $examDate = $request->input('exam_date');
-        $disciplines = $request->input('disciplines');
-
-        if (empty($location) || empty($examDate)) {
-            Flash::add('error', 'Local e data são obrigatórios.');
-            redirect('/juries');
-        }
-
-        if (empty($disciplines) || !is_array($disciplines)) {
-            Flash::add('error', 'Adicione pelo menos uma disciplina com salas.');
-            redirect('/juries');
-        }
-
-        $validator = new Validator();
-        $baseRules = [
-            'location' => 'required|max:120',
-            'exam_date' => 'required|date',
-        ];
-
-        if (!$validator->validate(['location' => $location, 'exam_date' => $examDate], $baseRules)) {
-            Flash::add('error', 'Verifique os dados do local.');
-            $_SESSION['errors'] = $validator->errors();
-            redirect('/juries');
-        }
-
-        // Validar data do júri: não pode ser no passado
-        if (strtotime($examDate) < strtotime(date('Y-m-d'))) {
-            Flash::add('error', 'Nao e possivel criar juris para datas passadas.');
-            redirect('/juries');
-        }
-
-        $juryModel = new Jury();
-        $totalCreated = 0;
-        $disciplinesCreated = 0;
-
-        foreach ($disciplines as $discipline) {
-            if (empty($discipline['subject']) || empty($discipline['start_time']) || empty($discipline['end_time'])) {
-                continue;
-            }
-
-            $rooms = $discipline['rooms'] ?? [];
-            if (empty($rooms) || !is_array($rooms)) {
-                continue;
-            }
-
-            $roomsCreated = 0;
-            foreach ($rooms as $room) {
-                if (empty($room['room']) || empty($room['candidates_quota'])) {
-                    continue;
-                }
-
-                $juryId = $juryModel->create([
-                    'subject' => $discipline['subject'],
-                    'exam_date' => $examDate,
-                    'start_time' => $discipline['start_time'],
-                    'end_time' => $discipline['end_time'],
-                    'location' => $location,
-                    'room' => $room['room'],
-                    'candidates_quota' => (int) $room['candidates_quota'],
-                    'notes' => null,
-                    'created_by' => Auth::id(),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                ActivityLogger::log('juries', $juryId, 'create_location_batch', [
-                    'location' => $location,
-                    'subject' => $discipline['subject'],
-                    'room' => $room['room']
-                ]);
-
-                $roomsCreated++;
-                $totalCreated++;
-            }
-
-            if ($roomsCreated > 0) {
-                $disciplinesCreated++;
-            }
-        }
-
-        if ($totalCreated === 0) {
-            Flash::add('error', 'Nenhum júri foi criado. Verifique os dados inseridos.');
-            redirect('/juries');
-        }
-
-        Flash::add('success', "Criados {$totalCreated} júris para {$disciplinesCreated} disciplina(s) no local '{$location}' em " . date('d/m/Y', strtotime($examDate)) . ". Agora aloque vigilantes e supervisores.");
-        redirect('/juries');
+        // Moved to JuryBulkController
     }
 
     public function updateQuick(Request $request)
@@ -766,232 +487,50 @@ class JuryController extends Controller
         Response::json(['success' => true, 'message' => 'Sala atualizada com sucesso!']);
     }
 
+    /**
+     * @deprecated Moved to JuryBulkController@updateBatch
+     */
     public function updateBatch(Request $request)
     {
-        $subject = $request->input('subject');
-        $examDate = $request->input('exam_date');
-        $startTime = $request->input('start_time');
-        $endTime = $request->input('end_time');
-        $location = $request->input('location');
-        $juries = $request->input('juries');
-
-        if (empty($juries) || !is_array($juries)) {
-            Response::json(['success' => false, 'message' => 'Nenhum júri para atualizar.'], 400);
-        }
-
-        $validator = new Validator();
-        $baseData = [
-            'subject' => $subject,
-            'exam_date' => $examDate,
-            'start_time' => $startTime,
-            'end_time' => $endTime,
-            'location' => $location,
-        ];
-
-        if (
-            !$validator->validate($baseData, [
-                'subject' => 'required|min:3|max:180',
-                'exam_date' => 'required|date',
-                'start_time' => 'required|time',
-                'end_time' => 'required|time',
-                'location' => 'required|max:120',
-            ])
-        ) {
-            Response::json(['success' => false, 'message' => 'Dados da disciplina inválidos.', 'errors' => $validator->errors()], 400);
-        }
-
-        $juryModel = new Jury();
-        $updatedCount = 0;
-
-        foreach ($juries as $juryData) {
-            if (empty($juryData['id']) || empty($juryData['room'])) {
-                continue;
-            }
-
-            $juryId = (int) $juryData['id'];
-            $jury = $juryModel->find($juryId);
-
-            if (!$jury) {
-                continue;
-            }
-
-            $juryModel->update($juryId, [
-                'subject' => $subject,
-                'exam_date' => $examDate,
-                'start_time' => $startTime,
-                'end_time' => $endTime,
-                'location' => $location,
-                'room' => $juryData['room'],
-                'candidates_quota' => (int) ($juryData['candidates_quota'] ?? $jury['candidates_quota']),
-                'updated_at' => now(),
-            ]);
-
-            ActivityLogger::log('juries', $juryId, 'update_batch', [
-                'subject' => $subject,
-                'room' => $juryData['room']
-            ]);
-
-            $updatedCount++;
-        }
-
-        if ($updatedCount === 0) {
-            Response::json(['success' => false, 'message' => 'Nenhum júri foi atualizado.'], 400);
-        }
-
-        Response::json(['success' => true, 'message' => "{$updatedCount} júri(s) atualizado(s) com sucesso!"]);
+        // Moved to JuryBulkController
     }
 
 
 
     /**
      * API: Obter estatísticas de alocação
+     * @deprecated Moved to JuryMetricsController@getAllocationStats
      */
     public function getAllocationStats(Request $request)
     {
-        $allocationService = new \App\Services\AllocationService();
-        $stats = $allocationService->getAllocationStats();
-
-        Response::json([
-            'success' => true,
-            'stats' => $stats
-        ]);
+        // Moved to JuryMetricsController
     }
 
     /**
      * API: Obter slots e ocupação de júri(s)
+     * @deprecated Moved to JuryResourceController@getJurySlots
      */
     public function getJurySlots(Request $request)
     {
-        $juryId = (int) $request->param('id');
-
-        $allocationService = new \App\Services\AllocationService();
-        $slots = $allocationService->getJurySlots($juryId);
-
-        Response::json([
-            'success' => true,
-            'slots' => $slots
-        ]);
+        // Moved to JuryResourceController
     }
 
     /**
      * API: Obter vigilantes elegíveis para um júri
+     * @deprecated Moved to JuryResourceController@getEligibleVigilantes
      */
     public function getEligibleVigilantes(Request $request)
     {
-        try {
-            $juryId = (int) $request->param('id');
-
-            $allocationService = new \App\Services\AllocationService();
-            $vigilantes = $allocationService->getEligibleVigilantes($juryId);
-
-            Response::json([
-                'success' => true,
-                'vigilantes' => $vigilantes
-            ]);
-        } catch (\Exception $e) {
-            error_log("Erro ao buscar vigilantes elegíveis: " . $e->getMessage());
-            Response::json([
-                'success' => false,
-                'message' => 'Erro ao carregar candidatos: ' . $e->getMessage()
-            ], 500);
-        }
+        // Moved to JuryResourceController
     }
 
     /**
-     * API: Obter supervisores elegíveis (para um júri ou todos)
+     * API: Obter supervisores elegíveis
+     * @deprecated Moved to JuryResourceController@getEligibleSupervisors
      */
     public function getEligibleSupervisors(Request $request)
     {
-        $juryId = (int) $request->param('id');
-
-        // Se não há juryId, retornar todos os supervisores elegíveis (COM FILTRO DE CONFLITO)
-        if (!$juryId) {
-            $examDate = $request->input('exam_date');
-            $startTime = $request->input('start_time');
-            $endTime = $request->input('end_time');
-
-            $userModel = new User();
-
-            // Se há contexto de exame, filtrar vigilantes já alocados E supervisores já ocupados
-            if ($examDate && $startTime && $endTime) {
-                $db = database();
-
-                // 1. Buscar vigilantes já alocados como vigilantes neste horário
-                $stmt = $db->prepare("
-                    SELECT DISTINCT jv.vigilante_id
-                    FROM jury_vigilantes jv
-                    INNER JOIN juries j ON j.id = jv.jury_id
-                    WHERE j.exam_date = :exam_date
-                      AND j.start_time = :start_time
-                      AND j.end_time = :end_time
-                ");
-                $stmt->execute([
-                    'exam_date' => $examDate,
-                    'start_time' => $startTime,
-                    'end_time' => $endTime
-                ]);
-                $excludeIds = $stmt->fetchAll(\PDO::FETCH_COLUMN);
-
-                // 2. Buscar supervisores JÁ supervisionando outros exames neste horário
-                $supervisorStmt = $db->prepare("
-                    SELECT DISTINCT j.supervisor_id
-                    FROM juries j
-                    WHERE j.supervisor_id IS NOT NULL
-                      AND j.exam_date = :exam_date
-                      AND j.start_time < :end_time
-                      AND j.end_time > :start_time
-                ");
-                $supervisorStmt->execute([
-                    'exam_date' => $examDate,
-                    'start_time' => $startTime,
-                    'end_time' => $endTime
-                ]);
-                $busySupervisors = $supervisorStmt->fetchAll(\PDO::FETCH_COLUMN);
-
-                // Combinar ambos os IDs a excluir
-                $excludeIds = array_unique(array_merge($excludeIds, $busySupervisors));
-
-                // Construir cláusula de exclusão
-                $excludeClause = !empty($excludeIds) ? "AND u.id NOT IN (" . implode(',', array_map('intval', $excludeIds)) . ")" : "";
-
-                $supervisors = $userModel->statement(
-                    "SELECT u.id, u.name, u.email, u.supervisor_eligible,
-                            IFNULL(vw.supervision_count, 0) as supervision_count,
-                            IFNULL(vw.workload_score, 0) as workload_score
-                     FROM users u
-                     LEFT JOIN vw_vigilante_workload vw ON vw.user_id = u.id
-                     WHERE u.role IN ('vigilante', 'coordenador', 'membro')
-                       $excludeClause
-                     ORDER BY u.supervisor_eligible DESC, IFNULL(vw.supervision_count, 0) ASC, u.name"
-                );
-            } else {
-                // Sem filtro de exame
-                $supervisors = $userModel->statement(
-                    "SELECT u.id, u.name, u.email, u.supervisor_eligible,
-                            IFNULL(vw.supervision_count, 0) as supervision_count,
-                            IFNULL(vw.workload_score, 0) as workload_score
-                     FROM users u
-                     LEFT JOIN vw_vigilante_workload vw ON vw.user_id = u.id
-                     WHERE u.role IN ('vigilante', 'coordenador', 'membro')
-                     ORDER BY u.supervisor_eligible DESC, IFNULL(vw.supervision_count, 0) ASC, u.name"
-                );
-            }
-
-            Response::json([
-                'success' => true,
-                'supervisors' => $supervisors
-            ]);
-            return;
-        }
-
-        // Com juryId, usar o serviço de alocação para considerar conflitos
-        $allocationService = new \App\Services\AllocationService();
-        $supervisors = $allocationService->getEligibleSupervisors($juryId);
-
-        Response::json([
-            'success' => true,
-            'supervisors' => $supervisors
-        ]);
+        // Moved to JuryResourceController
     }
 
     /**
@@ -2995,83 +2534,10 @@ class JuryController extends Controller
 
     /**
      * Export juries to Excel
+     * @deprecated Moved to JuryExportController@exportExcel
      */
     public function exportExcel(Request $request): void
     {
-        try {
-            $user = Auth::user();
-            $vacancyId = $request->input('vacancy_id', 'current');
-
-            // Get jury data
-            $juryService = new \App\Services\JuryService();
-            $data = $juryService->getDashboardData($user, $vacancyId);
-
-            // Check if PhpSpreadsheet is available
-            if (!class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
-                Response::json(['success' => false, 'message' => 'PhpSpreadsheet não está instalado'], 500);
-                return;
-            }
-
-            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
-            $sheet = $spreadsheet->getActiveSheet();
-            $sheet->setTitle('Júris de Exames');
-
-            // Header styling
-            $headerStyle = [
-                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-                'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F46E5']],
-                'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER]
-            ];
-
-            // Set headers
-            $headers = ['Disciplina', 'Sala', 'Data', 'Hora', 'Local', 'Vaga', 'Vigilantes', 'Supervisor'];
-            $col = 'A';
-            foreach ($headers as $header) {
-                $sheet->setCellValue($col . '1', $header);
-                $sheet->getStyle($col . '1')->applyFromArray($headerStyle);
-                $sheet->getColumnDimension($col)->setAutoSize(true);
-                $col++;
-            }
-
-            // Fill data
-            $row = 2;
-            foreach ($data['juries'] as $jury) {
-                $sheet->setCellValue('A' . $row, $jury['discipline'] ?? '');
-                $sheet->setCellValue('B' . $row, $jury['room'] ?? '');
-                $sheet->setCellValue('C' . $row, date('d/m/Y', strtotime($jury['exam_date'])));
-                $sheet->setCellValue('D' . $row, substr($jury['exam_time'], 0, 5));
-                $sheet->setCellValue('E' . $row, $jury['location'] ?? '');
-                $sheet->setCellValue('F' . $row, $jury['vacancy_name'] ?? '');
-
-                // Vigilantes
-                $vigilantes = isset($jury['vigilantes']) ? array_column($jury['vigilantes'], 'name') : [];
-                $sheet->setCellValue('G' . $row, implode(', ', $vigilantes));
-
-                // Supervisor
-                $sheet->setCellValue('H' . $row, $jury['supervisor_name'] ?? '');
-
-                $row++;
-            }
-
-            // Auto-size columns
-            foreach (range('A', 'H') as $col) {
-                $sheet->getColumnDimension($col)->setAutoSize(true);
-            }
-
-            // Output
-            $filename = 'juris_exames_' . date('Y-m-d_H-i-s') . '.xlsx';
-
-            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            header('Content-Disposition: attachment;filename="' . $filename . '"');
-            header('Cache-Control: max-age=0');
-
-            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
-            $writer->save('php://output');
-            exit;
-
-        } catch (\Exception $e) {
-            error_log('Excel export error: ' . $e->getMessage());
-            Response::json(['success' => false, 'message' => 'Erro ao exportar: ' . $e->getMessage()], 500);
-        }
+        // Moved to JuryExportController
     }
 }

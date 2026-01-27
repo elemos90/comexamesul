@@ -6,6 +6,7 @@ use App\Http\Request;
 use App\Models\User;
 use App\Models\SecurityQuestion;
 use App\Services\ActivityLogger;
+use App\Services\Logger;
 use App\Services\NotificationService;
 use App\Utils\Auth;
 use App\Utils\Flash;
@@ -40,6 +41,7 @@ class AuthController extends Controller
         $window = (int) env('RATE_LIMIT_WINDOW', 900);
         if (!RateLimiter::hit($key, $window, $maxAttempts)) {
             Flash::add('error', 'Muitas tentativas de login. Aguarde alguns minutos.');
+            Logger::security('rate_limit_exceeded', ['ip' => $request->ip(), 'type' => 'login']);
             redirect('/login');
         }
 
@@ -55,6 +57,7 @@ class AuthController extends Controller
         if (!$user || !password_verify($data['password'], $user['password_hash'])) {
             $_SESSION['old'] = ['username' => $data['username']];
             Flash::add('error', 'Credenciais inválidas.');
+            Logger::auth('login_failed', null, ['username' => $data['username']]);
             redirect('/login');
         }
 
@@ -66,6 +69,7 @@ class AuthController extends Controller
 
         Auth::loginUser($user);
         RateLimiter::clear($key);
+        Logger::auth('login_success', $user['id'], ['username' => $user['username'], 'role' => $user['role']]);
         ActivityLogger::log('auth', Auth::id(), 'login_success');
 
         // Verificar se deve alterar senha obrigatoriamente
@@ -187,7 +191,9 @@ class AuthController extends Controller
 
     public function logout(): void
     {
-        ActivityLogger::log('auth', Auth::id(), 'logout');
+        $userId = Auth::id();
+        Logger::auth('logout', $userId);
+        ActivityLogger::log('auth', $userId, 'logout');
         Auth::logout();
         Flash::add('success', 'Sessão encerrada.');
         redirect('/');

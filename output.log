@@ -1,0 +1,33 @@
+PHPUnit 10.5.63 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.2.12
+Configuration: C:\xampp\htdocs\comexamesul\phpunit.xml
+
+.EEE                                                                4 / 4 (100%)
+
+Time: 00:00.029, Memory: 8.00 MB
+
+There were 3 errors:
+
+1) Tests\Unit\Services\AllocationServiceTest::test_can_assign_vigilante_valid
+PDOException: SQLSTATE[HY000]: General error: 1 no such column: username
+
+C:\xampp\htdocs\comexamesul\app\Models\BaseModel.php:24
+C:\xampp\htdocs\comexamesul\app\Services\AllocationService.php:47
+C:\xampp\htdocs\comexamesul\tests\Unit\Services\AllocationServiceTest.php:43
+
+2) Tests\Unit\Services\AllocationServiceTest::test_cannot_assign_vigilante_if_capacity_full
+PDOException: SQLSTATE[HY000]: General error: 1 no such column: username
+
+C:\xampp\htdocs\comexamesul\app\Models\BaseModel.php:24
+C:\xampp\htdocs\comexamesul\app\Services\AllocationService.php:47
+C:\xampp\htdocs\comexamesul\tests\Unit\Services\AllocationServiceTest.php:73
+
+3) Tests\Unit\Services\AllocationServiceTest::test_auto_allocate_jury
+PDOException: SQLSTATE[HY000]: General error: 1 no such function: RAND
+
+C:\xampp\htdocs\comexamesul\app\Services\AllocationService.php:460
+C:\xampp\htdocs\comexamesul\tests\Unit\Services\AllocationServiceTest.php:99
+
+ERRORS!
+Tests: 4, Assertions: 1, Errors: 3, PHPUnit Deprecations: 1.

@@ -50,9 +50,15 @@ class Notification extends BaseModel
 
     /**
      * Get all notifications with recipient count
+     * 
+     * @param int $page Current page number (1-indexed)
+     * @param int $perPage Items per page
+     * @return array
      */
-    public function getAllWithStats(): array
+    public function getAllWithStats(int $page = 1, int $perPage = 50): array
     {
+        $offset = ($page - 1) * $perPage;
+
         $sql = "SELECT n.*, 
                        u.name as creator_name,
                        COUNT(DISTINCT nr.user_id) as total_recipients,
@@ -61,18 +67,39 @@ class Notification extends BaseModel
                 LEFT JOIN users u ON u.id = n.created_by
                 LEFT JOIN notification_recipients nr ON nr.notification_id = n.id
                 GROUP BY n.id
-                ORDER BY n.created_at DESC";
+                ORDER BY n.created_at DESC
+                LIMIT ? OFFSET ?";
 
-        $stmt = $this->db->query($sql);
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$perPage, $offset]);
         return $stmt->fetchAll();
     }
 
     /**
-     * Get notifications for a specific user
+     * Get total count of notifications
+     * 
+     * @return int
      */
-    public function getForUser(int $userId, bool $onlyUnread = false): array
+    public function getTotalCount(): int
+    {
+        $sql = "SELECT COUNT(*) FROM {$this->table}";
+        $stmt = $this->db->query($sql);
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Get notifications for a specific user
+     * 
+     * @param int $userId User ID
+     * @param bool $onlyUnread Only unread notifications
+     * @param int $page Current page
+     * @param int $perPage Items per page
+     * @return array
+     */
+    public function getForUser(int $userId, bool $onlyUnread = false, int $page = 1, int $perPage = 50): array
     {
         $unreadClause = $onlyUnread ? 'AND nr.read_at IS NULL' : '';
+        $offset = ($page - 1) * $perPage;
 
         $sql = "SELECT n.*, 
                        nr.read_at,
@@ -81,10 +108,11 @@ class Notification extends BaseModel
                 INNER JOIN notification_recipients nr ON nr.notification_id = n.id
                 LEFT JOIN users u ON u.id = n.created_by
                 WHERE nr.user_id = ? {$unreadClause}
-                ORDER BY n.created_at DESC";
+                ORDER BY n.created_at DESC
+                LIMIT ? OFFSET ?";
 
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$userId]);
+        $stmt->execute([$userId, $perPage, $offset]);
         return $stmt->fetchAll();
     }
 
@@ -104,8 +132,13 @@ class Notification extends BaseModel
 
     /**
      * Search notifications with filters
+     * 
+     * @param array $filters Search filters
+     * @param int $page Current page
+     * @param int $perPage Items per page
+     * @return array
      */
-    public function search(array $filters): array
+    public function search(array $filters, int $page = 1, int $perPage = 50): array
     {
         $where = ['1=1'];
         $params = [];
@@ -135,6 +168,10 @@ class Notification extends BaseModel
             $params[] = $filters['date_to'];
         }
 
+        $offset = ($page - 1) * $perPage;
+        $params[] = $perPage;
+        $params[] = $offset;
+
         $sql = "SELECT n.*, 
                        u.name as creator_name,
                        COUNT(DISTINCT nr.user_id) as total_recipients
@@ -143,10 +180,71 @@ class Notification extends BaseModel
                 LEFT JOIN notification_recipients nr ON nr.notification_id = n.id
                 WHERE " . implode(' AND ', $where) . "
                 GROUP BY n.id
-                ORDER BY n.created_at DESC";
+                ORDER BY n.created_at DESC
+                LIMIT ? OFFSET ?";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();
+    }
+
+    /**
+     * Get count for user notifications
+     */
+    public function getUserNotificationCount(int $userId, bool $onlyUnread = false): int
+    {
+        $unreadClause = $onlyUnread ? 'AND nr.read_at IS NULL' : '';
+
+        $sql = "SELECT COUNT(*) 
+                FROM {$this->table} n
+                INNER JOIN notification_recipients nr ON nr.notification_id = n.id
+                WHERE nr.user_id = ? {$unreadClause}";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$userId]);
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Get count for search results
+     */
+    public function getSearchCount(array $filters): int
+    {
+        $where = ['1=1'];
+        $params = [];
+
+        if (!empty($filters['type'])) {
+            $where[] = 'n.type = ?';
+            $params[] = $filters['type'];
+        }
+
+        if (!empty($filters['context_type'])) {
+            $where[] = 'n.context_type = ?';
+            $params[] = $filters['context_type'];
+        }
+
+        if (!empty($filters['created_by'])) {
+            $where[] = 'n.created_by = ?';
+            $params[] = $filters['created_by'];
+        }
+
+        if (!empty($filters['date_from'])) {
+            $where[] = 'n.created_at >= ?';
+            $params[] = $filters['date_from'];
+        }
+
+        if (!empty($filters['date_to'])) {
+            $where[] = 'n.created_at <= ?';
+            $params[] = $filters['date_to'];
+        }
+
+        $sql = "SELECT COUNT(DISTINCT n.id)
+                FROM {$this->table} n
+                LEFT JOIN notification_recipients nr ON nr.notification_id = n.id
+                WHERE " . implode(' AND ', $where);
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn();
     }
 }

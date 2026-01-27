@@ -129,9 +129,17 @@ class NotificationService
     /**
      * Get notifications for a specific user
      */
-    public function getNotificationsForUser(int $userId, bool $onlyUnread = false): array
+    public function getNotificationsForUser(int $userId, bool $onlyUnread = false, int $page = 1, int $perPage = 50): array
     {
-        return $this->notificationModel->getForUser($userId, $onlyUnread);
+        return $this->notificationModel->getForUser($userId, $onlyUnread, $page, $perPage);
+    }
+
+    /**
+     * Get total count of user notifications
+     */
+    public function getTotalCount(int $userId, bool $onlyUnread = false): int
+    {
+        return $this->notificationModel->getUserNotificationCount($userId, $onlyUnread);
     }
 
     /**
@@ -164,13 +172,25 @@ class NotificationService
     /**
      * Get notification history with filters
      */
-    public function getNotificationHistory(array $filters = []): array
+    public function getNotificationHistory(array $filters = [], int $page = 1, int $perPage = 50): array
     {
         if (empty($filters)) {
-            return $this->notificationModel->getAllWithStats();
+            return $this->notificationModel->getAllWithStats($page, $perPage);
         }
 
-        return $this->notificationModel->search($filters);
+        return $this->notificationModel->search($filters, $page, $perPage);
+    }
+
+    /**
+     * Get total count for history/search
+     */
+    public function getHistoryCount(array $filters = []): int
+    {
+        if (empty($filters)) {
+            return $this->notificationModel->getTotalCount();
+        }
+
+        return $this->notificationModel->getSearchCount($filters);
     }
 
     /**

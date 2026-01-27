@@ -1,0 +1,8 @@
+TEST: SetUp Started
+TEST: SetUp Finished
+TEST: SetUp Started
+TEST: SetUp Finished
+TEST: Method Started (test_can_assign_vigilante_valid)
+User Created: 1
+Jury Created: 1
+SUCCESS: Logic check passed.

@@ -22,14 +22,23 @@ class NotificationController extends Controller
     public function index(Request $request): string
     {
         $userId = Auth::id();
+        $page = (int) $request->input('page', 1);
+        $perPage = 25;
         $filter = $request->input('filter', 'unread');
         $onlyUnread = ($filter !== 'all');
 
-        $notifications = $this->service->getNotificationsForUser($userId, $onlyUnread);
+        $notifications = $this->service->getNotificationsForUser($userId, $onlyUnread, $page, $perPage);
+        $total = $this->service->getTotalCount($userId, $onlyUnread);
 
         return $this->view('notifications/index', [
             'notifications' => $notifications,
-            'title' => 'Minhas Notificações'
+            'title' => 'Minhas Notificações',
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'last_page' => ceil($total / $perPage)
+            ]
         ]);
     }
 
@@ -260,6 +269,9 @@ class NotificationController extends Controller
      */
     public function history(Request $request): string
     {
+        $page = (int) $request->input('page', 1);
+        $perPage = 50;
+
         $filters = [
             'type' => $request->input('type'),
             'context_type' => $request->input('context_type'),
@@ -270,12 +282,19 @@ class NotificationController extends Controller
         // Remove empty filters
         $filters = array_filter($filters);
 
-        $notifications = $this->service->getNotificationHistory($filters);
+        $notifications = $this->service->getNotificationHistory($filters, $page, $perPage);
+        $total = $this->service->getHistoryCount($filters);
 
         return $this->view('notifications/history', [
             'notifications' => $notifications,
             'filters' => $filters,
-            'title' => 'Histórico de Notificações'
+            'title' => 'Histórico de Notificações',
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'last_page' => ceil($total / $perPage)
+            ]
         ]);
     }
 }

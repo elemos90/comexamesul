@@ -135,7 +135,7 @@ $router->get('/notifications/history', 'NotificationController@history', ['AuthM
 $router->get('/juries/planning', 'JuryController@planning', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
 
 // Export Excel
-$router->get('/juries/export/excel', 'JuryController@exportExcel', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro,supervisor,vigilante']);
+$router->get('/juries/export/excel', 'JuryExportController@exportExcel', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro,supervisor,vigilante']);
 
 // Calendário Visual de Júris (JuryCalendarController)
 $router->get('/juries/calendar', 'JuryCalendarController@calendar', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro,vigilante']);
@@ -156,8 +156,8 @@ $router->get('/juries/vacancy/{id}/approved-candidates', 'JuryWizardController@g
 $router->get('/api/users/supervisors', 'JuryController@getEligibleSupervisors', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
 
 // API para o Wizard de Criação de Júris
-$router->get('/api/vigilantes/eligible', 'JuryController@getEligibleVigilantesForWizard', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
-$router->get('/api/supervisors/eligible', 'JuryController@getEligibleSupervisorsForWizard', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->get('/api/vigilantes/eligible', 'JuryResourceController@getEligibleVigilantesForWizard', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->get('/api/supervisors/eligible', 'JuryResourceController@getEligibleSupervisorsForWizard', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
 $router->post('/juries/bulk-assign-supervisor', 'JuryBulkController@bulkAssignSupervisor', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
 
 // API para alocação de supervisores por blocos (v2.7)
@@ -197,13 +197,13 @@ $router->post('/api/allocation/can-assign', 'JuryAllocationController@canAssign'
 $router->post('/api/allocation/auto-allocate-jury', 'JuryAllocationController@autoAllocateJury', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
 $router->post('/api/allocation/auto-allocate-discipline', 'JuryAllocationController@autoAllocateDiscipline', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
 $router->post('/api/allocation/swap', 'JuryAllocationController@swapVigilantes', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
-$router->get('/api/allocation/stats', 'JuryController@getAllocationStats', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
-$router->get('/api/allocation/metrics', 'JuryController@getMetrics', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
-$router->get('/api/allocation/jury-slots/{id}', 'JuryController@getJurySlots', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
-$router->get('/api/allocation/eligible-vigilantes/{id}', 'JuryController@getEligibleVigilantes', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
-$router->get('/api/allocation/eligible-supervisors/{id}', 'JuryController@getEligibleSupervisors', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
-$router->get('/api/allocation/available-vigilantes', 'JuryController@getAvailableVigilantes', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
-$router->get('/api/allocation/available-supervisors', 'JuryController@getAvailableSupervisors', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->get('/api/allocation/stats', 'JuryMetricsController@getAllocationStats', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->get('/api/allocation/metrics', 'JuryMetricsController@getMetrics', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->get('/api/allocation/jury-slots/{id}', 'JuryResourceController@getJurySlots', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->get('/api/allocation/eligible-vigilantes/{id}', 'JuryResourceController@getEligibleVigilantes', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->get('/api/allocation/eligible-supervisors/{id}', 'JuryResourceController@getEligibleSupervisors', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->get('/api/allocation/available-vigilantes', 'JuryResourceController@getAvailableVigilantes', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->get('/api/allocation/available-supervisors', 'JuryResourceController@getAvailableSupervisors', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
 
 // API de Sugestões Inteligentes "Top-3"
 $router->get('/api/suggest-top3', 'SuggestController@top3', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);

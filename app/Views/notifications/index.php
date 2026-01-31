@@ -39,6 +39,24 @@ $title = 'Minhas Notificações';
         </nav>
     </div>
 
+    <!-- Bulk Actions Toolbar -->
+    <div class="flex items-center justify-between py-2 border-b border-gray-100 mb-2">
+        <div class="flex items-center gap-2">
+            <input type="checkbox" id="selectAll"
+                class="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500">
+            <label for="selectAll" class="text-sm text-gray-500 select-none cursor-pointer">Selecionar todas</label>
+        </div>
+        <button id="deleteSelected"
+            class="hidden px-3 py-1.5 bg-red-50 text-red-700 text-sm font-medium rounded hover:bg-red-100 transition-colors flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                </path>
+            </svg>
+            Remover Selecionadas (<span id="countSelected">0</span>)
+        </button>
+    </div>
+
     <!-- Notifications List -->
     <div class="space-y-3">
         <?php if (empty($notifications)): ?>
@@ -61,9 +79,16 @@ $title = 'Minhas Notificações';
                 ];
                 $color = $typeColors[$notification['type']] ?? 'gray';
                 ?>
-                <div
+                <div id="notification-<?= $notification['id'] ?>"
                     class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition <?= $isUnread ? 'border-l-4 border-l-primary-500' : '' ?>">
                     <div class="flex items-start gap-4">
+
+                        <!-- Checkbox -->
+                        <div class="flex-shrink-0 pt-1">
+                            <input type="checkbox" value="<?= $notification['id'] ?>"
+                                class="notification-check w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 cursor-pointer">
+                        </div>
+
                         <!-- Icon -->
                         <div class="flex-shrink-0">
                             <div class="w-10 h-10 rounded-full bg-<?= $color ?>-100 flex items-center justify-center">
@@ -112,6 +137,11 @@ $title = 'Minhas Notificações';
                                         Marcar como lida
                                     </button>
                                 <?php endif; ?>
+
+                                <button onclick="deleteNotification(<?= $notification['id'] ?>)"
+                                    class="text-xs text-red-500 hover:text-red-700 font-medium">
+                                    Remover
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -138,6 +168,90 @@ $title = 'Minhas Notificações';
             }
         } catch (error) {
             console.error('Error marking as read:', error);
+        }
+    }
+
+    // Bulk Delete Logic
+    document.addEventListener('DOMContentLoaded', () => {
+        const selectAll = document.getElementById('selectAll');
+        const checkboxes = document.querySelectorAll('.notification-check');
+        const deleteButton = document.getElementById('deleteSelected');
+        const countSpan = document.getElementById('countSelected');
+
+        function updateToolbar() {
+            const checked = Array.from(checkboxes).filter(cb => cb.checked);
+            countSpan.textContent = checked.length;
+            if (checked.length > 0) {
+                deleteButton.classList.remove('hidden');
+            } else {
+                deleteButton.classList.add('hidden');
+            }
+        }
+
+        if (selectAll) {
+            selectAll.addEventListener('change', (e) => {
+                checkboxes.forEach(cb => cb.checked = e.target.checked);
+                updateToolbar();
+            });
+        }
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', updateToolbar);
+        });
+
+        if (deleteButton) {
+            deleteButton.addEventListener('click', async () => {
+                const checked = Array.from(checkboxes).filter(cb => cb.checked);
+                if (checked.length === 0) return;
+
+                if (!confirm(`Remover ${checked.length} notificações selecionadas?`)) return;
+
+                const ids = checked.map(cb => cb.value);
+
+                try {
+                    const response = await fetch(`<?= url('/notifications/delete') ?>`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ ids: ids })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        window.location.reload();
+                    } else {
+                        alert(result.message || 'Erro ao remover notifications');
+                    }
+                } catch (error) {
+                    console.error('Error deleting:', error);
+                    alert('Erro de conexão');
+                }
+            });
+        }
+    });
+
+    async function deleteNotification(id) {
+        if (!confirm('Remover esta notificação?')) return;
+        try {
+            const response = await fetch(`<?= url('/notifications/delete') ?>`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ ids: [id] })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                window.location.reload();
+            } else {
+                alert(result.message || 'Erro ao remover');
+            }
+        } catch (error) {
+            console.error('Error deleting:', error);
         }
     }
 </script>

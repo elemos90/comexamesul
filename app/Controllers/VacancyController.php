@@ -11,6 +11,9 @@ use App\Services\ActivityLogger;
 use App\Utils\Auth;
 use App\Utils\Flash;
 use App\Utils\Validator;
+use App\Models\EmailNotification;
+use App\Models\Notification;
+use App\Models\NotificationRecipient;
 
 class VacancyController extends Controller
 {
@@ -123,9 +126,74 @@ class VacancyController extends Controller
             'updated_at' => now(),
         ];
 
-        $model->create($payload);
+        $vacancyId = $model->create($payload); // Create retorna o ID? Se BaseModel, sim. Se não, preciso verificar. 
+        // O BaseModel::create retorna lastInsertId.
+
         ActivityLogger::log('vacancies', null, 'create', $payload);
-        Flash::add('success', 'Vaga criada.');
+
+        // =================================================================================
+        // NOTIFICAÇÕES EM MASSA (Vigilantes + Comissão)
+        // =================================================================================
+        try {
+            // 1. Buscar destinatários ativos
+            $userModel = new User();
+            // Buscar Vigilantes, Coordenadores e Membros ativos
+            $recipients = $userModel->statement(
+                "SELECT id, name, email FROM users 
+                 WHERE role IN ('vigilante', 'coordenador', 'membro') 
+                   AND (is_active = 1 OR is_active IS NULL)" // Assumindo default active se NULL
+            );
+
+            if (!empty($recipients)) {
+                $recipientIds = array_column($recipients, 'id');
+                $count = count($recipients);
+
+                // 2. Criar Notificação no Sistema
+                $notificationModel = new Notification();
+                $notifId = $notificationModel->create([
+                    'type' => 'vacancy_published',
+                    'subject' => 'Nova Vaga Disponível',
+                    'message' => "Uma nova vaga foi publicada: {$payload['title']}. Prazo até " . date('d/m/Y', strtotime($deadline)),
+                    'context_type' => 'vacancy',
+                    'context_id' => $vacancyId, // Usando o ID retornado
+                    'is_automatic' => 1,
+                    'created_by' => Auth::id(),
+                    'created_at' => now()
+                ]);
+
+                // 3. Associar destinatários (Batch Insert)
+                $recipientModel = new NotificationRecipient();
+                $recipientModel->batchInsert($notifId, $recipientIds);
+
+                // 4. Enfileirar Emails (Assíncrono)
+                $emailModel = new EmailNotification();
+                $emailBody = "Olá,\n\nUma nova oportunidade de vigilância foi publicada no portal:\n\n" .
+                    "📌 Título: {$payload['title']}\n" .
+                    "📅 Prazo: " . date('d/m/Y H:i', strtotime($deadline)) . "\n\n" .
+                    "Acesse o portal para se candidatar: " . url('/vacancies/' . $vacancyId);
+
+                foreach ($recipients as $user) {
+                    if (!empty($user['email'])) { // Apenas se tiver email
+                        $emailModel->queue(
+                            (int) $user['id'],
+                            'vacancy_alert',
+                            'Nova Vaga Disponível: ' . $payload['title'],
+                            $emailBody
+                        );
+                    }
+                }
+
+                Flash::add('success', "Vaga criada! Notificações enviadas para {$count} usuários.");
+            } else {
+                Flash::add('success', 'Vaga criada (nenhum usuário notificado).');
+            }
+
+        } catch (\Exception $e) {
+            // Não falhar a criação da vaga se a notificação der erro, apenas logar
+            ActivityLogger::log('system', null, 'notification_error', ['error' => $e->getMessage()]);
+            Flash::add('success', 'Vaga criada, mas houve um erro ao enviar notificações.');
+        }
+
         redirect('/vacancies');
     }
 

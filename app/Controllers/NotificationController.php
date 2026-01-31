@@ -66,6 +66,34 @@ class NotificationController extends Controller
     }
 
     /**
+     * API: Delete notifications
+     */
+    public function delete(Request $request): void
+    {
+        $userId = Auth::id();
+        $ids = $request->input('ids');
+
+        if (!$ids) {
+            $json = $request->json();
+            $ids = $json['ids'] ?? null;
+        }
+
+        if (empty($ids) || !is_array($ids)) {
+            $id = $request->input('id') ?? ($json['id'] ?? null);
+            if ($id)
+                $ids = [$id];
+        }
+
+        if (empty($ids)) {
+            Response::json(['success' => false, 'message' => 'Nenhuma notificação selecionada.']);
+            return;
+        }
+
+        $result = $this->service->deleteNotifications($userId, $ids);
+        Response::json($result);
+    }
+
+    /**
      * WIZARD STEP 1: Type and Context
      */
     public function create(): string

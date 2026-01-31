@@ -359,4 +359,103 @@ class JuryApiController extends Controller
             ], 500);
         }
     }
+    /**
+     * API: Obter salas disponíveis (sem conflito de horário)
+     * 
+     * Parâmetros:
+     * - location_id: ID do local
+     * - exam_date: Data do exame (YYYY-MM-DD)
+     * - start_time: Horário início (HH:MM)
+     * - end_time: Horário fim (HH:MM)
+     */
+    public function getAvailableRooms(Request $request)
+    {
+        try {
+            $locationId = (int) $request->query('location_id');
+            $examDate = $request->query('exam_date');
+            $startTime = $request->query('start_time');
+            $endTime = $request->query('end_time');
+
+            if (!$locationId || !$examDate || !$startTime || !$endTime) {
+                Response::json([
+                    'success' => false,
+                    'message' => 'Parâmetros obrigatórios: location_id, exam_date, start_time, end_time'
+                ], 400);
+                return;
+            }
+
+            $db = database();
+
+            // Normalizar horários para garantir formato H:i:s (MySQL TIME)
+            if (strlen($startTime) == 5)
+                $startTime .= ':00';
+            if (strlen($endTime) == 5)
+                $endTime .= ':00';
+
+            // Buscar salas do local que NÃO estão ocupadas no horário especificado
+            // Uma sala está ocupada se existe um júri onde:
+            // - room_id = sala em questão
+            // - exam_date = data selecionada  
+            // - Horários se sobrepõem: (start_time < end_time_param) AND (end_time > start_time_param)
+            $stmt = $db->prepare("
+                SELECT er.id, er.code, er.name, er.capacity, er.floor, er.building, el.name as location_name
+                FROM exam_rooms er
+                INNER JOIN exam_locations el ON el.id = er.location_id
+                WHERE er.location_id = :location_id
+                  AND er.active = 1
+                  AND er.id NOT IN (
+                      SELECT DISTINCT j.room_id
+                      FROM juries j
+                      WHERE j.room_id IS NOT NULL
+                        AND j.exam_date = :exam_date
+                        AND (
+                            (j.start_time < :end_time AND j.end_time > :start_time)
+                        )
+                  )
+                ORDER BY er.code
+            ");
+
+            $stmt->execute([
+                'location_id' => $locationId,
+                'exam_date' => $examDate,
+                'start_time' => $startTime,
+                'end_time' => $endTime
+            ]);
+
+            $rooms = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            // Também buscar salas ocupadas para dar feedback ao usuário
+            $occupiedStmt = $db->prepare("
+                SELECT DISTINCT er.id, er.code, er.name, j.subject, j.start_time, j.end_time
+                FROM exam_rooms er
+                INNER JOIN juries j ON j.room_id = er.id
+                WHERE er.location_id = :location_id
+                  AND j.exam_date = :exam_date
+                  AND (j.start_time < :end_time AND j.end_time > :start_time)
+                ORDER BY er.code
+            ");
+
+            $occupiedStmt->execute([
+                'location_id' => $locationId,
+                'exam_date' => $examDate,
+                'start_time' => $startTime,
+                'end_time' => $endTime
+            ]);
+
+            $occupied = $occupiedStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            Response::json([
+                'success' => true,
+                'available_rooms' => $rooms,
+                'occupied_rooms' => $occupied,
+                'total_available' => count($rooms),
+                'total_occupied' => count($occupied)
+            ]);
+        } catch (\Exception $e) {
+            Response::json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

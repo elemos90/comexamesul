@@ -9,10 +9,11 @@ $isVigilante = $user['role'] === 'vigilante';
 <div class="space-y-4">
     <?php include view_path('partials/breadcrumbs.php'); ?>
 
-    <div class="flex items-center justify-between">
+    <!-- Header Elegante -->
+    <div class="flex items-center justify-between p-5 bg-gradient-to-r from-indigo-50 via-blue-50 to-cyan-50 rounded-xl border border-indigo-100">
         <div>
-            <h1 class="text-lg font-semibold text-gray-900">Lista de Júris</h1>
-            <p class="text-xs text-gray-500">Visualização geral dos júris organizados por data e local</p>
+            <h1 class="text-xl font-bold bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">📋 Lista de Júris</h1>
+            <p class="text-xs text-gray-500 mt-1">Visualização geral dos júris organizados por data e local</p>
         </div>
         <div class="flex gap-2">
             <?php if ($canManage): ?>
@@ -101,13 +102,13 @@ $isVigilante = $user['role'] === 'vigilante';
             <!-- Área principal de júris agrupados -->
             <div class="lg:col-span-4 space-y-4">
                 <?php foreach ($groupedJuries as $group): ?>
-                    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                        <!-- Cabeçalho do grupo (Disciplina + Data/HoraO -->
-                        <div class="px-5 py-4 bg-primary-50 border-b-2 border-primary-200">
+                    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                        <!-- Cabeçalho do grupo (Disciplina + Data/Hora) -->
+                        <div class="px-5 py-4 bg-gradient-to-r from-indigo-500 via-blue-500 to-cyan-500 border-b border-indigo-300">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <h3 class="text-lg font-bold text-primary-900"><?= htmlspecialchars($group['subject']) ?></h3>
-                                    <p class="text-sm text-primary-700 mt-1">
+                                    <h3 class="text-lg font-bold text-white drop-shadow-sm">📚 <?= htmlspecialchars($group['subject']) ?></h3>
+                                    <p class="text-sm text-indigo-100 mt-1">
                                         <span class="font-medium"><?= htmlspecialchars(date('d/m/Y', strtotime($group['exam_date']))) ?></span>
                                         · <?= htmlspecialchars(substr($group['start_time'], 0, 5)) ?> - <?= htmlspecialchars(substr($group['end_time'], 0, 5)) ?>
                                     </p>
@@ -118,7 +119,7 @@ $isVigilante = $user['role'] === 'vigilante';
                                     $totalSalas = 0;
                                     foreach($group['locations'] as $loc) { $totalSalas += count($loc['juries']); }
                                     ?>
-                                    <span class="px-3 py-1.5 bg-white text-primary-700 font-semibold rounded border border-primary-300">
+                                    <span class="px-3 py-1.5 bg-white/20 backdrop-blur-sm text-white font-semibold rounded-lg border border-white/30">
                                         <?= $totalSalas ?> sala(s)
                                     </span>
                                     
@@ -137,7 +138,7 @@ $isVigilante = $user['role'] === 'vigilante';
                                             }
                                         }
                                     ?>
-                                    <button type="button" class="px-3 py-1.5 bg-blue-600 text-white font-medium rounded hover:bg-blue-500 flex items-center gap-1" data-action="edit-discipline-batch" data-group='<?= json_encode([
+                                    <button type="button" class="px-3 py-1.5 bg-white text-indigo-600 font-medium rounded-lg hover:bg-indigo-50 flex items-center gap-1 shadow-sm transition-all" data-action="edit-discipline-batch" data-group='<?= json_encode([
                                         'subject' => $group['subject'],
                                         'exam_date' => $group['exam_date'],
                                         'start_time' => substr($group['start_time'], 0, 5),
@@ -160,12 +161,12 @@ $isVigilante = $user['role'] === 'vigilante';
                             <?php foreach ($group['locations'] as $locationName => $locData): ?>
                                 
                                 <!-- Sub-cabeçalho do Local -->
-                                <div class="bg-gray-100 px-3 py-2 rounded border border-gray-200 flex items-center gap-2">
-                                     <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="bg-gradient-to-r from-slate-100 to-slate-200 px-4 py-2.5 rounded-lg border border-slate-300 flex items-center gap-2 shadow-sm">
+                                     <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                                      </svg>
-                                     <h4 class="font-bold text-gray-700 uppercase text-sm"><?= htmlspecialchars($locationName) ?></h4>
+                                     <h4 class="font-bold text-slate-700 uppercase text-sm">📍 <?= htmlspecialchars($locationName) ?></h4>
                                 </div>
 
                                 <div class="space-y-4 ml-2 pl-4 border-l-2 border-gray-200">
@@ -233,16 +234,16 @@ $isVigilante = $user['role'] === 'vigilante';
                                             <!-- Supervisor -->
                                             <div>
                                                 <h4 class="text-sm font-semibold text-gray-700 uppercase mb-2">Supervisor</h4>
-                                                <div class="dropzone-single min-h-[100px] border-2 border-dashed border-amber-300 rounded-lg p-3 bg-amber-50" data-jury="<?= $jury['id'] ?>" data-set-url="/juries/<?= $jury['id'] ?>/set-supervisor">
+                                                <div class="dropzone-single min-h-[100px] border-2 border-dashed border-purple-200 rounded-lg p-3 bg-purple-50" data-jury="<?= $jury['id'] ?>" data-set-url="/juries/<?= $jury['id'] ?>/set-supervisor">
                                                     <?php if (!empty($jury['supervisor_name'])): ?>
-                                                        <div class="draggable-item bg-amber-100 border-amber-300" data-id="<?= $jury['supervisor_id'] ?>" tabindex="0">
+                                                        <div class="draggable-item bg-purple-100 border-purple-200" data-id="<?= $jury['supervisor_id'] ?>" tabindex="0">
                                                             <div>
                                                                 <p class="text-sm font-medium text-gray-800"><?= htmlspecialchars($jury['supervisor_name']) ?></p>
-                                                                <p class="text-xs text-amber-700 font-medium">Supervisor designado</p>
+                                                                <p class="text-xs text-purple-600 font-medium">👑 Supervisor designado</p>
                                                             </div>
                                                         </div>
                                                     <?php else: ?>
-                                                        <p class="text-xs text-amber-600 italic text-center py-4">Arraste um supervisor elegível</p>
+                                                        <p class="text-xs text-purple-500 italic text-center py-4">Arraste um supervisor elegível</p>
                                                     <?php endif; ?>
                                                 </div>
                                                 
@@ -281,13 +282,13 @@ $isVigilante = $user['role'] === 'vigilante';
                             }
                         ?>
                         
-                        <!-- LINHA DE TOTAL DA DISCIPLINA (Igual ao Planeamento Avançado) -->
-                        <div style="background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%); border-top: 3px solid #d97706; border-bottom: 3px solid #d97706;" class="px-6 py-3">
+                        <!-- LINHA DE TOTAL DA DISCIPLINA -->
+                        <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0f9ff 100%); border-top: 2px solid #7dd3fc; border-bottom: 2px solid #7dd3fc;" class="px-6 py-3">
                             <div class="flex items-center justify-between">
-                                <span class="font-extrabold text-amber-900 text-base uppercase tracking-wide">
+                                <span class="font-extrabold text-sky-800 text-base uppercase tracking-wide">
                                     📚 TOTAL <?= strtoupper($group['subject']) ?>
                                 </span>
-                                <div class="flex gap-8 font-bold text-amber-900">
+                                <div class="flex gap-8 font-bold text-sky-700">
                                     <span class="flex items-center gap-2">
                                         <span class="text-sm opacity-75">Candidatos:</span>
                                         <span class="text-lg"><?= number_format($discTotalCandidates, 0) ?></span>
@@ -325,15 +326,15 @@ $isVigilante = $user['role'] === 'vigilante';
                     }
                     foreach ($disciplineTotals as $subject => $totals):
                 ?>
-                    <div class="bg-gradient-to-r from-amber-300 to-amber-400 border-t-4 border-b-4 border-amber-600 rounded-lg p-4 shadow-lg">
+                    <div class="bg-gradient-to-r from-slate-100 to-slate-200 border-t-2 border-b-2 border-slate-400 rounded-lg p-4 shadow-sm">
                         <div class="flex items-center justify-between">
-                            <h3 class="text-base font-extrabold text-amber-900 uppercase tracking-wide flex items-center gap-2">
+                            <h3 class="text-base font-extrabold text-slate-700 uppercase tracking-wide flex items-center gap-2">
                                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                     <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/>
                                 </svg>
                                 📚 TOTAL <?= strtoupper($subject) ?>
                             </h3>
-                            <div class="flex gap-6 font-bold text-amber-900">
+                            <div class="flex gap-6 font-bold text-slate-600">
                                 <span class="flex items-center gap-2">
                                     <span class="text-sm opacity-75">Candidatos:</span>
                                     <span class="text-lg"><?= number_format($totals['candidates'], 0) ?></span>

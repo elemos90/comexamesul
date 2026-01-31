@@ -23,50 +23,84 @@ $allVacancies = $allVacancies ?? [];
 
 <style>
     .fc {
-        --fc-border-color: #e5e7eb;
-        --fc-button-bg-color: #4f46e5;
-        --fc-button-border-color: #4f46e5;
-        --fc-button-hover-bg-color: #4338ca;
-        --fc-button-active-bg-color: #3730a3;
-        --fc-event-bg-color: #4f46e5;
-        --fc-today-bg-color: rgba(79, 70, 229, 0.1);
+        --fc-border-color: #e2e8f0;
+        --fc-button-bg-color: #6366f1;
+        --fc-button-border-color: #6366f1;
+        --fc-button-hover-bg-color: #4f46e5;
+        --fc-button-active-bg-color: #4338ca;
+        --fc-event-bg-color: #6366f1;
+        --fc-today-bg-color: rgba(99, 102, 241, 0.08);
+    }
+
+    .fc .fc-toolbar-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+    }
+
+    .fc .fc-button {
+        font-weight: 500;
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .fc .fc-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 
     .fc-event {
         cursor: pointer;
-        padding: 2px 4px;
+        padding: 3px 6px;
         font-size: 0.75rem;
-        border-radius: 4px;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
     .fc-event:hover {
-        opacity: 0.9;
-        transform: scale(1.02);
+        opacity: 0.95;
+        transform: translateY(-1px) scale(1.02);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     }
 
     .fc-daygrid-event {
         white-space: normal !important;
     }
 
-    /* Cores por status de alocação */
+    .fc-daygrid-day-number {
+        font-weight: 600;
+        color: #475569;
+    }
+
+    .fc-col-header-cell-cushion {
+        font-weight: 600;
+        color: #334155;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+    }
+
+    /* Cores por status de alocação - Paleta refinada */
     .event-complete {
-        background-color: #10b981 !important;
-        border-color: #059669 !important;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+        border-color: transparent !important;
     }
 
     .event-partial {
-        background-color: #f59e0b !important;
-        border-color: #d97706 !important;
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+        border-color: transparent !important;
     }
 
     .event-empty {
-        background-color: #ef4444 !important;
-        border-color: #dc2626 !important;
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+        border-color: transparent !important;
     }
 
     .event-no-supervisor {
-        background-color: #8b5cf6 !important;
-        border-color: #7c3aed !important;
+        background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%) !important;
+        border-color: transparent !important;
     }
 
     /* Loading overlay */
@@ -76,48 +110,59 @@ $allVacancies = $allVacancies ?? [];
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(255, 255, 255, 0.8);
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(2px);
         display: flex;
         align-items: center;
         justify-content: center;
         z-index: 100;
     }
 
-    /* Legenda */
+    /* Legenda elegante */
     .calendar-legend {
         display: flex;
-        gap: 1rem;
+        gap: 1.25rem;
         flex-wrap: wrap;
-        padding: 0.75rem;
-        background: #f9fafb;
-        border-radius: 0.5rem;
-        margin-bottom: 1rem;
+        padding: 1rem 1.25rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 0.75rem;
+        margin-bottom: 1.25rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
     .legend-item {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        font-size: 0.875rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #475569;
     }
 
     .legend-color {
         width: 1rem;
         height: 1rem;
-        border-radius: 4px;
+        border-radius: 5px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     }
 </style>
 
-<!-- Header -->
-<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+<!-- Header Elegante -->
+<div
+    class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 p-6 bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 rounded-xl border border-indigo-100">
     <div>
-        <h1 class="text-2xl font-bold text-gray-800">📅 Calendário de Júris</h1>
-        <p class="text-gray-600">Visualização mensal e semanal dos exames agendados</p>
+        <h1
+            class="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent flex items-center gap-2">
+            📅 Calendário de Júris
+        </h1>
+        <p class="text-gray-500 mt-1">Visualização mensal e semanal dos exames agendados</p>
     </div>
 
-    <div class="flex gap-2">
+    <div class="flex gap-3">
         <!-- Filtro de Vaga -->
-        <select id="vacancy-filter" class="px-3 py-2 border rounded-lg bg-white text-sm">
+        <select id="vacancy-filter"
+            class="px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
             <option value="current">📌 Vaga Atual</option>
             <?php foreach ($allVacancies as $v): ?>
                 <option value="<?= $v['id'] ?>" <?= $vacancyId == $v['id'] ? 'selected' : '' ?>>
@@ -127,38 +172,38 @@ $allVacancies = $allVacancies ?? [];
         </select>
 
         <a href="<?= url('/juries/planning') ?>"
-            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm">
+            class="px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 text-sm shadow-sm transition-all hover:shadow flex items-center gap-2">
             ← Voltar ao Planejamento
         </a>
     </div>
 </div>
 
-<!-- Legenda -->
+<!-- Legenda Estilizada -->
 <div class="calendar-legend">
     <div class="legend-item">
-        <div class="legend-color" style="background: #10b981;"></div>
-        <span>Completo</span>
+        <div class="legend-color" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);"></div>
+        <span>✅ Completo</span>
     </div>
     <div class="legend-item">
-        <div class="legend-color" style="background: #f59e0b;"></div>
-        <span>Parcial</span>
+        <div class="legend-color" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);"></div>
+        <span>⚠️ Parcial</span>
     </div>
     <div class="legend-item">
-        <div class="legend-color" style="background: #ef4444;"></div>
-        <span>Sem Vigilantes</span>
+        <div class="legend-color" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);"></div>
+        <span>❌ Sem Vigilantes</span>
     </div>
     <div class="legend-item">
-        <div class="legend-color" style="background: #8b5cf6;"></div>
-        <span>Sem Supervisor</span>
+        <div class="legend-color" style="background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);"></div>
+        <span>👑 Sem Supervisor</span>
     </div>
 </div>
 
-<!-- Calendário -->
-<div class="bg-white rounded-xl shadow-sm p-4 relative" style="min-height: 600px;">
+<!-- Calendário Container Premium -->
+<div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6 relative" style="min-height: 600px;">
     <div id="calendar-loading" style="display: none;">
         <div class="flex flex-col items-center">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
-            <span class="text-gray-600">Carregando eventos...</span>
+            <span class="text-gray-500 font-medium">Carregando eventos...</span>
         </div>
     </div>
     <div id="calendar"></div>

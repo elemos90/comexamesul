@@ -95,4 +95,26 @@ class NotificationRecipient extends BaseModel
             return false;
         }
     }
+
+    /**
+     * Delete notifications for user (single or bulk)
+     */
+    public function deleteForUser(int $userId, array $notificationIds): bool
+    {
+        if (empty($notificationIds)) {
+            return false;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($notificationIds), '?'));
+
+        $sql = "DELETE FROM {$this->table} 
+                WHERE user_id = ? AND notification_id IN ($placeholders)";
+
+        $stmt = $this->db->prepare($sql);
+
+        // Merge userId at the beginning of params
+        $params = array_merge([$userId], $notificationIds);
+
+        return $stmt->execute($params);
+    }
 }

@@ -113,6 +113,7 @@ $router->get('/payments/my-map', 'PaymentController@myMap', ['AuthMiddleware']);
 // User notifications
 $router->get('/notifications', 'NotificationController@index', ['AuthMiddleware']);
 $router->get('/notifications/unread-count', 'NotificationController@getUnreadCount', ['AuthMiddleware']);
+$router->post('/notifications/delete', 'NotificationController@delete', ['AuthMiddleware']);
 $router->post('/notifications/{id}/read', 'NotificationController@markAsRead', ['AuthMiddleware']);
 
 // Wizard (Coordenador only)
@@ -153,7 +154,7 @@ $router->get('/juries/{id}/eligible-vigilantes', 'JuryWizardController@getEligib
 $router->get('/juries/vacancy/{id}/approved-candidates', 'JuryWizardController@getVacancyApprovedCandidates', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
 
 // API para supervisores
-$router->get('/api/users/supervisors', 'JuryController@getEligibleSupervisors', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
+$router->get('/api/users/supervisors', 'JuryResourceController@getEligibleSupervisors', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
 
 // API para o Wizard de Criação de Júris
 $router->get('/api/vigilantes/eligible', 'JuryResourceController@getEligibleVigilantesForWizard', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
@@ -190,6 +191,7 @@ $router->post('/juries/{id}/update-quick', 'JuryController@updateQuick', ['AuthM
 $router->post('/juries/{id}/assign', 'JuryAllocationController@assign', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
 $router->post('/juries/{id}/unassign', 'JuryAllocationController@unassign', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro', 'CsrfMiddleware']);
 $router->post('/juries/{id}/set-supervisor', 'JuryAllocationController@setSupervisor', ['AuthMiddleware', 'RoleMiddleware:coordenador', 'CsrfMiddleware']);
+$router->post('/juries/bulk-assign-supervisor', 'JuryAllocationController@bulkAssignSupervisor', ['AuthMiddleware', 'RoleMiddleware:coordenador,membro']);
 $router->post('/juries/sync-room-names', 'JuryBulkController@syncRoomNames', ['AuthMiddleware', 'RoleMiddleware:coordenador', 'CsrfMiddleware']);
 
 // API de Alocação Inteligente
@@ -246,6 +248,7 @@ $router->get('/api/locations/{id}/rooms', 'MasterDataController@getRoomsByLocati
 // API: Dados mestre para criação de júris
 $router->get('/api/master-data/locations-rooms', 'JuryController@getMasterDataLocationsRooms', ['AuthMiddleware']);
 $router->get('/api/vacancies/{id}/subjects', 'JuryController@getVacancySubjects', ['AuthMiddleware']);
+$router->get('/api/rooms/available', 'JuryApiController@getAvailableRooms', ['AuthMiddleware']);
 
 // Instalação de Dados Mestres (sem autenticação para facilitar setup inicial)
 $router->get('/install/master-data', 'InstallController@masterData');

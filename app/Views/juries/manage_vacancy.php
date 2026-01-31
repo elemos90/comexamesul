@@ -180,6 +180,73 @@ $juryModel = new \App\Models\Jury();
         </div>
     <?php endif; ?>
 
+    <!-- Mapa de Alocação (Novo) -->
+    <?php if (!empty($allocationMap)): ?>
+        <div class="bg-white border border-gray-200 rounded-lg overflow-hidden mb-8 shadow-sm">
+            <div class="bg-gray-50 border-b px-6 py-4 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900">Mapa de Alocação e Subtotais</h2>
+                        <p class="text-xs text-gray-500">Visão consolidada por disciplina e vigilante</p>
+                    </div>
+                </div>
+            </div>
+            <div class="divide-y divide-gray-200">
+                <?php foreach ($allocationMap as $subject => $data): ?>
+                    <div class="bg-white">
+                        <div class="bg-gray-50/50 px-6 py-3 flex justify-between items-center border-b border-gray-100">
+                            <span class="font-bold text-gray-800 flex items-center gap-2">
+                                📚 <?= htmlspecialchars($subject) ?>
+                            </span>
+                            <span
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                Total: <?= $data['total_slots'] ?> alocações
+                            </span>
+                        </div>
+
+                        <?php if (empty($data['vigilantes'])): ?>
+                            <div class="px-6 py-4 text-sm text-gray-400 italic">Nenhum vigilante alocado nesta disciplina.</div>
+                        <?php else: ?>
+                            <div
+                                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 divide-x divide-y border-gray-100">
+                                <?php foreach ($data['vigilantes'] as $vid => $vigilante): ?>
+                                    <div class="p-4 flex items-center justify-between hover:bg-blue-50/30 transition-colors group">
+                                        <div class="flex items-center gap-3 min-w-0">
+                                            <div
+                                                class="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs font-bold border border-gray-200">
+                                                <?= substr($vigilante['name'], 0, 1) ?>
+                                            </div>
+                                            <div class="min-w-0">
+                                                <div class="text-sm font-medium text-gray-900 truncate"
+                                                    title="<?= htmlspecialchars($vigilante['name']) ?>">
+                                                    <?= htmlspecialchars($vigilante['name']) ?>
+                                                </div>
+                                                <div class="text-[10px] text-gray-400 truncate max-w-[120px]"
+                                                    title="<?= implode(', ', $vigilante['rooms']) ?>">
+                                                    <?= count($vigilante['rooms']) <= 3 ? implode(', ', $vigilante['rooms']) : count($vigilante['rooms']) . ' salas' ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right pl-2">
+                                            <div class="text-xl font-bold text-primary-600 leading-none">
+                                                <?= $vigilante['count'] ?>
+                                            </div>
+                                            <div class="text-[9px] text-gray-400 uppercase tracking-wider font-medium">Júris</div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <!-- Lista de Júris Agrupados -->
     <?php if (empty($groupedJuries)): ?>
         <div class="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
@@ -1535,7 +1602,7 @@ $juryModel = new \App\Models\Jury();
         document.getElementById('disc_exam_date').value = disciplineData.juries[0].exam_date;
         document.getElementById('disc_start_time').value = disciplineData.start_time;
         document.getElementById('disc_end_time').value = disciplineData.end_time;
-        
+
         // Populate Location ID (Critical for updateDiscipline)
         // Order of precedence:
         // 1. Explicit ID from discipline data (added in Jury model)
@@ -1547,7 +1614,7 @@ $juryModel = new \App\Models\Jury();
             // Try explicit ID from first jury if available
             if (disciplineData.juries[0].location_id) {
                 locationId = disciplineData.juries[0].location_id;
-            } 
+            }
             // Fallback: look up by location name
             else if (disciplineData.location) {
                 const loc = masterData.locations.find(l => l.name === disciplineData.location);
@@ -1931,10 +1998,10 @@ $juryModel = new \App\Models\Jury();
         if (!editVigilantes[currentSelectorRoomIndex]) {
             editVigilantes[currentSelectorRoomIndex] = [];
         }
-        
+
         editVigilantes[currentSelectorRoomIndex].push(vigilanteId);
         buildEditVigilantesSection();
-        
+
         // Fechar modal
         document.getElementById('modal-vigilante-selector').classList.add('hidden');
         document.getElementById('modal-vigilante-selector').classList.remove('flex');
@@ -2055,13 +2122,13 @@ $juryModel = new \App\Models\Jury();
         // Load existing vigilantes and supervisors from juries data
         if (disciplineData.juries) {
             const MAX_JURIS_POR_SUPERVISOR = 10;
-            
+
             disciplineData.juries.forEach((jury, index) => {
                 // Load Vigilantes
                 if (jury.vigilantes && Array.isArray(jury.vigilantes)) {
                     editVigilantes[index] = jury.vigilantes.map(v => v.user_id || v.id);
                 }
-                
+
                 // Load Supervisors (per block)
                 if (jury.supervisor_id) {
                     const blockIndex = Math.floor(index / MAX_JURIS_POR_SUPERVISOR);

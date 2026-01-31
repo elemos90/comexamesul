@@ -162,6 +162,25 @@ class NotificationService
     }
 
     /**
+     * Delete notifications for a user
+     */
+    public function deleteNotifications(int $userId, array $notificationIds): array
+    {
+        try {
+            $result = $this->recipientModel->deleteForUser($userId, $notificationIds);
+
+            if ($result) {
+                return ['success' => true, 'message' => 'Notificações removidas'];
+            }
+
+            return ['success' => false, 'message' => 'Erro ao remover notificações'];
+
+        } catch (\Exception $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
      * Get unread count for user
      */
     public function getUnreadCount(int $userId): int

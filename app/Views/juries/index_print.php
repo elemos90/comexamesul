@@ -263,7 +263,8 @@ ksort($juriesByDate);
                                 <?php $printMainColumns = false; endif; ?>
 
                             <!-- Coluna de Salas (agora ocupada pelo Header do Local) -->
-                            <td colspan="5" style="background-color: #fbbf24; font-weight: bold; text-align: center;">
+                            <td colspan="5"
+                                style="background-color: #f9fafb; font-weight: 600; text-align: center; color: #374151; border-top: 1px solid #e5e7eb;">
                                 <?= strtoupper(htmlspecialchars($locationName)) ?>
                             </td>
                         </tr>
@@ -313,28 +314,31 @@ ksort($juriesByDate);
 
                         <!-- Subtotal do Local -->
                         <tr class="subtotal-row">
-                            <td class="text-center font-bold" style="background-color: #fef3c7;">Subtotal</td>
-                            <td class="text-center font-bold" style="background-color: #fef3c7;">
+                            <td class="text-center font-bold" style="background-color: #fafafa; border-top: 1px solid #e5e7eb;">
+                                Subtotal</td>
+                            <td class="text-center font-bold" style="background-color: #fafafa; border-top: 1px solid #e5e7eb;">
                                 <?= number_format($locCandidatos, 0) ?>
                             </td>
-                            <td class="text-center" style="font-size: 0.75rem; background-color: #fef3c7;">
+                            <td class="text-center"
+                                style="font-size: 0.75rem; background-color: #fafafa; border-top: 1px solid #e5e7eb;">
                                 <?php if (!empty($locSupervisors)): ?>
                                     <div class="space-y-1">
                                         <?php foreach ($locSupervisors as $sup): ?>
-                                            <div class="text-blue-900">
+                                            <div>
                                                 <strong>Supervisor:</strong> <?= htmlspecialchars($sup['name']) ?>
                                                 <?php if ($sup['phone']): ?>
-                                                    <span class="text-xs text-gray-600"> • <?= htmlspecialchars($sup['phone']) ?></span>
+                                                    <span class="text-xs"> • <?= htmlspecialchars($sup['phone']) ?></span>
                                                 <?php endif; ?>
                                             </div>
                                         <?php endforeach; ?>
                                     </div>
                                 <?php else: ?>
-                                    <span class="text-gray-400 italic text-xs">Sem supervisor</span>
+                                    <span class="text-gray-500 italic text-xs">Sem supervisor</span>
                                 <?php endif; ?>
                             </td>
-                            <td class="text-center font-bold" style="background-color: #fef3c7;"><?= $locVigilantes ?></td>
-                            <td class="no-print" style="background-color: #fef3c7;"></td>
+                            <td class="text-center font-bold" style="background-color: #fafafa; border-top: 1px solid #e5e7eb;">
+                                <?= $locVigilantes ?></td>
+                            <td class="no-print" style="background-color: #fafafa; border-top: 1px solid #e5e7eb;"></td>
                         </tr>
 
                         <?php
@@ -346,7 +350,6 @@ ksort($juriesByDate);
 
                     <?php
                     // LÓGICA DE EXIBIÇÃO DO TOTAL DA DISCIPLINA
-                    // Verifica se o próximo item é de uma disciplina diferente
                     $currentSubject = $group['subject'];
                     $nextGroup = $groupedJuries[$groupIndex + 1] ?? null;
                     $nextSubject = $nextGroup['subject'] ?? null;
@@ -355,28 +358,17 @@ ksort($juriesByDate);
                         $totals = $disciplineTotals[$currentSubject];
                         ?>
                         <tr class="discipline-total-row"
-                            style="background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%); -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+                            style="background-color: #f3f4f6; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
                             <td colspan="8"
-                                style="padding: 8px 12px; border-top: 3px solid #d97706; border-bottom: 3px solid #d97706;">
+                                style="padding: 6px 12px; border-top: 1px solid #d1d5db; border-bottom: 1px solid #d1d5db;">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span
-                                        style="font-weight: 900; color: #78350f; font-size: 11pt; text-transform: uppercase; letter-spacing: 0.5px;">
-                                        📚 TOTAL <?= strtoupper($currentSubject) ?>
+                                    <span style="font-weight: 600; color: #1f2937; font-size: 10pt; text-transform: uppercase;">
+                                        TOTAL <?= strtoupper($currentSubject) ?>
                                     </span>
-                                    <div style="display: flex; gap: 24px; font-weight: bold; color: #78350f;">
-                                        <span>
-                                            <span style="font-size: 9pt; opacity: 0.75;">Candidatos:</span>
-                                            <span
-                                                style="font-size: 11pt; margin-left: 4px;"><?= number_format($totals['candidates'], 0) ?></span>
-                                        </span>
-                                        <span>
-                                            <span style="font-size: 9pt; opacity: 0.75;">Júris:</span>
-                                            <span style="font-size: 11pt; margin-left: 4px;"><?= $totals['juries'] ?></span>
-                                        </span>
-                                        <span>
-                                            <span style="font-size: 9pt; opacity: 0.75;">Vigilantes:</span>
-                                            <span style="font-size: 11pt; margin-left: 4px;"><?= $totals['vigilantes'] ?></span>
-                                        </span>
+                                    <div style="display: flex; gap: 24px; font-weight: 600; color: #374151;">
+                                        <span>Candidatos: <?= number_format($totals['candidates'], 0) ?></span>
+                                        <span>Júris: <?= $totals['juries'] ?></span>
+                                        <span>Vigilantes: <?= $totals['vigilantes'] ?></span>
                                     </div>
                                 </div>
                             </td>
@@ -385,20 +377,22 @@ ksort($juriesByDate);
 
                 <?php endforeach; // Fim loop grupos principais ?>
 
-                <!-- Total Geral (Mantido) -->
+                <!-- Total Geral -->
                 <tr class="total-row">
                     <td colspan="3"
-                        style="text-align: right; font-weight: bold; padding-right: 0.5rem; background-color: #fed7aa;">
+                        style="text-align: right; font-weight: 600; padding-right: 0.5rem; background-color: #e5e7eb; color: #111827; border-top: 1px solid #d1d5db;">
                         TOTAL GERAL</td>
-                    <td style="text-align: center; background-color: #fed7aa;"></td>
-                    <td style="text-align: center; font-weight: bold; background-color: #fed7aa;">
+                    <td style="text-align: center; background-color: #e5e7eb; border-top: 1px solid #d1d5db;"></td>
+                    <td
+                        style="text-align: center; font-weight: 600; background-color: #e5e7eb; color: #111827; border-top: 1px solid #d1d5db;">
                         <?= number_format($totalGeralCandidatos, 0) ?>
                     </td>
-                    <td style="background-color: #fed7aa;"></td>
-                    <td style="text-align: center; font-weight: bold; background-color: #fed7aa;">
+                    <td style="background-color: #e5e7eb; border-top: 1px solid #d1d5db;"></td>
+                    <td
+                        style="text-align: center; font-weight: 600; background-color: #e5e7eb; color: #111827; border-top: 1px solid #d1d5db;">
                         <?= $totalGeralVigilantes ?>
                     </td>
-                    <td class="no-print" style="background-color: #fed7aa;"></td>
+                    <td class="no-print" style="background-color: #e5e7eb; border-top: 1px solid #d1d5db;"></td>
                 </tr>
             </tbody>
         </table>
@@ -543,22 +537,24 @@ ksort($juriesByDate);
         text-align: center;
     }
 
-    /* Hierarchy Styles */
+    /* Hierarchy Styles - Formal Ultra-Suave */
     .location-header td {
-        background-color: #ffff00 !important;
-        font-weight: bold;
+        background-color: #f9fafb !important;
+        font-weight: 600;
         text-transform: uppercase;
+        color: #374151;
     }
 
     .subtotal-row td {
-        background-color: #ffff00 !important;
-        font-weight: bold;
+        background-color: #fafafa !important;
+        font-weight: 600;
     }
 
     .total-row td {
-        background-color: #ffc000 !important;
-        font-weight: bold;
+        background-color: #e5e7eb !important;
+        font-weight: 600;
         text-transform: uppercase;
+        color: #111827;
     }
 
     .text-center {

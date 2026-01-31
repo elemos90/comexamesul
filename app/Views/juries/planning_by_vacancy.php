@@ -629,6 +629,19 @@ $breadcrumbs = [
         updateAllRoomSelects();
     });
 
+    // Atualizar salas quando data/hora mudar
+    const updateRoomsListener = () => {
+        // Apenas atualizar se tivermos um local selecionado
+        if (selectedLocationId) {
+            updateAllRoomSelects();
+        }
+    };
+
+    document.querySelector('input[name="exam_date"]')?.addEventListener('change', updateRoomsListener);
+    document.querySelector('input[name="start_time"]')?.addEventListener('change', updateRoomsListener);
+    // Para end_time usamos change pois o input já tem validação validateTimeRange
+    document.querySelector('input[name="end_time"]')?.addEventListener('change', updateRoomsListener);
+
     function openCreateWizard(vacancyId, vacancyTitle) {
         document.getElementById('create_vacancy_id').value = vacancyId;
         document.getElementById('selected_vacancy_title').textContent = vacancyTitle;
@@ -675,7 +688,7 @@ $breadcrumbs = [
             .map(select => select.value)
             .filter(code => code && code !== excludeRoomCode);
 
-        const filteredRooms = masterRooms.filter(room =>
+        const filteredRooms = (window.availableRoomsCache || masterRooms).filter(room =>
             room.location_id == locationId && !selectedRoomCodes.includes(room.code)
         );
 
@@ -684,36 +697,111 @@ $breadcrumbs = [
         }
 
         if (filteredRooms.length === 0) {
-            return '<option value="">Nenhuma sala cadastrada para este local</option>';
+            return '<option value="">Nenhuma sala disponível para este horário</option>';
         }
 
         filteredRooms.forEach(room => {
-            html += `<option value="${room.code}" data-capacity="${room.capacity}">${room.code} - ${room.name} (Cap: ${room.capacity})</option>`;
+            html += `<option value="${room.code}" data-capacity="${room.capacity}" data-room-id="${room.id}">${room.code} - ${room.name} (Cap: ${room.capacity})</option>`;
         });
 
         return html;
     }
 
-    function updateAllRoomSelects() {
-        const roomSelects = document.querySelectorAll('.room-select');
-        roomSelects.forEach(select => {
-            const currentValue = select.value;
-            select.innerHTML = getRoomOptions(selectedLocationId, currentValue);
-            // Manter o valor selecionado se existir
-            if (currentValue) {
-                // Re-add the current selection as an option if it was filtered out
-                const hasOption = Array.from(select.options).some(opt => opt.value === currentValue);
-                if (!hasOption) {
-                    const room = masterRooms.find(r => r.code === currentValue);
-                    if (room) {
-                        const opt = document.createElement('option');
-                        opt.value = room.code;
-                        opt.textContent = `${room.code} - ${room.name} (Cap: ${room.capacity})`;
-                        opt.dataset.capacity = room.capacity;
-                        select.insertBefore(opt, select.options[1]);
-                    }
+    // Cache para salas disponíveis
+    window.availableRoomsCache = null;
+
+    async function fetchAvailableRooms() {
+        const examDate = document.querySelector('input[name="exam_date"]')?.value;
+        const startTime = document.querySelector('input[name="start_time"]')?.value;
+        const endTime = document.querySelector('input[name="end_time"]')?.value;
+
+        // Limpar cache antes de nova busca para evitar uso de dados obsoletos
+        window.availableRoomsCache = null;
+
+        // Se não tem data/hora preenchida, não buscamos nada (deixamos o cache nulo para usar fallback se necessário, ou vazio)
+        if (!selectedLocationId || !examDate || !startTime || !endTime) {
+            // Se faltar dados, talvez devêssemos mostrar todas as salas?
+            // Melhor não. Se tem local selecionado mas não tem hora, mostra todas do local.
+            if (selectedLocationId) {
+                window.availableRoomsCache = masterRooms.filter(r => r.location_id == selectedLocationId);
+            }
+            return;
+        }
+
+        try {
+            const params = new URLSearchParams({
+                location_id: selectedLocationId,
+                exam_date: examDate,
+                start_time: startTime,
+                end_time: endTime
+            });
+
+            const response = await fetch(`/comexamesul/public/api/rooms/available?${params}`);
+            const data = await response.json();
+
+            if (data.success) {
+                window.availableRoomsCache = data.available_rooms.map(room => ({
+                    ...room,
+                    location_id: selectedLocationId
+                }));
+
+                // Mostrar feedback se houver salas ocupadas
+                if (data.total_occupied > 0) {
+                    console.log(`⚠️ ${data.total_occupied} sala(s) ocupada(s) neste horário:`, data.occupied_rooms);
                 }
-                select.value = currentValue;
+            } else {
+                console.error('Erro ao buscar salas disponíveis:', data.message);
+                // Em caso de erro, NÃO fallback para todas as salas, pois pode gerar conflito.
+                // Deixar cache vazio para forçar erro ou mostrar vazio.
+                window.availableRoomsCache = [];
+                alert('Erro ao verificar disponibilidade de salas: ' + data.message);
+            }
+        } catch (error) {
+            console.error('Erro ao buscar salas disponíveis:', error);
+            window.availableRoomsCache = [];
+            alert('Erro de conexão ao verificar salas.');
+        }
+    }
+
+    async function updateAllRoomSelects() {
+        const roomSelects = document.querySelectorAll('.room-select');
+
+        // 1. Mostrar estado de carregando
+        roomSelects.forEach(select => {
+            if (select.value) {
+                // Se já tinha valor, manter, mas indicar loading? Não, melhor limpar para garantir.
+                // Mas se o usuário só mudou 1 minuto, perder a seleção é chato.
+                // Vamos tentar manter o valor SE ele ainda for válido depois.
+                select.dataset.oldValue = select.value;
+            }
+            select.innerHTML = '<option value="">⏳ Verificando disponibilidade...</option>';
+            select.disabled = true;
+        });
+
+        // 2. Buscar novas salas
+        await fetchAvailableRooms();
+
+        // 3. Atualizar dropdowns
+        roomSelects.forEach(select => {
+            select.disabled = false;
+            const oldValue = select.dataset.oldValue;
+
+            // Recriar opções
+            select.innerHTML = getRoomOptions(selectedLocationId, oldValue); // Passar oldValue como excludeCode se necessário, mas getRoomOptions usa exclude para outras salas.
+            // A lógica de getRoomOptions(locationId, excludeRoomCode) usa excludeRoomCode para filtrar salas JÁ selecionadas em OUTROS selects.
+            // Aqui queremos repopular. O segundo param é "excludeRoomCode". Não devemos passar o próprio valor.
+
+            // Re-selecionar valor antigo SE ele ainda existir na lista
+            if (oldValue) {
+                // Verificar se old value está nas options
+                const optionExists = select.querySelector(`option[value="${oldValue}"]`);
+                if (optionExists) {
+                    select.value = oldValue;
+                } else {
+                    // Valor antigo não está mais disponível!
+                    // Resetar para vazio
+                    select.value = "";
+                }
             }
         });
     }
@@ -1159,7 +1247,7 @@ $breadcrumbs = [
             let cardClass = 'border-red-300 bg-red-50';
             let iconClass = 'bg-red-100 text-red-700';
             let badgeClass = 'bg-red-100 text-red-700';
-            
+
             if (isOverAllocated) {
                 cardClass = 'border-yellow-400 bg-yellow-50';
                 iconClass = 'bg-yellow-100 text-yellow-700';
@@ -1180,11 +1268,11 @@ $breadcrumbs = [
                             <div>
                                 <div class="font-semibold text-gray-900 flex items-center gap-2">
                                     ${room.room}
-                                    ${isOverAllocated ? 
-                                        `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-yellow-200 text-yellow-800">
+                                    ${isOverAllocated ?
+                    `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-yellow-200 text-yellow-800">
                                             ⚠️ ${allocated.length - required} extra(s)
-                                        </span>` 
-                                    : ''}
+                                        </span>`
+                    : ''}
                                 </div>
                                 <div class="text-sm text-gray-600">${room.candidates} candidatos · Mín. ${required} vigilante(s)</div>
                             </div>
@@ -1202,11 +1290,11 @@ $breadcrumbs = [
                         </div>
                     </div>
                     
-                    ${isOverAllocated ? 
-                        `<div class="mb-3 px-3 py-2 bg-yellow-100 border border-yellow-200 rounded text-xs text-yellow-800 flex items-start gap-2">
+                    ${isOverAllocated ?
+                    `<div class="mb-3 px-3 py-2 bg-yellow-100 border border-yellow-200 rounded text-xs text-yellow-800 flex items-start gap-2">
                             <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                             <span><strong>Atenção:</strong> Você alocou mais vigilantes do que o mínimo exigido (${required}). Certifique-se de que isso é intencional.</span>
-                        </div>` 
+                        </div>`
                     : ''}
 
                     <div id="room-${index}-vigilantes" class="flex flex-wrap gap-2">

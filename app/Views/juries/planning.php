@@ -180,46 +180,45 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
 
         /* Fallback para navegadores teimosos (box-shadow hack) */
         .group-header {
-            background-color: #e2e8f0 !important;
-            box-shadow: inset 0 0 0 1000px #e2e8f0 !important;
-            color: #1e40af !important;
+            background-color: #f9fafb !important;
+            box-shadow: inset 0 0 0 1000px #f9fafb !important;
+            color: #374151 !important;
         }
 
         .subtotal-row {
-            background-color: #fef9c3 !important;
-            box-shadow: inset 0 0 0 1000px #fef9c3 !important;
+            background-color: #fafafa !important;
+            box-shadow: inset 0 0 0 1000px #fafafa !important;
         }
 
         .total-row {
-            background-color: #f97316 !important;
-            box-shadow: inset 0 0 0 1000px #f97316 !important;
-            color: white !important;
+            background-color: #f3f4f6 !important;
+            box-shadow: inset 0 0 0 1000px #f3f4f6 !important;
+            color: #1f2937 !important;
         }
 
         .discipline-total-row {
-            background-color: #f59e0b !important;
-            box-shadow: inset 0 0 0 1000px #f59e0b !important;
-            color: #451a03 !important;
+            background-color: #f3f4f6 !important;
+            box-shadow: inset 0 0 0 1000px #f3f4f6 !important;
+            color: #1f2937 !important;
         }
 
         .grand-total-row {
-            background-color: #f97316 !important;
-            box-shadow: inset 0 0 0 1000px #c2410c !important;
-            color: white !important;
+            background-color: #e5e7eb !important;
+            box-shadow: inset 0 0 0 1000px #e5e7eb !important;
+            color: #111827 !important;
         }
 
-        /* Reforçar bordas */
-        /* Reforçar bordas */
+        /* Bordas suaves */
         .total-row td,
         .discipline-total-row td,
         .grand-total-row td {
-            border-top: 2px solid #000 !important;
-            border-bottom: 2px solid #000 !important;
+            border-top: 1px solid #d1d5db !important;
+            border-bottom: 1px solid #d1d5db !important;
         }
 
         .subtotal-row td {
-            border-top: 2px solid #facc15 !important;
-            border-bottom: 2px solid #facc15 !important;
+            border-top: 1px solid #e5e7eb !important;
+            border-bottom: 1px solid #e5e7eb !important;
         }
 
         body {
@@ -933,7 +932,7 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
 
                                         <!-- Coluna Local (Ocupa o resto da largura) -->
                                         <td colspan="5" class="group-header"
-                                            style="background-color: #fffbeb; color: #92400e; border-bottom: 2px solid #fcd34d;">
+                                            style="background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 100%); color: #475569; border-bottom: 2px solid #94a3b8;">
                                             📍
                                             <?= strtoupper(htmlspecialchars($location)) ?>
                                         </td>
@@ -942,270 +941,248 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
                                     <?php
                                     $isFirstLocationOfGroup = false; // Já imprimimos as colunas principais
                         
-                                    // REFACTOR: Flatten groups to just list all juries for this location
-                                    // This fixes the "Split Subtotal" bug where different supervisors caused split blocks.
-                                    $allLocationJuries = [];
-                                    foreach ($supervisorsGroups as $supGroup) {
-                                        foreach ($supGroup['juries'] as $j) {
-                                            $allLocationJuries[] = $j;
-                                        }
-                                    }
+                                    // ORDENAÇÃO DOS GRUPOS DE SUPERVISOR (Sem Supervisor ID 0 primeiro ou último?)
+                                    // Manter ordem de inserção mas garantir consistência
+                                    ksort($supervisorsGroups);
 
-                                    // Sort juries by Room Name for cleaner display
-                                    usort($allLocationJuries, function ($a, $b) {
-                                        return strnatcmp($a['room'], $b['room']);
-                                    });
+                                    // LOOP: ITERAR CADA GRUPO DE SUPERVISOR DENTRO DO LOCAL (SEPARAR POR SUPERVISOR)
+                                    foreach ($supervisorsGroups as $supId => $supGroup):
+                                        $juriesInSupGroup = $supGroup['juries'];
 
-                                    $locationCandidates = 0;
-                                    $locationVigilantes = 0;
-                                    ?>
+                                        // Sort juries by Room Name
+                                        usort($juriesInSupGroup, function ($a, $b) {
+                                            return strnatcmp($a['room'], $b['room']);
+                                        });
 
-                                    <?php foreach ($allLocationJuries as $jury):
-                                        // Calculate totals
-                                        $vigilantesCount = count($jury['vigilantes'] ?? []);
-                                        $examCandidates += $jury['candidates_quota'];
-                                        $examVigilantes += $vigilantesCount;
+                                        $subCandidates = 0;
+                                        $subVigilantes = 0;
+                                        $isFirstRowOfSup = true;
 
-                                        $locationCandidates += $jury['candidates_quota'];
-                                        $locationVigilantes += $vigilantesCount;
+                                        // RENDERIZAR JÚRIS DESTE SUPERVISOR
+                                        foreach ($juriesInSupGroup as $jury):
+                                            // Calculate totals
+                                            $vigilantesCount = count($jury['vigilantes'] ?? []);
+                                            $examCandidates += $jury['candidates_quota'];
+                                            $examVigilantes += $vigilantesCount;
 
-                                        $totalCandidatos += $jury['candidates_quota'];
-                                        $totalVigilantes += $vigilantesCount;
+                                            // Subtotal do Supervisor
+                                            $subCandidates += $jury['candidates_quota'];
+                                            $subVigilantes += $vigilantesCount;
 
-                                        // UI Vars
-                                        $minVigilantes = max(1, ceil(($jury['candidates_quota'] ?? 0) / 30));
-                                        $hasSupervisor = !empty($jury['supervisor_id']);
-                                        $vigilanteIds = array_column($jury['vigilantes'] ?? [], 'id');
-                                        ?>
-                                        <tr data-jury-id="<?= $jury['id'] ?>" data-location="<?= htmlspecialchars($location) ?>"
-                                            data-exam-date="<?= $jury['exam_date'] ?>" data-start-time="<?= $jury['start_time'] ?>"
-                                            data-subject="<?= htmlspecialchars($group['subject'] ?? '') ?>"
-                                            data-vigilantes-count="<?= $vigilantesCount ?>" data-min-vigilantes="<?= $minVigilantes ?>"
-                                            data-has-supervisor="<?= $hasSupervisor ? 'true' : 'false' ?>"
-                                            data-vigilante-ids="<?= implode(',', $vigilanteIds) ?>"
-                                            data-supervisor-id="<?= $jury['supervisor_id'] ?? '' ?>">
+                                            // Totais Gerais
+                                            $totalCandidatos += $jury['candidates_quota'];
+                                            $totalVigilantes += $vigilantesCount;
 
-                                            <!-- Colunas Mescladas (Repetidas) -->
-                                            <td class="merged-cell align-middle text-center font-semibold border-r-2 border-gray-300 bg-white"
-                                                data-col="date">
-                                                <div class="cell-content">
-                                                    <?= date('d/m/Y', strtotime($jury['exam_date'])) ?><br>
-                                                    <span class="text-xs text-gray-500">(
-                                                        <?= $diasSemana[date('l', strtotime($jury['exam_date']))] ?? '' ?>)
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td class="merged-cell align-middle text-center font-semibold border-r-2 border-gray-300 bg-white"
-                                                data-col="time">
-                                                <div class="cell-content">
-                                                    <?= date('H:i', strtotime($jury['start_time'])) ?> -
-                                                    <?= date('H:i', strtotime($jury['end_time'])) ?>
-                                                </div>
-                                            </td>
-                                            <td class="merged-cell align-middle text-center font-semibold bg-gray-50 border-r-2 border-gray-300"
-                                                data-col="subject">
-                                                <div class="cell-content">
-                                                    <?= e($group['subject']) ?>
-                                                </div>
-                                            </td>
+                                            // UI Vars
+                                            $minVigilantes = max(1, ceil(($jury['candidates_quota'] ?? 0) / 30));
+                                            $hasSupervisor = !empty($jury['supervisor_id']);
+                                            $vigilanteIds = array_column($jury['vigilantes'] ?? [], 'id');
+                                            ?>
+                                            <tr data-jury-id="<?= $jury['id'] ?>" class="<?= $isFirstRowOfSup ? 'sup-group-start' : '' ?>"
+                                                data-location="<?= htmlspecialchars($location) ?>"
+                                                data-exam-date="<?= $jury['exam_date'] ?>" data-start-time="<?= $jury['start_time'] ?>"
+                                                data-subject="<?= htmlspecialchars($group['subject'] ?? '') ?>"
+                                                data-vigilantes-count="<?= $vigilantesCount ?>" data-min-vigilantes="<?= $minVigilantes ?>"
+                                                data-has-supervisor="<?= $hasSupervisor ? 'true' : 'false' ?>"
+                                                data-vigilante-ids="<?= implode(',', $vigilanteIds) ?>"
+                                                data-supervisor-id="<?= $jury['supervisor_id'] ?? '' ?>"
+                                                style="<?= $isFirstRowOfSup && $supId > 0 ? 'border-top: 2px solid #e2e8f0;' : '' ?>">
 
-                                            <!-- Colunas Específicas do Júri -->
-                                            <td style="font-weight: 600; font-size: 0.9rem;">
-                                                <?= htmlspecialchars($jury['room']) ?>
-                                            </td>
-                                            <td class="text-center font-bold text-blue-600 bg-blue-50" style="font-size: 1rem;">
-                                                <?= $jury['candidates_quota'] ?>
-                                                <div class="text-xs text-gray-500 font-normal mt-1">
-                                                    Mín:
-                                                    <?= $minVigilantes ?> <i class="fas fa-check-square text-green-500 ml-1"></i>
-                                                </div>
-                                            </td>
-
-                                            <!-- Coluna de Vigilantes -->
-                                            <td>
-                                                <?php if (empty($jury['vigilantes'])): ?>
-                                                    <div
-                                                        class="p-2 bg-red-50 text-red-600 rounded border border-red-100 text-sm flex items-center">
-                                                        <i class="fas fa-exclamation-triangle mr-2"></i> Sem vigilantes
+                                                <!-- Colunas Mescladas (Repetidas) -->
+                                                <td class="merged-cell align-middle text-center font-semibold border-r-2 border-gray-300 bg-white"
+                                                    data-col="date">
+                                                    <div class="cell-content">
+                                                        <?= date('d/m/Y', strtotime($jury['exam_date'])) ?><br>
+                                                        <span class="text-xs text-gray-500">(
+                                                            <?= $diasSemana[date('l', strtotime($jury['exam_date']))] ?? '' ?>)
+                                                        </span>
                                                     </div>
-                                                    <div style="display: flex; gap: 4px; margin-top: 4px; justify-content: center;">
-                                                        <button onclick="openManualModal(<?= $jury['id'] ?>)"
-                                                            class="btn-allocate btn-manual">✋ Manual</button>
+                                                </td>
+                                                <td class="merged-cell align-middle text-center font-semibold border-r-2 border-gray-300 bg-white"
+                                                    data-col="time">
+                                                    <div class="cell-content">
+                                                        <?= date('H:i', strtotime($jury['start_time'])) ?> -
+                                                        <?= date('H:i', strtotime($jury['end_time'])) ?>
                                                     </div>
-                                                <?php else: ?>
-                                                    <div class="space-y-1">
-                                                        <?php foreach ($jury['vigilantes'] as $v): ?>
-                                                            <div
-                                                                class="flex items-center justify-between p-1 px-2 bg-white border border-gray-200 rounded shadow-sm hover:shadow-md transition-shadow group-hover:border-blue-300">
-                                                                <div class="flex items-center gap-2">
-                                                                    <span class="text-gray-700 font-medium text-sm">
-                                                                        <?= htmlspecialchars($v['name']) ?>
-                                                                    </span>
-                                                                    <?php if (!empty($jury['supervisor_id']) && $v['id'] == $jury['supervisor_id']): ?>
-                                                                        <span
-                                                                            class="text-xs bg-yellow-100 text-yellow-800 px-1 rounded border border-yellow-200"
-                                                                            title="Supervisor">👑</span>
-                                                                    <?php endif; ?>
-                                                                </div>
-                                                                <button type="button"
-                                                                    class="text-red-400 hover:text-red-700 remove-vigilante p-1 rounded hover:bg-red-50 transition-colors"
-                                                                    data-jury-id="<?= $jury['id'] ?>" data-vigilante-id="<?= $v['id'] ?>"
-                                                                    title="Remover">
-                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                                            d="M6 18L18 6M6 6l12 12"></path>
-                                                                    </svg>
-                                                                </button>
-                                                            </div>
-                                                        <?php endforeach; ?>
-                                                        <?php if ($vigilantesCount < $minVigilantes): ?>
-                                                            <div style="display: flex; gap: 4px; margin-top: 4px; justify-content: center;">
-                                                                <button onclick="openManualModal(<?= $jury['id'] ?>)"
-                                                                    class="btn-allocate btn-manual">✋ Manual</button>
-                                                            </div>
+                                                </td>
+                                                <td class="merged-cell align-middle text-center font-semibold bg-gray-50 border-r-2 border-gray-300"
+                                                    data-col="subject">
+                                                    <div class="cell-content">
+                                                        <?= e($group['subject']) ?>
+                                                    </div>
+                                                </td>
+
+                                                <!-- SALA -->
+                                                <td class="font-bold text-gray-700 bg-white">
+                                                    <div class="flex items-center gap-2">
+                                                        <span><?= htmlspecialchars($jury['room']) ?></span>
+                                                        <?php if ($jury['has_room_conflict'] ?? false): ?>
+                                                            <span class="text-red-500 text-xs"
+                                                                title="Conflito de sala detectado! Esta sala está sendo usada em outro exame no mesmo horário.">
+                                                                ⚠️
+                                                            </span>
                                                         <?php endif; ?>
                                                     </div>
-                                                <?php endif; ?>
+                                                </td>
+
+                                                <!-- QUOTA CANDIDATOS -->
+                                                <td class="text-center font-bold text-blue-800 bg-blue-50/50">
+                                                    <?= $jury['candidates_quota'] ?>
+                                                    <div class="text-[9px] text-gray-400 font-normal">
+                                                        Mín: <?= $minVigilantes ?>
+                                                    </div>
+                                                </td>
+
+                                                <!-- VIGILANTES -->
+                                                <td class="bg-white">
+                                                    <div class="flex flex-col gap-1">
+                                                        <?php if (empty($jury['vigilantes'])): ?>
+                                                            <div class="empty-slot" onclick="openManualAllocation(<?= $jury['id'] ?>)">
+                                                                <span class="cursor-pointer hover:text-blue-600 hover:underline">
+                                                                    + Adicionar vigilante
+                                                                </span>
+                                                            </div>
+                                                        <?php else: ?>
+                                                            <?php foreach ($jury['vigilantes'] as $v): ?>
+                                                                <div
+                                                                    class="flex items-center justify-between text-xs bg-gray-50 px-2 py-1 rounded border border-gray-100 hover:border-blue-200 group">
+                                                                    <div class="flex items-center gap-1 overflow-hidden">
+                                                                        <?php if (($v['supervisor_eligible'] ?? 0) == 1): ?>
+                                                                            <span title="Elegível para Supervisor">👑</span>
+                                                                        <?php else: ?>
+                                                                            <span class="text-gray-400">👤</span>
+                                                                        <?php endif; ?>
+                                                                        <span class="truncate" title="<?= htmlspecialchars($v['name']) ?>">
+                                                                            <?= htmlspecialchars($v['name']) ?>
+                                                                        </span>
+                                                                        <?php if (!empty($v['phone'])): ?>
+                                                                            <span class="text-gray-400 text-[10px]">
+                                                                                (<?= htmlspecialchars($v['phone']) ?>)
+                                                                            </span>
+                                                                        <?php endif; ?>
+                                                                    </div>
+                                                                    <button type="button"
+                                                                        onclick="removeVigilante(<?= $jury['id'] ?>, <?= $v['id'] ?>)"
+                                                                        class="text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 px-1 font-bold">
+                                                                        ×
+                                                                    </button>
+                                                                </div>
+                                                            <?php endforeach; ?>
+                                                            <!-- Botão (+) pequeno se não atingiu quota -->
+                                                            <?php if ($vigilantesCount < $minVigilantes): ?>
+                                                                <div class="text-center mt-1">
+                                                                    <button onclick="openManualAllocation(<?= $jury['id'] ?>)"
+                                                                        class="text-[10px] text-blue-600 hover:underline bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                                                                        + Adicionar
+                                                                    </button>
+                                                                </div>
+                                                            <?php endif; ?>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </td>
+
+                                                <!-- CONTADOR VIGILANTES -->
+                                                <td class="text-center font-bold font-mono text-gray-700 bg-gray-50/50">
+                                                    <span
+                                                        class="<?= $vigilantesCount < $minVigilantes ? 'text-red-600' : 'text-green-600' ?>">
+                                                        <?= $vigilantesCount ?>
+                                                    </span>
+                                                </td>
+
+                                                <!-- AÇÕES -->
+                                                <td class="text-center no-print">
+                                                    <div class="flex items-center justify-center gap-1">
+                                                        <button onclick="editJuryInVacancy(<?= $jury['id'] ?>)"
+                                                            class="p-1 text-blue-600 hover:bg-blue-100 rounded" title="Editar Sala/Júri">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                            </svg>
+                                                        </button>
+                                                        <button onclick="deleteJury(<?= $jury['id'] ?>)"
+                                                            class="p-1 text-red-600 hover:bg-red-100 rounded" title="Remover Sala">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <?php
+                                            $isFirstRowOfSup = false;
+                                        endforeach; // Fim Júris Do Supervisor
+                                        ?>
+
+                                        <!-- LINHA DE SUBTOTAL DO SUPERVISOR -->
+                                        <tr class="subtotal-row" data-location="<?= htmlspecialchars($location) ?>"
+                                            style="background: linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%); border-top: 2px solid #cbd5e1; border-bottom: 2px solid #cbd5e1;">
+                                            <!-- Colunas de Alinhamento (3) -->
+                                            <td class="bg-white border-r-2 border-gray-300"></td>
+                                            <td class="bg-white border-r-2 border-gray-300"></td>
+                                            <td class="bg-gray-50 border-r-2 border-gray-300"></td>
+
+                                            <td colspan="1" class="text-right font-bold text-slate-600 px-4 py-2 text-sm bg-slate-50">
+                                                Subtotal
                                             </td>
-
-                                            <!-- Ações -->
-                                            <td class="text-center font-bold text-gray-700"
-                                                style="font-size: 1.1rem; vertical-align: middle;">
-                                                <?= $vigilantesCount ?>
+                                            <td class="text-center font-bold text-blue-800 bg-slate-50">
+                                                <?= $subCandidates ?>
                                             </td>
-                                            <td class="text-center align-middle space-x-2">
-                                                <button type="button"
-                                                    class="text-blue-500 hover:text-blue-700 edit-jury-btn p-1 rounded hover:bg-blue-50 transition-colors"
-                                                    data-jury-id="<?= $jury['id'] ?>" data-room="<?= htmlspecialchars($jury['room']) ?>"
-                                                    data-quota="<?= $jury['candidates_quota'] ?>" title="Editar">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
-                                                        </path>
-                                                    </svg>
-                                                </button>
-                                                <button type="button"
-                                                    class="text-red-500 hover:text-red-700 delete-jury-btn p-1 rounded hover:bg-red-50 transition-colors"
-                                                    data-jury-id="<?= $jury['id'] ?>" title="Remover">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                                                        </path>
-                                                    </svg>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; // Fim da iteração de júris do local ?>
+                                            <td colspan="1" class="px-3 py-2 bg-slate-50">
+                                                <div class="flex items-center justify-between">
+                                                    <!-- Info do Supervisor DO GRUPO -->
+                                                    <div class="flex flex-col text-xs text-gray-600">
+                                                        <?php
+                                                        if (empty($supGroup['supervisor_name'])) {
+                                                            echo '<span class="text-red-500 font-bold">⚠️ Sem supervisor</span>';
+                                                        } else {
+                                                            $sname = $supGroup['supervisor_name'];
+                                                            // Tentar pegar telefone do primeiro júri
+                                                            $firstJuryHere = $juriesInSupGroup[0] ?? [];
+                                                            $sphone = $firstJuryHere['supervisor_phone'] ?? '';
+                                                            $phoneDisplay = !empty($sphone) ? " <span class='text-gray-500'>({$sphone})</span>" : '';
 
-                                    <!-- Subtotal do LOCAL (Único por Local) -->
-                                    <tr class="subtotal-row" data-location="<?= htmlspecialchars($location) ?>"
-                                        style="background-color: #fef9c3; border-top: 2px solid #facc15; border-bottom: 2px solid #facc15;">
-                                        <!-- Colunas de Alinhamento (3) -->
-                                        <td class="bg-white border-r-2 border-gray-300"></td>
-                                        <td class="bg-white border-r-2 border-gray-300"></td>
-                                        <td class="bg-gray-50 border-r-2 border-gray-300"></td>
+                                                            echo "<div class='flex items-center gap-1'><span class='font-medium'>👑 $sname$phoneDisplay</span>";
 
-                                        <td colspan="1" class="text-right font-bold text-gray-600 px-4 py-2 text-sm bg-yellow-50">
-                                            Subtotal</td>
-                                        <td class="text-center font-bold text-blue-800 bg-yellow-50">
-                                            <?= $locationCandidates ?>
-                                        </td>
-                                        <td colspan="1" class="px-3 py-2 bg-yellow-50">
-                                            <div class="flex items-center justify-between">
-                                                <!-- Info dos Supervisores unificados -->
-                                                <div class="flex flex-col text-xs text-gray-600">
-                                                    <?php
-                                                    $locSupervisors = [];
-                                                    $supervisedCount = 0;
-                                                    foreach ($allLocationJuries as $j) {
-                                                        if (!empty($j['supervisor_name'])) {
-                                                            $locSupervisors[$j['supervisor_id']] = $j['supervisor_name'];
-                                                            $supervisedCount++;
-                                                        }
-                                                    }
-                                                    if (empty($locSupervisors)) {
-                                                        echo '<span class="text-red-500 font-bold">⚠️ Sem supervisor</span>';
-                                                    } else {
-                                                        foreach ($locSupervisors as $sid => $sname) {
-                                                            echo "<div class='flex items-center gap-1'><span class='font-medium'>👑 $sname</span>";
-
-                                                            // Alerta de Parcial
-                                                            if ($supervisedCount < count($allLocationJuries)) {
-                                                                echo "<span class='text-xs text-orange-600 font-bold ml-1' title='Apenas $supervisedCount de " . count($allLocationJuries) . " salas possuem supervisor. Clique em Definir para aplicar a todos.'>(Parcial)</span>";
-                                                            }
-
-                                                            // Botão para remover supervisor do grupo
-                                                            if (!empty($firstJury['id'])) {
-                                                                echo "<button onclick='removeSupervisorFromAllJuries({$firstJury['id']}, \"" . addslashes($sname) . "\")' class='text-red-500 hover:text-red-700 text-xs ml-1 p-0.5 rounded hover:bg-red-50 transition-colors' title='Remover Supervisor do Grupo'>
+                                                            // Botão para remover supervisor
+                                                            if (!empty($firstJuryHere['id'])) {
+                                                                echo "<button onclick='removeSupervisorFromAllJuries({$firstJuryHere['id']}, \"" . addslashes($sname) . "\")' class='text-red-500 hover:text-red-700 text-xs ml-1 p-0.5 rounded hover:bg-red-50 transition-colors' title='Remover Supervisor deste Grupo'>
                                                                     <svg class='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 18L18 6M6 6l12 12'></path></svg>
                                                                 </button>";
                                                             }
                                                             echo "</div>";
                                                         }
-                                                    }
-                                                    ?>
-                                                </div>
+                                                        ?>
+                                                    </div>
 
-                                                <!-- Botão Universal para definir Supervisor do Grupo -->
-                                                <?php
-                                                $firstJury = $allLocationJuries[0] ?? [];
-                                                $roomContext = "Grupo: " . count($allLocationJuries) . " salas em " . htmlspecialchars($location);
-                                                ?>
-                                                <?php if (!empty($firstJury)): ?>
-                                                    <button
-                                                        onclick="openSupervisorSelectModal(<?= $firstJury['id'] ?>, '<?= addslashes($roomContext) ?>', <?= $firstJury['vacancy_id'] ?>, '<?= $firstJury['exam_date'] ?>', '<?= $firstJury['start_time'] ?>', '<?= $firstJury['end_time'] ?>')"
-                                                        class="px-2 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700 transition shadow-sm font-medium">
-                                                        Definir
-                                                    </button>
-                                                <?php endif; ?>
-                                            </div>
-                                        </td>
-                                        <td class="text-center font-bold text-gray-800 bg-yellow-50">
-                                            <?= $locationVigilantes ?>
-                                        </td>
-                                        <td class="bg-yellow-50"></td>
-                                    </tr>
-                                    <?php // Fim flattened block ?>
+                                                    <!-- Botão Para Definir Supervisor (específico para este subgrupo) -->
+                                                    <?php
+                                                    $firstJuryHere = $juriesInSupGroup[0] ?? [];
+                                                    $roomContext = count($juriesInSupGroup) . " salas - " . ($supGroup['supervisor_name'] ?? 'Sem Sup.');
+                                                    $locJuryIds = array_column($juriesInSupGroup, 'id');
+                                                    ?>
+                                                    <?php if (!empty($firstJuryHere)): ?>
+                                                        <button
+                                                            onclick="openSupervisorSelectModalBulk([<?= implode(',', $locJuryIds) ?>], '<?= addslashes($roomContext) ?>', <?= $firstJuryHere['vacancy_id'] ?>, '<?= $firstJuryHere['exam_date'] ?>', '<?= $firstJuryHere['start_time'] ?>', '<?= $firstJuryHere['end_time'] ?>')"
+                                                            class="px-2 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700 transition shadow-sm font-medium">
+                                                            Definir
+                                                        </button>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </td>
+                                            <td class="text-center font-bold text-gray-800 bg-slate-50">
+                                                <?= $subVigilantes ?>
+                                            </td>
+                                            <td class="bg-slate-50"></td>
+                                        </tr>
+
+                                    <?php endforeach; // FIM LOOP SUPERVISORES ?>
+
 
                                 <?php endforeach; // Fim loop locais (PROCESSADOS) 
                                         ?>
 
-                                <?php // Total Geral do Grupo
-                                        if ($examCandidates > 0): ?>
-                                    <tr class="total-row"
-                                        style="background-color: #f97316; color: white; border-top: 2px solid #ea580c; border-bottom: 2px solid #ea580c;">
-                                        <!-- Merged Label (Date, Time, Subject, Room) -->
-                                        <td colspan="4" class="text-right px-4 py-2 font-bold uppercase tracking-wider"
-                                            style="background-color: inherit; color: inherit; border-right: 1px solid rgba(255,255,255,0.2);">
-                                            TOTAL <?= strtoupper($group['subject']) ?>
-                                        </td>
-
-                                        <!-- Candidates Count -->
-                                        <td
-                                            style="text-align: center; font-weight: 800; background-color: inherit; color: inherit; border-right: 1px solid rgba(255,255,255,0.2); font-size: 1rem;">
-                                            <?= number_format($examCandidates, 0) ?>
-                                        </td>
-
-                                        <!-- Vigilantes List (Empty) -->
-                                        <td style="background-color: inherit; border-right: 1px solid rgba(255,255,255,0.2);">
-                                            <div class="flex items-center justify-center gap-4 text-xs font-medium opacity-90">
-                                                <span>Candidatos: <strong><?= $examCandidates ?></strong></span>
-                                                <span>Júris: <strong><?= count($allLocationJuries) ?></strong></span>
-                                                <span>Vigilantes: <strong><?= $examVigilantes ?></strong></span>
-                                            </div>
-                                        </td>
-
-                                        <!-- Vigilantes Count -->
-                                        <td
-                                            style="text-align: center; font-weight: 800; background-color: inherit; color: inherit; border-right: 1px solid rgba(255,255,255,0.2); font-size: 1rem;">
-                                            <?= $examVigilantes ?>
-                                        </td>
-
-                                        <!-- Actions (Empty) -->
-                                        <td style="background-color: inherit;"></td>
-                                        <td style="background-color: inherit;"></td>
-                                    </tr>
-                                <?php endif; ?>
+                                <?php // Nota: O Total do Grupo foi removido pois já é exibido na linha discipline-total-row abaixo ?>
 
                                 <?php
                                 // VERIFICAR SE É O ÚLTIMO GRUPO DESTA DISCIPLINA
@@ -1218,13 +1195,13 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
                                     $totals = $disciplineTotals[$currentSubject];
                                     ?>
                                     <tr class="discipline-total-row"
-                                        style="background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%); border-top: 3px solid #d97706; border-bottom: 3px solid #d97706;">
+                                        style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0f9ff 100%); border-top: 2px solid #7dd3fc; border-bottom: 2px solid #7dd3fc;">
                                         <td colspan="8" class="py-3 px-6">
                                             <div class="flex items-center justify-between">
-                                                <span class="font-extrabold text-amber-900 text-base uppercase tracking-wide">
+                                                <span class="font-extrabold text-sky-800 text-base uppercase tracking-wide">
                                                     📚 TOTAL <?= strtoupper($currentSubject) ?>
                                                 </span>
-                                                <div class="flex gap-8 font-bold text-amber-900">
+                                                <div class="flex gap-8 font-bold text-sky-700">
                                                     <span class="flex items-center gap-2">
                                                         <span class="text-sm opacity-75">Candidatos:</span>
                                                         <span class="text-lg"><?= number_format($totals['candidates'], 0) ?></span>
@@ -1247,27 +1224,19 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
 
                             <!-- LINHA DE TOTALIZAÇÃO GERAL -->
                             <tr class="grand-total-row"
-                                style="background-color: #f97316; color: white; border-top: 4px solid #c2410c;">
-                                <!-- Colunas de Alinhamento (3) -->
-                            <tr class="grand-total-row"
-                                style="background-color: #f97316; color: white; border-top: 4px solid #c2410c;">
-                                <!-- Colunas de Alinhamento (3) -->
-                                <td class="bg-gray-100 border-r-2 border-gray-300"></td>
-                                <td class="bg-gray-100 border-r-2 border-gray-300"></td>
-                                <td class="bg-gray-100 border-r-2 border-gray-300"></td>
-
-                                <td colspan="1"
-                                    style="text-align: right; padding-right: 16px; font-weight: 800; font-size: 1.1rem; text-transform: uppercase;">
-                                    TOTAL GERAL
+                                style="background: linear-gradient(135deg, #ea580c 0%, #f97316 50%, #ea580c 100%); color: white; border-top: 4px solid #c2410c;">
+                                <td colspan="4"
+                                    style="text-align: right; padding: 12px 20px; font-weight: 800; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                                    🏆 TOTAL GERAL
                                 </td>
-                                <td style="text-align: center; font-weight: 800; font-size: 1.2rem;">
+                                <td style="text-align: center; font-weight: 800; font-size: 1.3rem; padding: 12px 8px;">
                                     <?= number_format($totalCandidatos, 0) ?>
                                 </td>
-                                <td class="bg-gray-100"></td>
-                                <td style="text-align: center; font-weight: 800; font-size: 1.2rem;">
+                                <td style="padding: 12px 8px;"></td>
+                                <td style="text-align: center; font-weight: 800; font-size: 1.3rem; padding: 12px 8px;">
                                     <?= $totalVigilantes ?>
                                 </td>
-                                <td class="bg-gray-100"></td>
+                                <td style="padding: 12px 8px;"></td>
                             </tr>
                         <?php endif; // Fim if/else empty check
                         ?>
@@ -1518,16 +1487,19 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
     </div>
 </div>
 
-<script>
-    const csrfToken = '<?= csrf_token() ?>';
-    const baseUrl = '<?= rtrim(dirname($_SERVER['SCRIPT_NAME']), '/') ?>';      /*       * * Escape HTML para prevenir XSS em JavaScript
-     */
+<script>const csrfToken = '<?= csrf_token() ?>';
+    const baseUrl = '<?= rtrim(dirname($_SERVER['SCRIPT_NAME']), '/') ?>';
+
+    /**
+    * Escape HTML para prevenir XSS em JavaScript
+    */
     function escapeHtml(text) {
         if (!text) return '';
         const div = document.createElement('div');
         div.textContent = text;
-        return div.in    nerHTML;
+        return div.innerHTML;
     }
+
 
     /**
      * Exibir modal de confirmação personalizado
@@ -2419,7 +2391,40 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
 
     // Variáveis globais para o modal de selecção de supervisor
     let currentSupervisorSelectJuryId = null;
+    let currentSupervisorSelectJuryIds = []; // Array para atribuição em lote
     let currentSupervisorSelectVacancyId = null;
+
+    /**
+     * Abrir modal para seleccionar supervisor de múltiplos júris (em lote)
+     */
+    async function openSupervisorSelectModalBulk(juryIds, roomName, vacancyId, examDate, startTime, endTime) {
+        const modal = document.getElementById('modal-supervisor-select');
+        const roomNameEl = document.getElementById('supervisor-select-room-name');
+        const contentEl = document.getElementById('supervisor-select-content');
+
+        currentSupervisorSelectJuryId = juryIds[0]; // Manter compatibilidade
+        currentSupervisorSelectJuryIds = juryIds; // Guardar todos os IDs
+        currentSupervisorSelectVacancyId = vacancyId;
+
+        roomNameEl.textContent = roomName;
+
+        // Mostrar modal com loading
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        contentEl.innerHTML = `
+            <div class="flex items-center justify-center py-8">
+                <svg class="animate-spin w-8 h-8 text-purple-600" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <span class="ml-2 text-gray-600">Carregando supervisores disponíveis...</span>
+            </div>
+        `;
+
+        // Carregar supervisores disponíveis
+        await loadAvailableSupervisors(examDate, startTime, endTime, vacancyId);
+    }
 
     /**
      * Abrir modal para seleccionar supervisor de um júri individual
@@ -2553,20 +2558,28 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
     }
 
     /**
-     * Atribuir supervisor a um júri individual
+     * Atribuir supervisor a um ou mais júris
      */
     async function assignSupervisorToJury(supervisorId, supervisorName) {
-        if (!currentSupervisorSelectJuryId) return;
+        // Verificar se temos IDs para atribuir
+        const juryIds = currentSupervisorSelectJuryIds.length > 0
+            ? currentSupervisorSelectJuryIds
+            : (currentSupervisorSelectJuryId ? [currentSupervisorSelectJuryId] : []);
+
+        if (juryIds.length === 0) return;
 
         try {
-            const response = await fetch(`${baseUrl}/juries/${currentSupervisorSelectJuryId}/supervisor/single`, {
+            // Usar bulk assign para atribuir a todos os júris do local
+            const response = await fetch(`${baseUrl}/juries/bulk-assign-supervisor`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-Token': csrfToken
                 },
-                body: new URLSearchParams({
+                body: JSON.stringify({
                     csrf: csrfToken,
+                    jury_ids: juryIds,
                     supervisor_id: supervisorId
                 })
             });
@@ -2579,7 +2592,7 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
                 const successDiv = document.createElement('div');
                 successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
                 successDiv.innerHTML = supervisorId ?
-                    `✅ Supervisor "${escapeHtml(supervisorName)}" atribuído!` :
+                    `✅ Supervisor "${escapeHtml(supervisorName)}" atribuído a ${juryIds.length} júri(s)!` :
                     '✅ Supervisor removido!';
                 document.body.appendChild(successDiv);
 

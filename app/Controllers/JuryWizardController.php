@@ -89,80 +89,108 @@ class JuryWizardController extends Controller
             if (!$vacancyId || !$location || !$examDate || empty($disciplines)) {
                 Response::json([
                     'success' => false,
-                    'message' => 'Dados incompletos'
+                    'message' => 'Dados incompletos: Verifique se vaga, local, data e disciplinas foram enviados corretamente.'
                 ], 400);
                 return;
             }
 
             $juryModel = new Jury();
             $roomModel = new ExamRoom();
-            $created = [];
-            $totalCreated = 0;
-            $conflicts = [];
+            $allocationService = new SmartAllocationService();
 
-            // ========== VALIDAÇÃO DE CONFLITOS DE PAPÉIS (VIGILANTE VS SUPERVISOR) ==========
-            $allVigilanteIds = [];
-            $allSupervisorIds = [];
+            // Iniciar transação para garantir atomicidade (Tudo ou Nada)
+            $db = Connection::getInstance();
+            $db->beginTransaction();
 
-            // Coletar todos os vigilantes propostos
-            foreach ($disciplines as $discipline) {
-                if (!empty($discipline['rooms'])) {
-                    foreach ($discipline['rooms'] as $room) {
-                        if (!empty($room['vigilantes']) && is_array($room['vigilantes'])) {
-                            foreach ($room['vigilantes'] as $vId) {
-                                if ((int) $vId > 0) {
-                                    $allVigilanteIds[] = (int) $vId;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            $allVigilanteIds = array_unique($allVigilanteIds);
+            try {
+                // 1. VALIDAÇÃO PRÉVIA GERAL
+                // Antes de criar qualquer coisa, validamos TUDO. Se houver 1 erro, abortamos.
 
-            // Coletar todos os supervisores propostos
-            $proposedSupervisors = $request->input('blockSupervisors') ?? $request->input('supervisors') ?? [];
-            foreach ($proposedSupervisors as $sId) {
-                if ((int) $sId > 0) {
-                    $allSupervisorIds[] = (int) $sId;
-                }
-            }
-            $allSupervisorIds = array_unique($allSupervisorIds);
+                // A. Validação de Conflitos de Papéis (Vigilante vs Supervisor)
+                $this->validateRoleConflicts($disciplines, $request);
 
-            // Verificar interseção
-            $roleConflicts = array_intersect($allVigilanteIds, $allSupervisorIds);
+                $conflicts = [];
+                $insufficientVigilantes = [];
+                $juriesToCreate = [];
 
-            if (!empty($roleConflicts)) {
-                $userModel = new \App\Models\User();
-                $conflictNames = [];
-                foreach ($roleConflicts as $userId) {
-                    $u = $userModel->find($userId);
-                    if ($u) {
-                        $conflictNames[] = $u['name'];
-                    }
-                }
-
-                Response::json([
-                    'success' => false,
-                    'message' => "❌ Conflito de papéis detectado!\n\nOs seguintes utilizadores foram atribuídos como VIGILANTE e SUPERVISOR ao mesmo tempo:\n- " . implode("\n- ", $conflictNames) . "\n\nPor favor, corrija as atribuições antes de salvar."
-                ], 422);
-                return;
-            }
-            // ==============================================================================
-
-            foreach ($disciplines as $discipline) {
-                if (empty($discipline['subject']) || empty($discipline['start_time']) || empty($discipline['end_time'])) {
-                    continue;
-                }
-
-                $rooms = $discipline['rooms'] ?? [];
-
-                foreach ($rooms as $room) {
-                    if (empty($room['room']) || empty($room['candidates_quota'])) {
+                // B. Loop de Validação de Regras de Negócio e Disponibilidade
+                foreach ($disciplines as $discipline) {
+                    if (empty($discipline['subject']) || empty($discipline['start_time']) || empty($discipline['end_time'])) {
                         continue;
                     }
 
-                    // Buscar detalhes da sala
+                    $rooms = $discipline['rooms'] ?? [];
+                    foreach ($rooms as $room) {
+                        if (empty($room['room']) || empty($room['candidates_quota'])) {
+                            continue;
+                        }
+
+                        // Validar número mínimo de vigilantes
+                        $vigilantesCount = count($room['vigilantes'] ?? []);
+                        $minRequired = max(1, ceil((int) $room['candidates_quota'] / 30));
+
+                        if ($vigilantesCount < $minRequired) {
+                            $insufficientVigilantes[] = "Sala {$room['room']} ({$discipline['subject']}): Alocados {$vigilantesCount}, Necessários {$minRequired}";
+                        }
+
+                        // Verificar conflito de sala
+                        $conflictCheck = $this->checkRoomConflict(
+                            $juryModel,
+                            $location,
+                            $room['room'],
+                            $examDate,
+                            $discipline['start_time'],
+                            $discipline['end_time']
+                        );
+
+                        if (!empty($conflictCheck)) {
+                            $conflicts[] = [
+                                'room' => $room['room'],
+                                'subject' => $discipline['subject'],
+                                'time' => $discipline['start_time'] . '-' . $discipline['end_time'],
+                                'existing' => $conflictCheck[0]['subject'] . ' (' . $conflictCheck[0]['start_time'] . '-' . $conflictCheck[0]['end_time'] . ')'
+                            ];
+                        }
+
+                        // Preparar dados para criação (se passar na validação)
+                        $juriesToCreate[] = [
+                            'discipline' => $discipline,
+                            'room' => $room,
+                            'vigilantes_capacity' => max($vigilantesCount, $minRequired, 2)
+                        ];
+                    }
+                }
+
+                // Se houver erros de validação, ABORTAR IMEDIATAMENTE e retornar erro
+                if (!empty($conflicts)) {
+                    $msg = "❌ Operação cancelada devido a conflitos de horário nas salas:\n";
+                    foreach ($conflicts as $c) {
+                        $msg .= "- Sala {$c['room']}: {$c['existing']} já ocupa este horário.\n";
+                    }
+                    throw new \Exception($msg);
+                }
+
+                if (!empty($insufficientVigilantes)) {
+                    $msg = "❌ Operação cancelada. Algumas salas não têm vigilantes suficientes:\n";
+                    foreach ($insufficientVigilantes as $err) {
+                        $msg .= "- $err\n";
+                    }
+                    throw new \Exception($msg);
+                }
+
+                if (empty($juriesToCreate)) {
+                    throw new \Exception("Nenhum júri válido encontrado para criar.");
+                }
+
+                // 2. CRIAÇÃO DOS JÚRIS (Se chegou aqui, está tudo validado)
+                $created = [];
+                $totalCreated = 0;
+
+                foreach ($juriesToCreate as $item) {
+                    $disc = $item['discipline'];
+                    $room = $item['room'];
+
+                    // Buscar detalhes da sala (ID location, etc)
                     $roomDetails = null;
                     $roomLocationId = null;
                     if (!empty($room['room_id'])) {
@@ -172,45 +200,20 @@ class JuryWizardController extends Controller
                         }
                     }
 
-                    // Criar texto descritivo da sala
                     $roomText = $this->buildRoomDescription($room, $roomDetails);
-
-                    // Verificar conflito de sala
-                    $conflictCheck = $this->checkRoomConflict(
-                        $juryModel,
-                        $location,
-                        $room['room'],
-                        $examDate,
-                        $discipline['start_time'],
-                        $discipline['end_time']
-                    );
-
-                    if (!empty($conflictCheck)) {
-                        $conflicts[] = [
-                            'room' => $room['room'],
-                            'subject' => $discipline['subject'],
-                            'time' => $discipline['start_time'] . '-' . $discipline['end_time'],
-                            'existing' => $conflictCheck[0]['subject'] . ' (' . $conflictCheck[0]['start_time'] . '-' . $conflictCheck[0]['end_time'] . ')'
-                        ];
-                        continue;
-                    }
-
-                    $vigilantesCount = count($room['vigilantes'] ?? []);
-                    $minRequired = max(1, ceil((int) $room['candidates_quota'] / 30));
-                    $capacity = max($vigilantesCount, $minRequired, 2); // Ensure capacity covers current allocation
 
                     $juryId = $juryModel->create([
                         'vacancy_id' => $vacancyId,
-                        'subject' => $discipline['subject'],
+                        'subject' => $disc['subject'],
                         'exam_date' => $examDate,
-                        'start_time' => $discipline['start_time'],
-                        'end_time' => $discipline['end_time'],
+                        'start_time' => $disc['start_time'],
+                        'end_time' => $disc['end_time'],
                         'location' => $location,
                         'location_id' => $roomLocationId,
                         'room' => $roomText,
                         'room_id' => !empty($room['room_id']) ? (int) $room['room_id'] : null,
                         'candidates_quota' => (int) $room['candidates_quota'],
-                        'vigilantes_capacity' => $capacity, // Fix for SQL Error 1644
+                        'vigilantes_capacity' => (int) $item['vigilantes_capacity'],
                         'notes' => null,
                         'created_by' => Auth::id(),
                         'created_at' => now(),
@@ -219,60 +222,100 @@ class JuryWizardController extends Controller
 
                     $created[] = [
                         'id' => $juryId,
-                        'subject' => $discipline['subject'],
+                        'subject' => $disc['subject'],
                         'room' => $room['room']
                     ];
 
-                    // Guardar vigilantes alocados
+                    // Alocar vigilantes
                     $this->assignVigilantesToJury($juryId, $room['vigilantes'] ?? []);
 
                     ActivityLogger::log('juries', $juryId, 'create_for_vacancy', [
                         'vacancy_id' => $vacancyId,
-                        'subject' => $discipline['subject'],
-                        'room' => $room['room'],
-                        'vigilantes_count' => count($room['vigilantes'] ?? [])
+                        'subject' => $disc['subject'],
+                        'room' => $room['room']
                     ]);
 
                     $totalCreated++;
                 }
-            }
 
-            if ($totalCreated === 0) {
-                $message = $this->buildConflictMessage($conflicts);
+                // Alocar supervisores (Bloco ou Individual)
+                $supervisorCount = $this->assignSupervisors($request, $created, $vacancyId);
+
+                // Commit da transação
+                $db->commit();
+
                 Response::json([
-                    'success' => false,
-                    'message' => 'Nenhum júri foi criado' . $message,
-                    'conflicts' => $conflicts
-                ], 400);
-                return;
+                    'success' => true,
+                    'message' => "✅ Sucesso! $totalCreated júris criados e validados.",
+                    'juries' => $created,
+                    'total' => $totalCreated,
+                    'vacancy_id' => $vacancyId
+                ]);
+
+            } catch (\Exception $e) {
+                // Em caso de QUALQUER erro, desfazemos tudo
+                $db->rollBack();
+                throw $e;
             }
-
-            $message = "Criados {$totalCreated} júris com sucesso";
-            $message .= $this->buildConflictMessage($conflicts);
-
-            // Guardar supervisores por bloco
-            $supervisorCount = $this->assignBlockSupervisors($request, $created);
-            if ($supervisorCount > 0) {
-                $message .= "\n✅ {$supervisorCount} supervisor(es) atribuído(s)";
-            }
-
-            Response::json([
-                'success' => true,
-                'message' => $message,
-                'juries' => $created,
-                'total' => $totalCreated,
-                'conflicts' => $conflicts,
-                'has_conflicts' => !empty($conflicts),
-                'vacancy_id' => $vacancyId
-            ]);
 
         } catch (\Exception $e) {
             if (ob_get_length())
                 ob_clean();
             Response::json([
                 'success' => false,
-                'message' => 'Erro ao criar júris: ' . $e->getMessage()
-            ], 500);
+                'message' => $e->getMessage() // Retorna a mensagem específica (conflito, RH, etc)
+            ], 400); // 400 Bad Request para erros de validação
+        }
+    }
+
+    /**
+     * Valida conflitos de papéis entre vigilantes e supervisores
+     */
+    private function validateRoleConflicts(array $disciplines, Request $request): void
+    {
+        $allVigilanteIds = [];
+        $allSupervisorIds = [];
+
+        // Coletar vigilantes
+        foreach ($disciplines as $discipline) {
+            if (!empty($discipline['rooms'])) {
+                foreach ($discipline['rooms'] as $room) {
+                    if (!empty($room['vigilantes']) && is_array($room['vigilantes'])) {
+                        foreach ($room['vigilantes'] as $vId) {
+                            if ((int) $vId > 0)
+                                $allVigilanteIds[] = (int) $vId;
+                        }
+                    }
+                }
+            }
+        }
+        $allVigilanteIds = array_unique($allVigilanteIds);
+
+        // Coletar supervisores
+        $proposedSupervisors = array_merge(
+            $request->input('blockSupervisors') ?? [],
+            $request->input('supervisors') ?? [],
+            $request->input('individual_supervisors') ?? []
+        );
+
+        foreach ($proposedSupervisors as $sId) {
+            if ((int) $sId > 0)
+                $allSupervisorIds[] = (int) $sId;
+        }
+        $allSupervisorIds = array_unique($allSupervisorIds);
+
+        // Verificar interseção
+        $roleConflicts = array_intersect($allVigilanteIds, $allSupervisorIds);
+
+        if (!empty($roleConflicts)) {
+            $userModel = new \App\Models\User();
+            $conflictNames = [];
+            foreach ($roleConflicts as $userId) {
+                $u = $userModel->find($userId);
+                if ($u)
+                    $conflictNames[] = $u['name'];
+            }
+            throw new \Exception("❌ Conflito de papéis: Usuários definidos como Vigilante E Supervisor ao mesmo tempo:\n- " . implode("\n- ", $conflictNames));
         }
     }
 
@@ -667,50 +710,104 @@ class JuryWizardController extends Controller
     }
 
     /**
-     * Atribui supervisores por bloco
+     * Atribui supervisores (Lógica Híbrida: Individual, Bloco ou Automática Unitária)
      */
-    private function assignBlockSupervisors(Request $request, array $created): int
+    private function assignSupervisors(Request $request, array $created, int $vacancyId): int
     {
-        $blockSupervisors = $request->input('blockSupervisors') ?? $request->input('supervisors') ?? [];
-
-        if (empty($created) || empty($blockSupervisors)) {
-            return 0;
-        }
+        $individual = $request->input('individual_supervisors') ?? [];
+        $blocks = $request->input('blockSupervisors') ?? $request->input('supervisors') ?? [];
 
         $db = Connection::getInstance();
-        $maxJuriesPerSupervisor = 10;
         $supervisorCount = 0;
 
-        foreach ($blockSupervisors as $blockIndex => $supervisorId) {
-            $supervisorId = (int) $supervisorId;
-            if ($supervisorId <= 0)
-                continue;
+        // 1. Atribuição Individual (Prioridade Máxima)
+        if (!empty($individual) && is_array($individual)) {
+            foreach ($individual as $index => $supervisorId) {
+                if (isset($created[$index])) {
+                    $juryId = $created[$index]['id'];
+                    $supervisorId = (int) $supervisorId;
 
-            $startIndex = $blockIndex * $maxJuriesPerSupervisor;
-            $endIndex = min($startIndex + $maxJuriesPerSupervisor, count($created));
-
-            for ($i = $startIndex; $i < $endIndex; $i++) {
-                if (isset($created[$i])) {
-                    $juryId = $created[$i]['id'];
-                    $updateStmt = $db->prepare(
-                        "UPDATE juries SET supervisor_id = :supervisor_id, updated_at = NOW() WHERE id = :jury_id"
-                    );
-                    $updateStmt->execute([
-                        'supervisor_id' => $supervisorId,
-                        'jury_id' => $juryId
-                    ]);
-
-                    ActivityLogger::log('juries', $juryId, 'assign_supervisor_from_wizard', [
-                        'supervisor_id' => $supervisorId,
-                        'block_index' => $blockIndex
-                    ]);
+                    if ($supervisorId > 0) {
+                        $this->updateSupervisor($db, $juryId, $supervisorId, 'individual_wizard');
+                        $supervisorCount++;
+                    }
                 }
             }
-
-            $supervisorCount++;
+            return $supervisorCount;
         }
 
-        return $supervisorCount;
+        // 2. Atribuição por Blocos (Fallback Padrão)
+        if (!empty($blocks) && is_array($blocks)) {
+            $maxJuriesPerSupervisor = 10;
+
+            foreach ($blocks as $blockIndex => $supervisorId) {
+                $supervisorId = (int) $supervisorId;
+                if ($supervisorId <= 0)
+                    continue;
+
+                $startIndex = $blockIndex * $maxJuriesPerSupervisor;
+                $endIndex = min($startIndex + $maxJuriesPerSupervisor, count($created));
+
+                for ($i = $startIndex; $i < $endIndex; $i++) {
+                    if (isset($created[$i])) {
+                        $this->updateSupervisor($db, $created[$i]['id'], $supervisorId, 'block_wizard');
+                        $supervisorCount++; // Conta supervisões efetivas (embora seja bloco)
+                        // Nota: A contagem real para pagamento é feita pelo Model Payment (blocos únicos)
+                    }
+                }
+            }
+            return $supervisorCount;
+        }
+
+        // 3. Alocação Automática Unitária (Prioridade Comissão)
+        // Se criou apenas 1 júri E não especificou supervisor, tenta alocar um membro da comissão
+        if (count($created) === 1) {
+            $committeeMember = $this->findBestCommitteeMember($vacancyId);
+            if ($committeeMember) {
+                $this->updateSupervisor($db, $created[0]['id'], $committeeMember, 'auto_committee_priority');
+                return 1;
+            }
+        }
+
+        return 0;
+    }
+
+    /**
+     * Helper para atualizar supervisor
+     */
+    private function updateSupervisor($db, int $juryId, int $supervisorId, string $context): void
+    {
+        $db->prepare("UPDATE juries SET supervisor_id = :sid, updated_at = NOW() WHERE id = :jid")
+            ->execute(['sid' => $supervisorId, 'jid' => $juryId]);
+
+        ActivityLogger::log('juries', $juryId, 'assign_supervisor', [
+            'supervisor_id' => $supervisorId,
+            'context' => $context,
+            'assigned_by' => Auth::id()
+        ]);
+    }
+
+    /**
+     * Encontra o melhor membro da comissão disponível
+     */
+    private function findBestCommitteeMember(int $vacancyId): ?int
+    {
+        $db = Connection::getInstance();
+
+        // Priorizar membros da comissão (role = membro ou coordenador) com menos carga
+        // Filtar pela disponibilidade básica se possível (mas membros geralmente estão sempre disponíveis para gestão)
+        $sql = "SELECT u.id 
+                FROM users u
+                LEFT JOIN vw_vigilante_workload vw ON vw.user_id = u.id
+                WHERE u.role IN ('membro', 'coordenador')
+                  AND u.is_active = 1
+                ORDER BY IFNULL(vw.supervision_count, 0) ASC, u.name ASC
+                LIMIT 1";
+
+        $stmt = $db->query($sql);
+        $result = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return $result ? (int) $result['id'] : null;
     }
 
     /**

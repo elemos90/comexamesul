@@ -223,7 +223,7 @@ class JuryResourceController extends Controller
                 FROM users u
                 LEFT JOIN vw_vigilante_workload vw ON vw.user_id = u.id
                 WHERE u.role IN ('vigilante', 'coordenador', 'membro')
-                ORDER BY u.supervisor_eligible DESC, workload_score ASC, u.name ASC
+                ORDER BY u.supervisor_eligible DESC, workload_score ASC, RAND()
             ");
             $stmt->execute();
             $supervisors = $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -280,7 +280,7 @@ class JuryResourceController extends Controller
              FROM users u 
              LEFT JOIN vw_vigilante_workload vw ON vw.user_id = u.id
              WHERE u.role = 'vigilante'
-             ORDER BY u.supervisor_eligible DESC, vw.workload_score ASC, u.name"
+             ORDER BY u.supervisor_eligible DESC, vw.workload_score ASC, RAND()"
         );
 
         Response::json([

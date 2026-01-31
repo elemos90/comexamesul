@@ -202,6 +202,14 @@ class JuryController extends Controller
 
                 // Converter para array indexado e ordenar locais por nome
                 $groupedJuries = array_values($groupedJuries);
+
+                // ORDENAR POR DATA E HORA (não por disciplina)
+                usort($groupedJuries, function ($a, $b) {
+                    $t1 = strtotime($a['exam_date'] . ' ' . $a['start_time']);
+                    $t2 = strtotime($b['exam_date'] . ' ' . $b['start_time']);
+                    return $t1 - $t2;
+                });
+
                 foreach ($groupedJuries as &$group) {
                     ksort($group['locations']);
                 }
@@ -252,6 +260,14 @@ class JuryController extends Controller
                     $groupedJuries[$mainKey]['locations'][$locKey]['juries'][] = $jury;
                 }
                 $groupedJuries = array_values($groupedJuries);
+
+                // ORDENAR POR DATA E HORA (não por disciplina)
+                usort($groupedJuries, function ($a, $b) {
+                    $t1 = strtotime($a['exam_date'] . ' ' . $a['start_time']);
+                    $t2 = strtotime($b['exam_date'] . ' ' . $b['start_time']);
+                    return $t1 - $t2;
+                });
+
                 foreach ($groupedJuries as &$group) {
                     ksort($group['locations']);
                 }
@@ -1714,9 +1730,60 @@ class JuryController extends Controller
         // Candidatos aprovados
         $candidates = $allocationService->getApprovedCandidates($vacancyId);
 
+        // MAPA DE ALOCAÇÃO (PIVOT: Disciplina -> Vigilante -> Qtd Júris)
+        $allocationMap = [];
+        $globalTotalSlots = 0;
+
+        // Iterar sobre a estrutura agrupada por Local (groupedJuries)
+        foreach ($groupedJuries as $locationGroup) {
+            foreach ($locationGroup['disciplines'] as $discipline) {
+                $subject = $discipline['subject'];
+
+                // Normalizar chave da disciplina
+                if (!isset($allocationMap[$subject])) {
+                    $allocationMap[$subject] = [
+                        'total_slots' => 0,
+                        'vigilantes' => []
+                    ];
+                }
+
+                foreach ($discipline['juries'] as $jury) {
+                    if (!empty($jury['vigilantes'])) {
+                        foreach ($jury['vigilantes'] as $vigilante) {
+                            $vid = $vigilante['id'];
+
+                            if (!isset($allocationMap[$subject]['vigilantes'][$vid])) {
+                                $allocationMap[$subject]['vigilantes'][$vid] = [
+                                    'name' => $vigilante['name'],
+                                    'count' => 0,
+                                    'rooms' => []
+                                ];
+                            }
+
+                            $allocationMap[$subject]['vigilantes'][$vid]['count']++;
+                            $allocationMap[$subject]['vigilantes'][$vid]['rooms'][] = $jury['room'];
+
+                            $allocationMap[$subject]['total_slots']++;
+                            $globalTotalSlots++;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Ordenar mapa por disciplina e vigilantes por nome
+        ksort($allocationMap);
+        foreach ($allocationMap as &$discData) {
+            usort($discData['vigilantes'], function ($a, $b) {
+                return strcmp($a['name'], $b['name']);
+            });
+        }
+        unset($discData);
+
         return $this->view('juries/manage_vacancy', [
             'vacancy' => $vacancy,
             'groupedJuries' => $groupedJuries,
+            'allocationMap' => $allocationMap,
             'stats' => $stats,
             'candidates' => $candidates,
             'user' => $user,

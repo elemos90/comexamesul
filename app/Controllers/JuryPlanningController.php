@@ -85,6 +85,13 @@ class JuryPlanningController extends Controller
                 $groupedJuries[$key]['juries'][] = $jury;
             }
             $groupedJuries = array_values($groupedJuries);
+
+            // ORDENAR POR DATA E HORA (não por disciplina)
+            usort($groupedJuries, function ($a, $b) {
+                $t1 = strtotime($a['exam_date'] . ' ' . $a['start_time']);
+                $t2 = strtotime($b['exam_date'] . ' ' . $b['start_time']);
+                return $t1 - $t2;
+            });
         } else {
             $groupedJuries = $juryModel->getGroupedBySubjectAndTime();
         }

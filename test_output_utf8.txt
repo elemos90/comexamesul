@@ -1,0 +1,120 @@
+﻿PHPUnit 10.5.63 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.2.12
+Configuration: C:\xampp\htdocs\comexamesul\phpunit.xml
+
+................F.F.FF..............F..EEEEEEEEEEE............... 65 / 99 ( 65%)
+.F...........................SF...                                99 / 99 (100%)
+
+Time: 00:04.681, Memory: 10.00 MB
+
+There were 11 errors:
+
+1) Tests\Unit\StatsCacheServiceTest::testCacheServiceExists
+Error: Undefined constant "App\Services\BASE_PATH"
+
+C:\xampp\htdocs\comexamesul\tests\Unit\StatsCacheServiceTest.php:19
+
+2) Tests\Unit\StatsCacheServiceTest::testRememberStoresAndRetrievesValue
+Error: Undefined constant "App\Services\BASE_PATH"
+
+C:\xampp\htdocs\comexamesul\tests\Unit\StatsCacheServiceTest.php:19
+
+3) Tests\Unit\StatsCacheServiceTest::testGetReturnsNullForMissingKey
+Error: Undefined constant "App\Services\BASE_PATH"
+
+C:\xampp\htdocs\comexamesul\tests\Unit\StatsCacheServiceTest.php:19
+
+4) Tests\Unit\StatsCacheServiceTest::testSetStoresValue
+Error: Undefined constant "App\Services\BASE_PATH"
+
+C:\xampp\htdocs\comexamesul\tests\Unit\StatsCacheServiceTest.php:19
+
+5) Tests\Unit\StatsCacheServiceTest::testForgetRemovesValue
+Error: Undefined constant "App\Services\BASE_PATH"
+
+C:\xampp\htdocs\comexamesul\tests\Unit\StatsCacheServiceTest.php:19
+
+6) Tests\Unit\StatsCacheServiceTest::testFlushClearsAllCache
+Error: Undefined constant "App\Services\BASE_PATH"
+
+C:\xampp\htdocs\comexamesul\tests\Unit\StatsCacheServiceTest.php:19
+
+7) Tests\Unit\StatsCacheServiceTest::testMetricsTrackHitsAndMisses
+Error: Undefined constant "App\Services\BASE_PATH"
+
+C:\xampp\htdocs\comexamesul\tests\Unit\StatsCacheServiceTest.php:19
+
+8) Tests\Unit\StatsCacheServiceTest::testTagsAllowGroupInvalidation
+Error: Undefined constant "App\Services\BASE_PATH"
+
+C:\xampp\htdocs\comexamesul\tests\Unit\StatsCacheServiceTest.php:19
+
+9) Tests\Unit\StatsCacheServiceTest::testTTLConstantsExist
+Error: Undefined constant "App\Services\BASE_PATH"
+
+C:\xampp\htdocs\comexamesul\tests\Unit\StatsCacheServiceTest.php:19
+
+10) Tests\Unit\StatsCacheServiceTest::testContextualCacheMethods
+Error: Undefined constant "App\Services\BASE_PATH"
+
+C:\xampp\htdocs\comexamesul\tests\Unit\StatsCacheServiceTest.php:19
+
+11) Tests\Unit\StatsCacheServiceTest::testInfoReturnsValidStructure
+Error: Undefined constant "App\Services\BASE_PATH"
+
+C:\xampp\htdocs\comexamesul\tests\Unit\StatsCacheServiceTest.php:19
+
+--
+
+There were 7 failures:
+
+1) Tests\Unit\ModelsTest::testCoreModelsExist
+Model App\Models\Application should exist
+Failed asserting that false is true.
+
+C:\xampp\htdocs\comexamesul\tests\Unit\ModelsTest.php:34
+
+2) Tests\Unit\ModelsTest::testJuryModelMethods
+Method forVacancy should exist in Jury model
+Failed asserting that false is true.
+
+C:\xampp\htdocs\comexamesul\tests\Unit\ModelsTest.php:81
+
+3) Tests\Unit\ModelsTest::testApplicationModelMethods
+Method find should exist in Application model
+Failed asserting that false is true.
+
+C:\xampp\htdocs\comexamesul\tests\Unit\ModelsTest.php:124
+
+4) Tests\Unit\ModelsTest::testModelsExtendBaseModel
+App\Models\User should extend App\Models\Model
+Failed asserting that two strings are equal.
+--- Expected
++++ Actual
+@@ @@
+-'App\Models\Model'
++'App\Models\BaseModel'
+
+C:\xampp\htdocs\comexamesul\tests\Unit\ModelsTest.php:149
+
+5) Tests\Unit\ServicesTest::testMailServiceMethods
+Method sendPasswordReset should exist in MailService
+Failed asserting that false is true.
+
+C:\xampp\htdocs\comexamesul\tests\Unit\ServicesTest.php:112
+
+6) Tests\Unit\Utils\ValidatorTest::test_validates_date
+Data '15/01/2025' deveria ser v├ílida
+Failed asserting that false is true.
+
+C:\xampp\htdocs\comexamesul\tests\Unit\Utils\ValidatorTest.php:310
+
+7) Tests\Feature\RoutesTest::testHomepageLoads
+Homepage should return 200 or 302, got: HTTP/1.1 301 Moved Permanently
+Failed asserting that false is true.
+
+C:\xampp\htdocs\comexamesul\tests\Feature\RoutesTest.php:44
+
+ERRORS!
+Tests: 99, Assertions: 261, Errors: 11, Failures: 7, PHPUnit Deprecations: 1, Skipped: 1.

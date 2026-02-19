@@ -908,6 +908,12 @@ $juryModel = new \App\Models\Jury();
     const vacancyId = <?= $vacancy['id'] ?>;
     const csrfToken = '<?= \App\Utils\Csrf::token() ?>';
 
+    // CORREÇÃO #1.5: Helper para URL (baseada no CodeIgniter)
+    const baseUrl = '<?= rtrim(url(''), '/') ?>';
+    function appUrl(path) {
+        return baseUrl + (path.startsWith('/') ? path : '/' + path);
+    }
+
     // CORREÇÃO #2: Utility Functions para Loading States
     function showLoading(button, message = 'Processando...') {
         const originalContent = button.innerHTML;

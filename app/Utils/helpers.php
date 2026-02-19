@@ -91,8 +91,12 @@ if (!function_exists('url')) {
             $basePath = '';
         }
 
-        // Se o script está na raiz (não na pasta public), adicionar /public para recursos estáticos
-        if (!str_contains($scriptName, '/public/')) {
+        // Detect if we are serving from the public directory
+        $docRoot = str_replace(['/', '\\'], '/', $_SERVER['DOCUMENT_ROOT'] ?? '');
+        $servingFromPublic = str_ends_with($docRoot, '/public');
+
+        // Se o script está na raiz (não na pasta public) e NÃO estamos servindo da public, adicionar /public para recursos estáticos
+        if (!$servingFromPublic && !str_contains($scriptName, '/public/')) {
             // Para rotas/páginas, mantemos o basePath normal
             // Para recursos estáticos (css, js, assets, images), adicionamos /public
             $staticExtensions = ['.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.ico', '.woff', '.woff2', '.ttf'];

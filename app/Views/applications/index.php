@@ -495,7 +495,7 @@ $isCoordinator = isset($user) && strcasecmp($user['role'], 'coordenador') === 0;
 <script>
     // CSRF Token
     const csrfToken = '<?= csrf_token() ?>';
-    const baseUrl = '<?= rtrim(dirname($_SERVER['SCRIPT_NAME']), '/') ?>';
+    const baseUrl = '<?= rtrim(url(''), '/') ?>';
 
     // ===== CONFIGURAR TOASTR =====
     if (typeof toastr !== 'undefined') {
@@ -709,36 +709,7 @@ $isCoordinator = isset($user) && strcasecmp($user['role'], 'coordenador') === 0;
         }
     }
 
-    // ===== REVERTER PARA PENDENTE =====
-    async function revertToPending(appId, vigilanteName) {
-        if (!confirm(`Reverter candidatura de ${vigilanteName} para PENDENTE?\n\nIsso irá desfazer a aprovação ou rejeição anterior.`)) {
-            return;
-        }
 
-        try {
-            const response = await fetch(`${baseUrl}/applications/${appId}/revert`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({ csrf: csrfToken })
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                showSuccessToast(`Candidatura de <strong>${vigilanteName}</strong> foi revertida para PENDENTE!`);
-                // Recarregar página para atualizar botões corretamente
-                setTimeout(() => location.reload(), 1000);
-            } else {
-                showErrorToast(result.message || 'Erro ao reverter candidatura');
-            }
-        } catch (error) {
-            console.error('Erro:', error);
-            showErrorToast('Erro de conexão ao reverter candidatura');
-        }
-    }
 
     // ===== MODAL DE REJEIÇÃO =====
     function showRejectModal(appId, vigilanteName) {
@@ -988,7 +959,7 @@ $isCoordinator = isset($user) && strcasecmp($user['role'], 'coordenador') === 0;
         const selectAllCb = document.getElementById('select-all-checkbox');
         if (selectAllCb) {
             const visibleChecked = visibleCheckboxes.filter(cb => cb.checked);
-            
+
             if (visibleCheckboxes.length > 0) {
                 if (visibleChecked.length === visibleCheckboxes.length) {
                     selectAllCb.checked = true;

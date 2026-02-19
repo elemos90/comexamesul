@@ -244,7 +244,7 @@ $allVacancies = $allVacancies ?? [];
 <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/pt-br.global.min.js"></script>
 
 <script>
-    const calendarBaseUrl = '<?= url('') ?>';
+    const calendarBaseUrl = '<?= rtrim(url(''), '/') ?>';
     const calendarCsrfToken = '<?= \App\Utils\Csrf::token() ?>';
 
     let calendar;

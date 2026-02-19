@@ -1092,14 +1092,15 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
                                                 <!-- AÇÕES -->
                                                 <td class="text-center no-print">
                                                     <div class="flex items-center justify-center gap-1">
-                                                        <button onclick="editJuryInVacancy(<?= $jury['id'] ?>)"
+                                                        <button
+                                                            onclick="editJuryInVacancy(<?= $jury['vacancy_id'] ?? 0 ?>, <?= $jury['id'] ?>)"
                                                             class="p-1 text-blue-600 hover:bg-blue-100 rounded" title="Editar Sala/Júri">
                                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                                     d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                                             </svg>
                                                         </button>
-                                                        <button onclick="deleteJury(<?= $jury['id'] ?>)"
+                                                        <button onclick="deleteJury(<?= $jury['id'] ?>, '<?= addslashes($jury['room']) ?>')"
                                                             class="p-1 text-red-600 hover:bg-red-100 rounded" title="Remover Sala">
                                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -1488,7 +1489,7 @@ $helpPage = 'juries-planning'; // Identificador para o sistema de ajuda
 </div>
 
 <script>const csrfToken = '<?= csrf_token() ?>';
-    const baseUrl = '<?= rtrim(dirname($_SERVER['SCRIPT_NAME']), '/') ?>';
+    const baseUrl = '<?= rtrim(url(''), '/') ?>';
 
     /**
     * Escape HTML para prevenir XSS em JavaScript

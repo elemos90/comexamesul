@@ -563,6 +563,7 @@ $breadcrumbs = [
 </div>
 
 <script>
+    const baseUrl = '<?= rtrim(url(''), '/') ?>';
     // Dados mestre do PHP
     const masterRooms = <?= json_encode($rooms) ?>;
 
@@ -736,7 +737,7 @@ $breadcrumbs = [
                 end_time: endTime
             });
 
-            const response = await fetch(`/comexamesul/public/api/rooms/available?${params}`);
+            const response = await fetch(`${baseUrl}/api/rooms/available?${params}`);
             const data = await response.json();
 
             if (data.success) {
@@ -1220,8 +1221,7 @@ $breadcrumbs = [
         if (eligibleVigilantes.length === 0) {
             try {
                 const vacancyId = document.getElementById('create_vacancy_id').value;
-                const basePath = window.location.pathname.split('/public/')[0] || '';
-                const url = `${basePath}/public/api/vigilantes/eligible?vacancy_id=${vacancyId}`;
+                const url = `${baseUrl}/api/vigilantes/eligible?vacancy_id=${vacancyId}`;
                 const response = await fetch(url);
                 const result = await response.json();
 
@@ -1506,8 +1506,7 @@ $breadcrumbs = [
             container.innerHTML = '<div class="text-center py-4"><span class="animate-spin inline-block w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full"></span> Carregando supervisores elegíveis...</div>';
             try {
                 const vacancyId = document.getElementById('create_vacancy_id').value;
-                const basePath = window.location.pathname.split('/public/')[0] || '';
-                const response = await fetch(`${basePath}/public/api/supervisors/eligible?vacancy_id=${vacancyId}`);
+                const response = await fetch(`${baseUrl}/api/supervisors/eligible?vacancy_id=${vacancyId}`);
                 const result = await response.json();
 
                 if (result.success) {
@@ -1832,7 +1831,7 @@ $breadcrumbs = [
         this.innerHTML = '<span class="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span> Criando...';
 
         try {
-            const response = await fetch('<?= url('/juries/create-for-vacancy') ?>', {
+            const response = await fetch(`${baseUrl}/juries/create-for-vacancy`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

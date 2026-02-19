@@ -148,8 +148,10 @@ $roleName = $roleNames[$user['role']] ?? ucfirst($user['role']);
             try {
                 const response = await fetch('<?= url("/notifications/unread-count") ?>', {
                     method: 'GET',
+                    credentials: 'include',
                     headers: {
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
 

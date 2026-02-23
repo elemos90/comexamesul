@@ -77,7 +77,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
         'cookie_httponly' => true,
         'cookie_secure' => filter_var(env('SESSION_SECURE', false), FILTER_VALIDATE_BOOL),
         'cookie_samesite' => 'Lax',
-        'cookie_path' => str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'])),
+        'cookie_path' => '/',
     ]);
 }
 

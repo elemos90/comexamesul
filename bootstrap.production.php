@@ -25,7 +25,7 @@ if (file_exists($composerAutoload)) {
 $envPath = BASE_PATH . '/.env';
 if (!file_exists($envPath)) {
     // Criar .env com configurações mínimas se não existir
-    $defaultEnv = "APP_URL=https://admissao.cycode.net\n";
+    $defaultEnv = "APP_URL=https://jogos.cycode.net\n";
     $defaultEnv .= "APP_ENV=production\n";
     $defaultEnv .= "APP_DEBUG=false\n";
     file_put_contents($envPath, $defaultEnv);

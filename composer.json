@@ -31,5 +31,8 @@
     "scripts": {
         "test": "phpunit",
         "analyze": "phpstan analyse app --level=5"
+    },
+    "config": {
+        "platform-check": false
     }
 }

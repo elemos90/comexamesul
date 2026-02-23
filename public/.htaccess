@@ -1,10 +1,12 @@
 <IfModule mod_rewrite.c>
+    DirectoryIndex index.php
     RewriteEngine On
     
     # Auto-detectar base path
     # Se acessar via localhost/ use /
     # Se acessar via localhost/comexamesul/public/ use /comexamesul/public/
-    RewriteBase /comexamesul/public/
+    # Base na raiz do domínio/subdomínio
+    RewriteBase /
     
     # Permitir acesso direto a arquivos existentes
     RewriteCond %{REQUEST_FILENAME} !-f

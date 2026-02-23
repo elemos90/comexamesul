@@ -56,71 +56,40 @@ if (!function_exists('view_path')) {
 if (!function_exists('url')) {
     function url(string $path = ''): string
     {
-        static $basePath = null;
-        $scriptName = $_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '';
+        static $appUrl = null;
+        if ($appUrl === null) {
+            $appUrl = rtrim(env('APP_URL', ''), '/');
+        }
 
+        $path = ltrim($path, '/');
+
+        // Se temos APP_URL definida em produção, usamos ela como base absoluta
+        if ($appUrl && !str_contains($_SERVER['HTTP_HOST'] ?? '', 'localhost') && !str_contains($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1')) {
+            return $appUrl . '/' . $path;
+        }
+
+        static $basePath = null;
         if ($basePath === null) {
+            $scriptName = $_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '';
             $basePath = str_replace('\\', '/', dirname($scriptName));
 
-            // Fix for when script is running from root or perceived root
             if ($basePath === '/' || $basePath === '.') {
                 $basePath = '';
             }
 
-            // Robust XAMPP/Windows detection due to frequent SCRIPT_NAME issues
-            // If base path is empty but we suspect we are in a subfolder
+            // Robust deduction for when we are in a subfolder locally (like /comexamesul/public)
             if ($basePath === '') {
                 $docRoot = str_replace(['/', '\\'], '/', $_SERVER['DOCUMENT_ROOT'] ?? '');
                 $scriptDir = str_replace(['/', '\\'], '/', dirname($_SERVER['SCRIPT_FILENAME'] ?? ''));
 
-                // If script is inside document root
                 if ($docRoot && strpos($scriptDir, $docRoot) === 0) {
                     $relPath = substr($scriptDir, strlen($docRoot));
-                    // Should be something like /comexamesul/public
                     $basePath = '/' . ltrim($relPath, '/');
                 }
-
-                // Fallback: Check REQUEST_URI for known project folder
-                if (($basePath === '' || $basePath === '/') && strpos($_SERVER['REQUEST_URI'] ?? '', '/comexamesul/public') !== false) {
-                    $basePath = '/comexamesul/public';
-                }
             }
         }
 
-        if ($basePath === '/' || $basePath === '.') {
-            $basePath = '';
-        }
-
-        // Detect if we are serving from the public directory
-        $docRoot = str_replace(['/', '\\'], '/', $_SERVER['DOCUMENT_ROOT'] ?? '');
-        $servingFromPublic = str_ends_with($docRoot, '/public');
-
-        // Se o script está na raiz (não na pasta public) e NÃO estamos servindo da public, adicionar /public para recursos estáticos
-        if (!$servingFromPublic && !str_contains($scriptName, '/public/')) {
-            // Para rotas/páginas, mantemos o basePath normal
-            // Para recursos estáticos (css, js, assets, images), adicionamos /public
-            $staticExtensions = ['.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.ico', '.woff', '.woff2', '.ttf'];
-            $isStaticResource = false;
-            foreach ($staticExtensions as $ext) {
-                if (str_ends_with($path, $ext)) {
-                    $isStaticResource = true;
-                    break;
-                }
-            }
-            $staticPaths = ['/css/', '/js/', '/assets/', '/images/'];
-            foreach ($staticPaths as $staticPath) {
-                if (str_starts_with($path, $staticPath) || str_starts_with('/' . ltrim($path, '/'), $staticPath)) {
-                    $isStaticResource = true;
-                    break;
-                }
-            }
-
-            if ($isStaticResource) {
-                return $basePath . '/public/' . ltrim($path, '/');
-            }
-        }
-
-        return $basePath . '/' . ltrim($path, '/');
+        return $basePath . '/' . $path;
     }
 }
 

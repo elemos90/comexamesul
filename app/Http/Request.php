@@ -36,6 +36,11 @@ class Request
             $uri = substr($uri, strlen($basePath));
         }
 
+        // Caso especial para quando o servidor redireciona para /public/ mas não atualiza SCRIPT_NAME devidamente
+        if (strpos($uri, '/public/') === 0) {
+            $uri = substr($uri, 7);
+        }
+
         return '/' . ltrim($uri, '/');
     }
 

@@ -2,6 +2,39 @@
 
 Este guia descreve os passos para colocar a aplicação em produção.
 
+## 🚀 Método Recomendado (Arquivo ZIP)
+
+## 1. Prepare o Servidor
+
+1.  Acesse o **cPanel** -> **File Manager**.
+2.  Vá para a pasta **`comissaoexames.cycode.net`** (NÃO é public_html).
+3.  **MUITO IMPORTANTE:** Apague TODOS os arquivos existentes nessa pasta (delete o `index.html` e a pasta `cgi-bin` se houver).
+    *   Queremos limpar o site de teste para instalar o sistema real.
+
+## 2. Upload dos Arquivos
+
+1.  Faça upload do arquivo `release_v1.0.zip` para dentro da pasta `comissaoexames.cycode.net`.
+2.  Clique com o botão direito no arquivo zip e escolha **Extract** (Extrair).
+3.  Extraia para a própria pasta.
+
+### Estrutura Esperada após Extração:
+Você deverá ver arquivos soltos na raiz da pasta `comissaoexames.cycode.net`:
+- `index.php`
+- `.htaccess`
+- `bootstrap.php`
+- `app/` (pasta)
+- ... e outros.
+
+NÃO deve haver uma pasta chamada `public`.
+
+## 3. Configuração do Ambiente (.env)
+
+---
+
+## 📂 Método Manual (Arrastar e Soltar)
+
+Se preferir enviar os arquivos soltos, siga estas instruções:
+
 ## 1. Preparação dos Arquivos
 
 Antes de enviar, certifique-se de que os arquivos locais estão prontos.
@@ -48,7 +81,9 @@ Arraste as seguintes pastas e arquivos para a pasta `public_html` (ou raiz) do s
    - Marque "Recurso em subdiretórios" (Recurse into subdirectories).
 
 3. **Banco de Dados**:
-   - Utilize o PHPMyAdmin do seu servidor (cPanel) para importar o banco de dados, se necessário. Use o arquivo `install_production.sql` (se criado) ou o dump mais recente.
+   - No phpMyAdmin, **clique no nome do seu banco de dados** na barra lateral esquerda.
+   - Clique na aba **Importar**.
+   - Escolha o arquivo `database_production.sql`.
 
 ## 4. Teste
 

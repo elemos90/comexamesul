@@ -2,23 +2,29 @@
 
 # Desabilitar listagem de diretórios
 Options -Indexes
+DirectoryIndex index.php
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteBase /comexamesul/
+    RewriteBase /
     
-    # Permitir arquivos estáticos da pasta public
+    # Bloquear acesso a arquivos sensíveis
+    RewriteRule (\.env|\.sql|\.log|\.bak)$ - [F,L]
+    
+    # Permitir arquivos e diretórios reais
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
     
-    # Redirecionar tudo para index.php na raiz
-    RewriteRule ^(.*)$ index.php [L,QSA]
+    # Verificar se o ficheiro existe na pasta public (CSS, JS, imagens, etc.)
+    RewriteCond %{DOCUMENT_ROOT}/public/$1 -f
+    RewriteRule ^(.*)$ public/$1 [L]
+    
+    # Tudo o resto vai para public/index.php (routing da aplicação)
+    RewriteRule ^(.*)$ public/index.php [QSA,L]
 </IfModule>
 
 # Bloquear acesso a arquivos sensíveis
 <FilesMatch "\.(env|md|sql|log|ini|sh|bak|config|json|lock)$">
     Require all denied
 </FilesMatch>
-
-# Bloquear acesso direto a pastas sensíveis (usando RewriteRule dentro do módulo)
